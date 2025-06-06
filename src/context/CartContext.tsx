@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { CartItem, Juice } from '@/lib/types';
@@ -48,51 +49,80 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         newItems = [...prevItems, { ...juice, quantity: quantityToAdd }];
       }
       saveCartToLocalStorage(newItems);
+      return newItems;
+    });
+
+    setTimeout(() => {
       toast({
         title: "Added to cart!",
         description: `${juice.name} has been added to your cart.`,
       });
-      return newItems;
-    });
+    }, 0);
   };
 
   const removeFromCart = (juiceId: string) => {
+    const itemToRemoveDetails = cartItems.find(item => item.id === juiceId);
+
     setCartItems(prevItems => {
-      const itemToRemove = prevItems.find(item => item.id === juiceId);
       const newItems = prevItems.filter(item => item.id !== juiceId);
-      saveCartToLocalStorage(newItems);
-      if (itemToRemove) {
-        toast({
-          title: "Removed from cart",
-          description: `${itemToRemove.name} has been removed from your cart.`,
-          variant: "destructive"
-        });
+      if (newItems.length < prevItems.length) { // Check if something was actually removed
+        saveCartToLocalStorage(newItems);
       }
       return newItems;
     });
+
+    if (itemToRemoveDetails) {
+      setTimeout(() => {
+        toast({
+          title: "Removed from cart",
+          description: `${itemToRemoveDetails.name} has been removed from your cart.`,
+          variant: "destructive"
+        });
+      }, 0);
+    }
   };
 
   const updateQuantity = (juiceId: string, quantity: number) => {
     setCartItems(prevItems => {
+      let newItems;
       if (quantity <= 0) {
-        return prevItems.filter(item => item.id !== juiceId);
+        // If quantity becomes 0 or less, consider removing the item or decide behavior.
+        // For now, just filter out. If toast on remove is desired, logic similar to removeFromCart is needed.
+        newItems = prevItems.filter(item => item.id !== juiceId);
+      } else {
+        newItems = prevItems.map(item =>
+          item.id === juiceId ? { ...item, quantity } : item
+        );
       }
-      const newItems = prevItems.map(item =>
-        item.id === juiceId ? { ...item, quantity } : item
-      );
       saveCartToLocalStorage(newItems);
       return newItems;
     });
   };
 
   const clearCart = () => {
+    const hadItems = cartItems.length > 0;
     setCartItems([]);
     saveCartToLocalStorage([]);
-    toast({
-      title: "Cart Cleared",
-      description: "Your shopping cart has been emptied.",
-    });
+
+    if (hadItems) { // Optional: only toast if there was something to clear. Original did not have this.
+      setTimeout(() => {
+        toast({
+          title: "Cart Cleared",
+          description: "Your shopping cart has been emptied.",
+        });
+      }, 0);
+    } else { // If cart was already empty, original toast might still be desired or not.
+            // For minimal change to fix error, let's keep the original behavior to always toast.
+            // Reverting to always toast unless specified.
+      setTimeout(() => {
+        toast({
+          title: "Cart Cleared",
+          description: "Your shopping cart has been emptied.",
+        });
+      }, 0);
+    }
   };
+
 
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -102,9 +132,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   };
   
-  // Debounce localStorage writes slightly if performance becomes an issue
-  // For now, direct saves are fine for typical cart sizes
-
   return (
     <CartContext.Provider
       value={{
