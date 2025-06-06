@@ -1,9 +1,10 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { CreditCard, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 // import type { Metadata } from 'next'; // Keep for potential future use or if parts are server-rendered
 
@@ -20,7 +21,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = () => {
     // In a real application, this would trigger payment processing and order submission.
     toast({
-      title: "Order Placed (Concept)",
+      title: "Order Placed (Conceptual)",
       description: "Thank you for your order! This is a conceptual confirmation.",
     });
     // Potentially redirect to an order confirmation page or clear cart after a delay.
@@ -64,17 +65,32 @@ export default function CheckoutPage() {
               </div>
 
               {/* Placeholder for payment form */}
-              <div className="p-4 border rounded-lg bg-muted/30">
-                <h3 className="font-semibold mb-2">Payment Method</h3>
-                <p className="text-sm text-muted-foreground">Payment gateway integration (e.g., Stripe, PayPal) would be here.</p>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <h4 className="font-semibold mb-1">Credit/Debit Card</h4>
+                    <p className="text-sm text-muted-foreground">Secure card payment form would be here (e.g., Stripe Elements).</p>
+                  </div>
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <h4 className="font-semibold mb-1">PayPal</h4>
+                    <p className="text-sm text-muted-foreground">PayPal button and integration would appear here.</p>
+                    {/* Example of where a PayPal button might go - this is non-functional */}
+                    <Button variant="outline" className="mt-2 w-full" disabled>
+                      Pay with PayPal (Placeholder)
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
               
               <Button 
                 size="lg" 
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3"
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
                 onClick={handlePlaceOrder}
               >
-                <CreditCard className="mr-2 h-5 w-5" /> Place Your Order (Concept)
+                <CreditCard className="mr-2 h-5 w-5" /> Confirm & Pay (Concept)
               </Button>
             </CardContent>
           </Card>
