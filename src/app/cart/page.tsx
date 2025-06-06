@@ -16,7 +16,7 @@ export default function CartPage() {
   const { cartItems } = useCart();
 
   if (typeof window !== 'undefined') { // For client-side only title update
-    document.title = 'Your Cart - JuiceBox';
+    document.title = 'Your Cart - Elixir';
   }
 
 

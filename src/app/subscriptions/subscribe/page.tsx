@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Suspense } from 'react';
@@ -16,7 +15,7 @@ function SubscribePageContents() {
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
 
   if (typeof window !== 'undefined') {
-    document.title = selectedPlan ? `Subscribe to ${selectedPlan.name} - JuiceBox` : 'Choose a Subscription - JuiceBox';
+    document.title = selectedPlan ? `Subscribe to ${selectedPlan.name} - Elixir` : 'Choose a Subscription - Elixir';
   }
 
   return (

@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact Us - JuiceBox',
-  description: 'Get in touch with JuiceBox for support, inquiries, or feedback.',
+  title: 'Contact Us - Elixir',
+  description: 'Get in touch with Elixir for support, inquiries, or feedback.',
 };
 
 export default function ContactPage() {
@@ -77,7 +77,7 @@ export default function ContactPage() {
                 <Mail className="h-6 w-6 text-primary" />
                 <div>
                   <h3 className="font-semibold">Email</h3>
-                  <a href="mailto:support@juicebox.com" className="text-muted-foreground hover:text-primary transition-colors">support@juicebox.com</a>
+                  <a href="mailto:support@elixir.com" className="text-muted-foreground hover:text-primary transition-colors">support@elixir.com</a>
                 </div>
               </div>
               <div className="flex items-center gap-3">

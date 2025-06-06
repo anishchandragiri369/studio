@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { CartItem, Juice } from '@/lib/types';
@@ -18,7 +17,7 @@ interface CartContextType {
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'juiceBoxCart';
+const CART_STORAGE_KEY = 'elixirCart';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -104,16 +103,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCartItems([]);
     saveCartToLocalStorage([]);
 
-    if (hadItems) { // Optional: only toast if there was something to clear. Original did not have this.
+    if (hadItems) { 
       setTimeout(() => {
         toast({
           title: "Cart Cleared",
           description: "Your shopping cart has been emptied.",
         });
       }, 0);
-    } else { // If cart was already empty, original toast might still be desired or not.
-            // For minimal change to fix error, let's keep the original behavior to always toast.
-            // Reverting to always toast unless specified.
+    } else { 
       setTimeout(() => {
         toast({
           title: "Cart Cleared",

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CreditCard, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import type { Metadata } from 'next'; // Keep for potential future use or if parts are server-rendered
+// import type { Metadata } from 'next'; // Keep for potential future use or if parts are server-rendered
 
 // Client components cannot directly export metadata.
 // If dynamic metadata is needed, it should be handled in a parent layout or via useEffect for document.title.
 // export const metadata: Metadata = {
-// title: 'Checkout - JuiceBox',
-//   description: 'Complete your JuiceBox order.',
+// title: 'Checkout - Elixir',
+//   description: 'Complete your Elixir order.',
 // };
 
 export default function CheckoutPage() {
@@ -29,7 +28,7 @@ export default function CheckoutPage() {
   };
   
   if (typeof window !== 'undefined') {
-    document.title = 'Checkout - JuiceBox';
+    document.title = 'Checkout - Elixir';
   }
 
   return (
