@@ -76,21 +76,22 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     name: 'Weekly Kickstarter',
     frequency: 'weekly',
     pricePerDelivery: 29.99,
-    description: 'Get a fresh batch of 5 curated juices delivered to your doorstep every week. Perfect for starting your week right!',
+    description: 'Get a fresh batch of curated or custom-selected juices delivered to your doorstep every week. Perfect for starting your week right!',
     defaultJuices: [
       { juiceId: '1', quantity: 1 },
       { juiceId: '2', quantity: 2 },
       { juiceId: '3', quantity: 1 },
       { juiceId: '6', quantity: 1 },
     ],
-    isCustomizable: false,
+    isCustomizable: true,
+    maxJuices: 5,
   },
   {
     id: 'sub2',
     name: 'Monthly Wellness Pack',
     frequency: 'monthly',
     pricePerDelivery: 109.99,
-    description: 'A comprehensive selection of 20 juices delivered monthly. Ideal for maintaining a healthy lifestyle.',
+    description: 'A comprehensive selection of curated or custom-selected juices delivered monthly. Ideal for maintaining a healthy lifestyle.',
      defaultJuices: [
       { juiceId: '1', quantity: 4 },
       { juiceId: '2', quantity: 4 },
@@ -99,16 +100,18 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { juiceId: '5', quantity: 2 },
       { juiceId: '6', quantity: 2 },
     ],
-    isCustomizable: false,
+    isCustomizable: true,
+    maxJuices: 20,
   },
   {
     id: 'sub3',
-    name: 'Custom Weekly',
+    name: 'Custom Weekly', // This plan name might be redundant now but keeping for consistency with previous state
     frequency: 'weekly',
-    pricePerDelivery: 32.99, // Base price, actual price may vary based on selection
-    description: 'Choose your own 5 favorite juices for weekly delivery. Tailor your subscription to your taste.',
+    pricePerDelivery: 32.99, 
+    description: 'Choose your own favorite juices for weekly delivery. Tailor your subscription to your taste.',
     isCustomizable: true,
-    maxJuices: 5,
+    maxJuices: 5, // Assuming 5 based on "Weekly Kickstarter" which also became 5. Adjust if needed.
+    // No defaultJuices for this one, user starts from scratch or we can add some popular ones.
   },
 ];
 

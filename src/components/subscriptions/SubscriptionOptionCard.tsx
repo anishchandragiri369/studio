@@ -1,10 +1,12 @@
+
 "use client";
 
 import type { SubscriptionPlan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Zap } from 'lucide-react';
+import { CheckCircle, Zap, Edit3 } from 'lucide-react';
 import Link from 'next/link';
+import { JUICES } from '@/lib/constants'; // Import JUICES to resolve names
 
 interface SubscriptionOptionCardProps {
   plan: SubscriptionPlan;
@@ -29,22 +31,33 @@ const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOption
           <span className="text-sm font-normal text-muted-foreground">/{plan.frequency === 'weekly' ? 'week' : 'month'}</span>
         </p>
         <p className="text-sm text-foreground/80 mb-4 min-h-[4.5em] line-clamp-3">{plan.description}</p>
+        
+        {plan.isCustomizable && (
+          <div className="mb-4">
+            <p className="flex items-center gap-2 text-sm text-primary font-medium">
+              <Edit3 size={16} /> Fully customizable up to {plan.maxJuices} juices.
+            </p>
+          </div>
+        )}
+
         {plan.defaultJuices && plan.defaultJuices.length > 0 && (
           <div className="space-y-1 text-sm">
-            <h4 className="font-semibold mb-1">Includes:</h4>
-            {plan.defaultJuices.slice(0,3).map(dj => ( // Show first 3 default juices
-                 <p key={dj.juiceId} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle size={16} className="text-green-500" />
-                    {dj.quantity}x Juice ID: {dj.juiceId} {/* Replace with actual juice name if available */}
-                 </p>
-            ))}
-            {plan.defaultJuices.length > 3 && <p className="text-xs text-muted-foreground/80">+ {plan.defaultJuices.length - 3} more</p>}
+            <h4 className="font-semibold mb-1">{plan.isCustomizable ? "Suggested starting juices:" : "Includes:"}</h4>
+            {plan.defaultJuices.slice(0,3).map(dj => {
+                 const juiceInfo = JUICES.find(j => j.id === dj.juiceId);
+                 return (
+                   <p key={dj.juiceId} className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                      <span>{dj.quantity}x {juiceInfo ? juiceInfo.name : `Juice ID: ${dj.juiceId}`}</span>
+                   </p>
+                 )
+            })}
+            {plan.defaultJuices.length > 3 && <p className="text-xs text-muted-foreground/80 ml-6">+ {plan.defaultJuices.length - 3} more</p>}
           </div>
         )}
       </CardContent>
       <CardFooter className="p-6 pt-0">
         <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-6">
-          {/* Link to a specific subscription configuration page or a general sign-up */}
           <Link href={`/subscriptions/subscribe?plan=${plan.id}`}>Choose Plan</Link>
         </Button>
       </CardFooter>
