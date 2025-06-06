@@ -24,11 +24,11 @@ const CartSummary = () => {
       <CardContent className="space-y-4">
         <div className="flex justify-between">
           <p className="text-muted-foreground">Subtotal</p>
-          <p className="font-medium">${total.toFixed(2)}</p>
+          <p className="font-medium text-accent">${total.toFixed(2)}</p>
         </div>
         <div className="flex justify-between">
           <p className="text-muted-foreground">Estimated Shipping</p>
-          <p className="font-medium">${shippingCost.toFixed(2)}</p>
+          <p className="font-medium text-accent">${shippingCost.toFixed(2)}</p>
         </div>
         <Separator />
         <div className="flex justify-between text-lg font-semibold">
@@ -38,9 +38,7 @@ const CartSummary = () => {
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Link href="/checkout">
-            Proceed to Checkout
-          </Link>
+          <Link href="/checkout">Proceed to Checkout</Link>
         </Button>
         <Button variant="outline" onClick={clearCart} className="w-full">
           Clear Cart

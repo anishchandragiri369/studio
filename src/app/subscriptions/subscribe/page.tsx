@@ -35,9 +35,9 @@ function SubscribePageContents() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-6 bg-muted/50 rounded-lg">
-              <h2 className="text-2xl font-semibold font-headline mb-2">{selectedPlan.name}</h2>
+              <h2 className="text-2xl font-semibold font-headline mb-2 text-primary">{selectedPlan.name}</h2>
               <p className="text-muted-foreground capitalize mb-1">{selectedPlan.frequency} Delivery</p>
-              <p className="text-2xl font-bold text-primary mb-3">
+              <p className="text-2xl font-bold text-accent mb-3">
                 ${selectedPlan.pricePerDelivery.toFixed(2)}
                 <span className="text-sm font-normal text-muted-foreground">
                   /{selectedPlan.frequency === 'weekly' ? 'week' : 'month'}

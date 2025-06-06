@@ -37,10 +37,10 @@ const CartItem = ({ item }: CartItemProps) => {
       </Link>
       <div className="flex-grow">
         <Link href={`/menu#${item.id}`}>
-          <h3 className="font-headline text-lg hover:text-primary transition-colors">{item.name}</h3>
+          <h3 className="font-headline text-lg text-primary transition-colors">{item.name}</h3>
         </Link>
         <p className="text-sm text-muted-foreground">{item.flavor}</p>
-        <p className="text-sm font-semibold text-primary">${item.price.toFixed(2)} each</p>
+        <p className="text-sm font-semibold text-accent">${item.price.toFixed(2)} each</p>
       </div>
       <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-1">
@@ -69,7 +69,7 @@ const CartItem = ({ item }: CartItemProps) => {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-md font-semibold w-20 text-right hidden sm:block">
+        <p className="text-md font-semibold w-20 text-right hidden sm:block text-accent">
           ${(item.price * item.quantity).toFixed(2)}
         </p>
         <Button
@@ -82,7 +82,7 @@ const CartItem = ({ item }: CartItemProps) => {
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
-       <p className="text-md font-semibold w-full text-right sm:hidden mt-2">
+       <p className="text-md font-semibold w-full text-right sm:hidden mt-2 text-accent">
           Subtotal: ${(item.price * item.quantity).toFixed(2)}
         </p>
     </div>
