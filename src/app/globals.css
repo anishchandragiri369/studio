@@ -4,84 +4,84 @@
 
 @layer base {
   :root {
-    --background: 28 57% 95%; /* #FAF2EC Light, desaturated orange */
-    --foreground: 28 15% 25%; /* Dark warm gray for text */
+    --background: 130 40% 95%; /* Soft, light green */
+    --foreground: 28 15% 25%; /* Dark warm gray for text (kept for contrast with orange primary/accent) */
 
-    --card: 28 57% 98%; /* Slightly lighter/different from background */
+    --card: 130 40% 98%; /* Slightly lighter green */
     --card-foreground: 28 15% 25%;
 
-    --popover: 28 57% 98%;
+    --popover: 130 40% 98%; /* Slightly lighter green */
     --popover-foreground: 28 15% 25%;
 
-    --primary: 34 88% 62%; /* #F2994A Saturated orange */
-    --primary-foreground: 34 70% 98%; /* Light color for text on primary */
+    --primary: 34 88% 62%; /* #F2994A Saturated orange (Unchanged) */
+    --primary-foreground: 34 70% 98%; /* Light color for text on primary (Unchanged) */
 
-    --secondary: 30 60% 90%; /* A lighter shade of orange or complementary */
-    --secondary-foreground: 30 25% 30%; /* Darker text for secondary */
+    --secondary: 130 30% 90%; /* Lighter, less saturated green */
+    --secondary-foreground: 28 15% 30%; /* Darker text for secondary */
 
-    --muted: 30 50% 92%; /* Muted background */
-    --muted-foreground: 28 10% 45%; /* Lighter warm gray for muted text */
+    --muted: 130 30% 92%; /* Muted green */
+    --muted-foreground: 28 10% 45%; /* Lighter warm gray for muted text (kept) */
 
-    --accent: 13 69% 54%; /* #D95E3A Analogous reddish-orange */
-    --accent-foreground: 13 60% 98%; /* Light color for text on accent */
+    --accent: 13 69% 54%; /* #D95E3A Analogous reddish-orange (Unchanged) */
+    --accent-foreground: 13 60% 98%; /* Light color for text on accent (Unchanged) */
 
-    --destructive: 0 72% 51%; /* Standard destructive red */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%; /* Standard destructive red (Unchanged) */
+    --destructive-foreground: 0 0% 98%; /* (Unchanged) */
 
-    --border: 30 40% 85%; /* Border color derived from theme */
-    --input: 30 50% 97%; /* Input background, slightly different from main bg */
-    --ring: 34 88% 62%; /* Ring color (primary) */
+    --border: 130 25% 85%; /* Green-derived border */
+    --input: 130 35% 97%; /* Light green input background */
+    --ring: 34 88% 62%; /* Ring color (primary - Unchanged) */
 
     --radius: 0.5rem;
 
-    /* Sidebar specific colors - keeping them consistent with main theme for now */
-    --sidebar-background: 28 57% 92%; 
+    /* Sidebar specific colors */
+    --sidebar-background: 130 40% 92%; 
     --sidebar-foreground: 28 15% 25%;
     --sidebar-primary: 34 88% 62%;
     --sidebar-primary-foreground: 34 70% 98%;
     --sidebar-accent: 13 69% 54%;
     --sidebar-accent-foreground: 13 60% 98%;
-    --sidebar-border: 30 40% 80%;
+    --sidebar-border: 130 25% 80%;
     --sidebar-ring: 34 88% 62%;
   }
 
   .dark {
-    --background: 28 10% 12%; /* Dark warm gray */
-    --foreground: 28 30% 92%; /* Light text for dark mode */
+    --background: 130 10% 12%; /* Dark desaturated green */
+    --foreground: 130 25% 92%; /* Light green-tinted text */
 
-    --card: 28 10% 15%;
-    --card-foreground: 28 30% 92%;
+    --card: 130 10% 15%;
+    --card-foreground: 130 25% 92%;
 
-    --popover: 28 10% 15%;
-    --popover-foreground: 28 30% 92%;
+    --popover: 130 10% 15%;
+    --popover-foreground: 130 25% 92%;
 
-    --primary: 34 80% 58%; /* Saturated orange, adjusted for dark */
-    --primary-foreground: 34 15% 15%; /* Dark text on primary for dark mode */
+    --primary: 34 80% 58%; /* Saturated orange, adjusted for dark (Unchanged) */
+    --primary-foreground: 34 15% 15%; /* Dark text on primary for dark mode (Unchanged) */
 
-    --secondary: 30 20% 22%;
-    --secondary-foreground: 30 30% 92%;
+    --secondary: 130 15% 22%; /* Darker, less saturated green */
+    --secondary-foreground: 130 25% 92%;
 
-    --muted: 30 15% 20%;
-    --muted-foreground: 28 20% 70%;
+    --muted: 130 10% 20%; /* Muted dark green */
+    --muted-foreground: 130 15% 70%; /* Lighter green-tinted muted text */
 
-    --accent: 13 65% 50%; /* Reddish-orange, adjusted for dark */
-    --accent-foreground: 13 15% 15%; /* Dark text on accent for dark mode */
+    --accent: 13 65% 50%; /* Reddish-orange, adjusted for dark (Unchanged) */
+    --accent-foreground: 13 15% 15%; /* Dark text on accent for dark mode (Unchanged) */
 
-    --destructive: 0 60% 45%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 60% 45%; /* (Unchanged) */
+    --destructive-foreground: 0 0% 98%; /* (Unchanged) */
 
-    --border: 30 15% 25%;
-    --input: 30 15% 25%;
-    --ring: 34 80% 58%;
+    --border: 130 10% 25%; /* Dark green-derived border */
+    --input: 130 10% 25%; /* Dark green input background */
+    --ring: 34 80% 58%; /* (Unchanged) */
     
     /* Dark Sidebar */
-    --sidebar-background: 28 10% 10%;
-    --sidebar-foreground: 28 30% 92%;
+    --sidebar-background: 130 10% 10%;
+    --sidebar-foreground: 130 25% 92%;
     --sidebar-primary: 34 80% 58%;
     --sidebar-primary-foreground: 34 15% 15%;
     --sidebar-accent: 13 65% 50%;
     --sidebar-accent-foreground: 13 15% 15%;
-    --sidebar-border: 30 15% 20%;
+    --sidebar-border: 130 10% 20%;
     --sidebar-ring: 34 80% 58%;
   }
 }
