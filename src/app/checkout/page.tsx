@@ -1,18 +1,36 @@
 
-import { Metadata } from 'next';
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CreditCard, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import type { Metadata } from 'next'; // Keep for potential future use or if parts are server-rendered
 
-export const metadata: Metadata = {
-  title: 'Checkout - JuiceBox',
-  description: 'Complete your JuiceBox order.',
-};
+// Client components cannot directly export metadata.
+// If dynamic metadata is needed, it should be handled in a parent layout or via useEffect for document.title.
+// export const metadata: Metadata = {
+// title: 'Checkout - JuiceBox',
+//   description: 'Complete your JuiceBox order.',
+// };
 
 export default function CheckoutPage() {
-  // In a real application, you would fetch cart details, user info, etc.
-  // For now, this is a placeholder.
+  const { toast } = useToast();
+
+  const handlePlaceOrder = () => {
+    // In a real application, this would trigger payment processing and order submission.
+    toast({
+      title: "Order Placed (Concept)",
+      description: "Thank you for your order! This is a conceptual confirmation.",
+    });
+    // Potentially redirect to an order confirmation page or clear cart after a delay.
+    // For now, just a toast.
+  };
+  
+  if (typeof window !== 'undefined') {
+    document.title = 'Checkout - JuiceBox';
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -52,7 +70,11 @@ export default function CheckoutPage() {
                 <p className="text-sm text-muted-foreground">Payment gateway integration (e.g., Stripe, PayPal) would be here.</p>
               </div>
               
-              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3">
+              <Button 
+                size="lg" 
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3"
+                onClick={handlePlaceOrder}
+              >
                 <CreditCard className="mr-2 h-5 w-5" /> Place Your Order (Concept)
               </Button>
             </CardContent>
