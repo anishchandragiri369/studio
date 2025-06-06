@@ -1,0 +1,134 @@
+import type { Juice, SubscriptionPlan } from './types';
+
+export const JUICES: Juice[] = [
+  {
+    id: '1',
+    name: 'Sunrise Orange',
+    flavor: 'Orange, Carrot, Ginger',
+    price: 5.99,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'orange juice',
+    description: 'A vibrant blend of sweet oranges, earthy carrots, and a spicy kick of ginger. Perfect to start your day.',
+    category: 'Fruit Blast',
+    tags: ['energizing', 'vitamin c', 'morning'],
+  },
+  {
+    id: '2',
+    name: 'Green Vitality',
+    flavor: 'Kale, Spinach, Apple, Lemon',
+    price: 6.49,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'green smoothie',
+    description: 'Packed with leafy greens, crisp apple, and zesty lemon for a refreshing and nutritious boost.',
+    category: 'Green Power',
+    tags: ['detox', 'healthy', 'greens'],
+  },
+  {
+    id: '3',
+    name: 'Berry Bliss',
+    flavor: 'Strawberry, Blueberry, Raspberry, Banana',
+    price: 6.29,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'berry smoothie',
+    description: 'A delightful mix of sweet berries and creamy banana, rich in antioxidants.',
+    category: 'Fruit Blast',
+    tags: ['antioxidant', 'sweet', 'smoothie'],
+  },
+  {
+    id: '4',
+    name: 'Tropical Escape',
+    flavor: 'Pineapple, Mango, Coconut Water',
+    price: 6.79,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'tropical drink',
+    description: 'Experience a taste of the tropics with this exotic blend of pineapple, mango, and hydrating coconut water.',
+    category: 'Exotic Flavors',
+    tags: ['tropical', 'hydrating', 'refreshing'],
+  },
+  {
+    id: '5',
+    name: 'Beet Boost',
+    flavor: 'Beetroot, Apple, Carrot, Lemon',
+    price: 5.99,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'beet juice',
+    description: 'An earthy and energizing juice featuring beetroot, balanced with sweet apple and carrot.',
+    category: 'Veggie Fusion',
+    tags: ['earthy', 'stamina', 'nutrient-rich'],
+  },
+  {
+    id: '6',
+    name: 'Citrus Zing',
+    flavor: 'Grapefruit, Orange, Lemon, Lime',
+    price: 6.19,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'citrus juice',
+    description: 'A zesty and invigorating explosion of citrus fruits, perfect for a pick-me-up.',
+    category: 'Fruit Blast',
+    tags: ['tangy', 'refreshing', 'vitamin c'],
+  },
+];
+
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+  {
+    id: 'sub1',
+    name: 'Weekly Kickstarter',
+    frequency: 'weekly',
+    pricePerDelivery: 29.99,
+    description: 'Get a fresh batch of 5 curated juices delivered to your doorstep every week. Perfect for starting your week right!',
+    defaultJuices: [
+      { juiceId: '1', quantity: 1 },
+      { juiceId: '2', quantity: 2 },
+      { juiceId: '3', quantity: 1 },
+      { juiceId: '6', quantity: 1 },
+    ],
+  },
+  {
+    id: 'sub2',
+    name: 'Monthly Wellness Pack',
+    frequency: 'monthly',
+    pricePerDelivery: 109.99,
+    description: 'A comprehensive selection of 20 juices delivered monthly. Ideal for maintaining a healthy lifestyle.',
+     defaultJuices: [
+      { juiceId: '1', quantity: 4 },
+      { juiceId: '2', quantity: 4 },
+      { juiceId: '3', quantity: 4 },
+      { juiceId: '4', quantity: 4 },
+      { juiceId: '5', quantity: 2 },
+      { juiceId: '6', quantity: 2 },
+    ],
+  },
+  {
+    id: 'sub3',
+    name: 'Custom Weekly',
+    frequency: 'weekly',
+    pricePerDelivery: 32.99, // Base price, actual price may vary based on selection
+    description: 'Choose your own 5 favorite juices for weekly delivery. Tailor your subscription to your taste.',
+  },
+];
+
+export const AVAILABLE_FLAVORS_FOR_AI: string[] = JUICES.map(j => j.flavor);
+export const AVAILABLE_JUICE_NAMES_FOR_AI: string[] = JUICES.map(j => j.name);
+
+// Mock data for AI features
+export const MOCK_USER_TASTE_PREFERENCES = "Loves sweet and fruity, sometimes tangy. Avoids very earthy or veggie-heavy juices.";
+export const MOCK_USER_CONSUMPTION_HABITS = "Drinks juice 3-4 times a week, usually one per serving. Enjoys variety.";
+export const MOCK_USER_ORDER_HISTORY = JSON.stringify([
+  { juiceName: "Sunrise Orange", quantity: 2, date: "2023-10-01" },
+  { juiceName: "Berry Bliss", quantity: 3, date: "2023-10-05" },
+  { juiceName: "Tropical Escape", quantity: 1, date: "2023-10-10" },
+]);
+
+export const MOCK_AI_PREFERENCES_INPUT = JSON.stringify({
+  favoriteFlavors: ["orange", "strawberry", "pineapple", "mango"],
+  dietaryRestrictions: ["none"],
+  healthGoals: ["more energy", "better hydration"]
+});
+
+export const NAV_LINKS = [
+  { href: '/', label: 'Home' },
+  { href: '/menu', label: 'Menu' },
+  { href: '/subscriptions', label: 'Subscriptions' },
+  { href: '/recipe-creator', label: 'Recipe Creator' },
+  { href: '/contact', label: 'Contact Us' },
+];
