@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useTransition } from 'react';
@@ -10,12 +11,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MOCK_USER_ORDER_HISTORY, MOCK_AI_PREFERENCES_INPUT } from '@/lib/constants';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
+import { useToast } from "@/hooks/use-toast";
 
 const JuiceRecommenderClient = () => {
   const [recommendations, setRecommendations] = useState<AIJuiceRecommendationOutput['recommendations'] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { addToCart } = useCart();
+  const { toast } = useToast();
 
   // In a real app, pastOrders and preferences would come from user data / state
   const pastOrders = MOCK_USER_ORDER_HISTORY;
@@ -45,15 +48,32 @@ const JuiceRecommenderClient = () => {
   };
 
   const handleAddCombinationToCart = (combo: AIJuiceRecommendationOutput['recommendations'][0]) => {
-    combo.juices.forEach(recommendedJuice => {
-      const juiceDetails = JUICES.find(j => j.name === recommendedJuice.juiceName);
-      if (juiceDetails) {
-        addToCart(juiceDetails, recommendedJuice.quantity);
-      } else {
-        console.warn(`Juice "${recommendedJuice.juiceName}" not found in current JUICES list.`);
-        // Optionally, show a toast message to the user
-      }
-    });
+    if (combo.juices && Array.isArray(combo.juices) && combo.juices.length > 0) {
+      combo.juices.forEach(recommendedJuice => {
+        const juiceDetails = JUICES.find(j => j.name === recommendedJuice.juiceName);
+        if (juiceDetails) {
+          addToCart(juiceDetails, recommendedJuice.quantity);
+        } else {
+          console.warn(`Juice "${recommendedJuice.juiceName}" not found in current JUICES list.`);
+          toast({
+            title: "Juice Not Found",
+            description: `Could not add "${recommendedJuice.juiceName}" as it's not available.`,
+            variant: "destructive",
+          });
+        }
+      });
+       toast({
+        title: "Combo Added!",
+        description: `"${combo.name || 'Recommended combo'}" added to your cart.`,
+      });
+    } else {
+      console.warn(`No juices to add for recommendation: ${combo.name || 'Unnamed Recommendation'}`);
+      toast({
+        title: "Cannot Add Combo",
+        description: `No specific juices found in the recommendation "${combo.name || 'Unnamed Recommendation'}".`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -80,11 +100,18 @@ const JuiceRecommenderClient = () => {
                   {combo.reasoning && <CardDescription>{combo.reasoning}</CardDescription>}
                 </CardHeader>
                 <CardContent>
-                  <ul className="list-disc list-inside pl-2 space-y-1 text-sm">
-                    {combo.juices.map((juice, jIndex) => (
-                      <li key={jIndex}>{juice.quantity}x {juice.juiceName}</li>
-                    ))}
-                  </ul>
+                  {combo.juices && Array.isArray(combo.juices) && combo.juices.length > 0 ? (
+                    <ul className="list-disc list-inside pl-2 space-y-1 text-sm">
+                      {combo.juices.map((juice, jIndex) => (
+                        <li key={jIndex}>
+                          {typeof juice.quantity === 'number' ? `${juice.quantity}x ` : ''}
+                          {juice.juiceName || 'Unknown Juice'}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Juice details not available for this recommendation.</p>
+                  )}
                 </CardContent>
                 <CardFooter>
                    <Button onClick={() => handleAddCombinationToCart(combo)} size="sm" variant="outline">Add Combo to Cart</Button>
