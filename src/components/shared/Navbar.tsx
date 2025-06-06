@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -8,7 +9,7 @@ import Logo from './Logo';
 import { NAV_LINKS } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const Navbar = () => {
   const { getItemCount } = useCart();
@@ -56,29 +57,24 @@ const Navbar = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] p-6 bg-background">
-                <div className="flex flex-col gap-6">
-                  <div className="flex justify-between items-center">
-                     <Logo />
-                     <SheetClose asChild>
-                        <Button variant="ghost" size="icon">
-                            <X className="h-6 w-6" />
-                        </Button>
-                     </SheetClose>
-                  </div>
-                  <nav className="flex flex-col gap-4">
-                    {NAV_LINKS.map(link => (
-                      <SheetClose asChild key={link.href}>
-                        <Link
-                          href={link.href}
-                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          {link.label}
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </nav>
-                </div>
+                <SheetHeader className="mb-6 text-left"> {/* Ensure text-left for Logo */}
+                  <Logo />
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                  {/* The X close button is part of SheetContent by default */}
+                </SheetHeader>
+                <nav className="flex flex-col gap-4">
+                  {NAV_LINKS.map(link => (
+                    <SheetClose asChild key={link.href}>
+                      <Link
+                        href={link.href}
+                        className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </nav>
               </SheetContent>
             </Sheet>
           </div>
