@@ -1,3 +1,4 @@
+
 export interface Juice {
   id: string;
   name: string;
@@ -21,6 +22,8 @@ export interface SubscriptionPlan {
   pricePerDelivery: number;
   description: string;
   defaultJuices?: { juiceId: string; quantity: number }[]; // Optional: pre-selected juices
+  isCustomizable?: boolean;
+  maxJuices?: number; // Max number of items for customizable plans
 }
 
 // For AI Recipe Suggestion

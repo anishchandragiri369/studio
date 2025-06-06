@@ -1,3 +1,4 @@
+
 import type { Juice, SubscriptionPlan } from './types';
 
 export const JUICES: Juice[] = [
@@ -82,6 +83,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { juiceId: '3', quantity: 1 },
       { juiceId: '6', quantity: 1 },
     ],
+    isCustomizable: false,
   },
   {
     id: 'sub2',
@@ -97,6 +99,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { juiceId: '5', quantity: 2 },
       { juiceId: '6', quantity: 2 },
     ],
+    isCustomizable: false,
   },
   {
     id: 'sub3',
@@ -104,6 +107,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     frequency: 'weekly',
     pricePerDelivery: 32.99, // Base price, actual price may vary based on selection
     description: 'Choose your own 5 favorite juices for weekly delivery. Tailor your subscription to your taste.',
+    isCustomizable: true,
+    maxJuices: 5,
   },
 ];
 
