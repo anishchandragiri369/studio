@@ -105,13 +105,12 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     id: 'sub3',
-    name: 'Custom Weekly', // This plan name might be redundant now but keeping for consistency with previous state
+    name: 'Custom Weekly',
     frequency: 'weekly',
     pricePerDelivery: 32.99, 
     description: 'Choose your own favorite juices for weekly delivery. Tailor your subscription to your taste.',
     isCustomizable: true,
-    maxJuices: 5, // Assuming 5 based on "Weekly Kickstarter" which also became 5. Adjust if needed.
-    // No defaultJuices for this one, user starts from scratch or we can add some popular ones.
+    maxJuices: 5, 
   },
 ];
 
@@ -139,4 +138,5 @@ export const NAV_LINKS = [
   { href: '/subscriptions', label: 'Subscriptions' },
   { href: '/recipe-creator', label: 'Recipe Creator' },
   { href: '/contact', label: 'Contact Us' },
+  // Login/Signup links will be handled dynamically in Navbar
 ];

@@ -1,4 +1,8 @@
 
+import type { z } from 'zod';
+import type { loginSchema, signUpSchema, forgotPasswordSchema } from '@/lib/zod-schemas';
+
+
 export interface Juice {
   id: string;
   name: string;
@@ -53,3 +57,8 @@ export type AIJuiceCombination = {
 export type AIJuiceRecommendationOutput = {
   recommendations: AIJuiceCombination[];
 }
+
+// Auth Form Data Types
+export type LoginFormData = z.infer<typeof loginSchema>;
+export type SignUpFormData = z.infer<typeof signUpSchema>;
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
