@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import AISubscriptionRecommender from '@/components/subscriptions/AISubscriptionRecommender'; // To be created
 
 export const metadata: Metadata = {
-  title: 'Juice Subscriptions - Elixir',
+  title: 'Juice Subscriptions - Elixr',
   description: 'Choose from our flexible weekly and monthly juice subscription plans.',
 };
 

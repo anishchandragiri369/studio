@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import RecipeCreatorClient from '@/components/recipe-creator/RecipeCreatorClient';
 
 export const metadata: Metadata = {
-  title: 'AI Recipe Creator - Elixir',
+  title: 'AI Recipe Creator - Elixr',
   description: 'Generate unique juice recipes based on your favorite flavors using AI.',
 };
 

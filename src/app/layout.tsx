@@ -6,7 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 
 export const metadata: Metadata = {
-  title: 'Elixir - Fresh Juices Delivered',
+  title: 'Elixr - Fresh Juices Delivered',
   description: 'Discover a variety of fresh juices and subscription plans. Healthy, delicious, and convenient.',
   keywords: ['juice', 'fresh juice', 'subscription', 'healthy drinks', 'juice delivery'],
 };

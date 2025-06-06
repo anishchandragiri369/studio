@@ -62,7 +62,7 @@ export default function HomePage() {
       {/* How It Works / Features Section */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">Why Choose Elixir?</h2>
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">Why Choose Elixr?</h2>
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div className="p-6 bg-card rounded-lg shadow-md animate-slide-in-up">
               <Gift className="h-12 w-12 text-primary mx-auto mb-4" />

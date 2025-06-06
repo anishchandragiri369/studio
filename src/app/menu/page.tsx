@@ -3,7 +3,7 @@ import JuiceCard from '@/components/menu/JuiceCard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Our Juices - Elixir',
+  title: 'Our Juices - Elixr',
   description: 'Explore our wide selection of fresh and delicious juices.',
 };
 

@@ -33,7 +33,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-border text-center text-xs">
-          <p>&copy; {currentYear} Elixir. All rights reserved.</p>
+          <p>&copy; {currentYear} Elixr. All rights reserved.</p>
         </div>
       </div>
     </footer>

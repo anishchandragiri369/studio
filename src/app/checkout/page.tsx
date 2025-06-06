@@ -10,8 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 // Client components cannot directly export metadata.
 // If dynamic metadata is needed, it should be handled in a parent layout or via useEffect for document.title.
 // export const metadata: Metadata = {
-// title: 'Checkout - Elixir',
-//   description: 'Complete your Elixir order.',
+// title: 'Checkout - Elixr',
+//   description: 'Complete your Elixr order.',
 // };
 
 export default function CheckoutPage() {
@@ -28,7 +28,7 @@ export default function CheckoutPage() {
   };
   
   if (typeof window !== 'undefined') {
-    document.title = 'Checkout - Elixir';
+    document.title = 'Checkout - Elixr';
   }
 
   return (

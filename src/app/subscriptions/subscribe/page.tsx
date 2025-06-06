@@ -15,7 +15,7 @@ function SubscribePageContents() {
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
 
   if (typeof window !== 'undefined') {
-    document.title = selectedPlan ? `Subscribe to ${selectedPlan.name} - Elixir` : 'Choose a Subscription - Elixir';
+    document.title = selectedPlan ? `Subscribe to ${selectedPlan.name} - Elixr` : 'Choose a Subscription - Elixr';
   }
 
   return (
