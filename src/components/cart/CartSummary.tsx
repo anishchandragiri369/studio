@@ -38,7 +38,9 @@ const CartSummary = () => {
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Link href="/checkout">Proceed to Checkout</Link> {/* Assume /checkout page for final steps */}
+          <Link href="/checkout" legacyBehavior passHref>
+            <a>Proceed to Checkout</a>
+          </Link>
         </Button>
         <Button variant="outline" onClick={clearCart} className="w-full">
           Clear Cart
