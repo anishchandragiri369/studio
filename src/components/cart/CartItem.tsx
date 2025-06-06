@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -24,8 +25,8 @@ const CartItem = ({ item }: CartItemProps) => {
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/30 transition-colors rounded-md">
-      <Link href={`/menu#${item.id}`} className="flex-shrink-0"> {/* Assuming you can link to specific item on menu */}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/30 transition-colors rounded-md">
+      <Link href={`/menu#${item.id}`} className="flex-shrink-0 self-center sm:self-auto" aria-label={`View ${item.name} details`}>
         <Image
           src={item.image}
           alt={item.name}
@@ -35,18 +36,22 @@ const CartItem = ({ item }: CartItemProps) => {
           data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
         />
       </Link>
-      <div className="flex-grow">
+
+      <div className="flex-grow w-full sm:w-auto"> {/* Item details */}
         <Link href={`/menu#${item.id}`}>
-          <h3 className="font-headline text-lg text-primary transition-colors">{item.name}</h3>
+          <h3 className="font-headline text-lg text-primary hover:text-primary/80 transition-colors">{item.name}</h3>
         </Link>
         <p className="text-sm text-muted-foreground">{item.flavor}</p>
         <p className="text-sm font-semibold text-accent">${item.price.toFixed(2)} each</p>
       </div>
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-        <div className="flex items-center gap-1">
+
+      {/* Actions and Item Subtotal Section */}
+      <div className="flex flex-col items-stretch gap-3 w-full sm:w-auto sm:flex-row sm:items-center sm:gap-3 mt-2 sm:mt-0">
+        <div className="flex items-center gap-1 justify-center sm:justify-start"> {/* Quantity controls */}
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8 sm:h-9 sm:w-9"
             onClick={() => handleQuantityChange(item.quantity - 1)}
             aria-label="Decrease quantity"
           >
@@ -55,36 +60,44 @@ const CartItem = ({ item }: CartItemProps) => {
           <Input
             type="number"
             value={item.quantity}
-            onChange={(e) => handleQuantityChange(parseInt(e.target.value, 10))}
-            className="w-16 h-9 text-center focus-visible:ring-primary"
+            onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val)) {
+                  handleQuantityChange(Math.max(1, val)); // Ensure quantity doesn't go below 1 from direct input
+                }
+            }}
+            onBlur={(e) => { // Handle case where input is empty or invalid on blur
+              if (item.quantity < 1) handleQuantityChange(1);
+            }}
+            className="w-12 h-8 sm:h-9 text-center focus-visible:ring-primary px-1"
             min="1"
             aria-label={`${item.name} quantity`}
           />
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8 sm:h-9 sm:w-9"
             onClick={() => handleQuantityChange(item.quantity + 1)}
             aria-label="Increase quantity"
           >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-md font-semibold w-20 text-right hidden sm:block text-accent">
+
+        <p className="text-md font-semibold text-accent text-right sm:text-center sm:min-w-[70px] md:min-w-[90px]"> {/* Item subtotal */}
           ${(item.price * item.quantity).toFixed(2)}
         </p>
+
         <Button
           variant="ghost"
           size="icon"
           onClick={() => removeFromCart(item.id)}
-          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 self-center sm:self-auto"
           aria-label={`Remove ${item.name} from cart`}
         >
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
-       <p className="text-md font-semibold w-full text-right sm:hidden mt-2 text-accent">
-          Subtotal: ${(item.price * item.quantity).toFixed(2)}
-        </p>
     </div>
   );
 };
