@@ -2,8 +2,11 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 
-// Log the assembled config object to help with debugging environment variable issues
-// This will appear in your browser's developer console and possibly the server terminal.
+// Log individual environment variables to help diagnose .env issues.
+// These will appear in your server console when Next.js starts, and potentially in the browser console.
+// console.log("Reading NEXT_PUBLIC_FIREBASE_API_KEY:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+// console.log("Reading NEXT_PUBLIC_FIREBASE_PROJECT_ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,34 +17,42 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// This log is crucial for you to see what your app is actually reading.
-console.log("Firebase Config for Initialization (assembled from process.env):", firebaseConfig);
+// This log is useful to see what config object is actually being assembled.
+// console.log("Firebase Config for Initialization (assembled from process.env):", firebaseConfig);
 
 let app: FirebaseApp;
 let auth: Auth;
 
+// Explicitly check for the most critical missing configuration values.
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  const errorMessage =
+    `CRITICAL FIREBASE CONFIGURATION ERROR: Firebase apiKey or projectId is missing from the assembled firebaseConfig. ` +
+    `Attempted apiKey: '${firebaseConfig.apiKey}', Attempted projectId: '${firebaseConfig.projectId}'. ` +
+    "This indicates that the corresponding NEXT_PUBLIC_FIREBASE_API_KEY and/or NEXT_PUBLIC_FIREBASE_PROJECT_ID environment variables " +
+    "are undefined or empty when read by Next.js. \n\n" +
+    "TROUBLESHOOTING STEPS:\n" +
+    "1. VERIFY .env FILE: Ensure a file named exactly '.env' exists in the ROOT directory of your project.\n" +
+    "2. CHECK VARIABLE NAMES: In the .env file, ensure the variable names are EXACTLY 'NEXT_PUBLIC_FIREBASE_API_KEY' and 'NEXT_PUBLIC_FIREBASE_PROJECT_ID' (and other NEXT_PUBLIC_FIREBASE_... variables).\n" +
+    "3. VALIDATE VALUES: Confirm the values assigned to these variables in .env are correct and copied accurately from your Firebase project console.\n" +
+    "4. RESTART SERVER: CRITICAL - After ANY changes to the .env file, you MUST STOP and RESTART your Next.js development server (e.g., 'npm run dev').\n\n" +
+    "Current environment variable values seen by this script (may be undefined if not set or not picked up): \n" +
+    `  NEXT_PUBLIC_FIREBASE_API_KEY (direct read): ${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}\n` +
+    `  NEXT_PUBLIC_FIREBASE_PROJECT_ID (direct read): ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`;
+
+  console.error("Firebase Config Error Details:\n", errorMessage, "\nAssembled firebaseConfig object:", firebaseConfig);
+  throw new Error("Firebase initialization failed due to missing apiKey or projectId. Check console for details and .env troubleshooting steps.");
+}
+
 if (!getApps().length) {
   try {
-    // Ensure all critical keys are present before initializing
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      const errorMessage = 
-        `Firebase apiKey or projectId is missing in the assembled firebaseConfig. ` +
-        `Attempted apiKey: '${firebaseConfig.apiKey}', Attempted projectId: '${firebaseConfig.projectId}'. ` +
-        "This means the corresponding NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID environment variables are undefined or empty. " +
-        "Please meticulously check your .env file in the project root, ensure the variable names are correct (prefixed with NEXT_PUBLIC_), that they have valid values, and that you have RESTARTED your Next.js development server after any changes to .env.";
-      
-      console.error(errorMessage, {
-          apiKey_read_direct: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-          projectId_read_direct: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          assembled_config_at_error: firebaseConfig
-      });
-      throw new Error(`Firebase initialization failed. ${errorMessage}`);
-    }
     app = initializeApp(firebaseConfig);
-  } catch (error) {
-    // Catching errors during initializeApp, which could also be due to bad config (though the check above should catch missing keys)
-    console.error("Firebase initializeApp error (inner catch):", error);
-    throw new Error(`Firebase initialization failed. Please check your Firebase configuration in .env and ensure the server was restarted. Original error: ${error}`);
+  } catch (e) {
+    console.error("Firebase initializeApp() threw an unexpected error:", e);
+    let detailedErrorMessage = "Firebase initializeApp() failed unexpectedly.";
+    if (e instanceof Error) {
+      detailedErrorMessage += ` Firebase reported: ${e.message}.`;
+    }
+    throw new Error(detailedErrorMessage + " Please double-check all Firebase configuration values in your .env file and ensure the server was restarted.");
   }
 } else {
   app = getApps()[0];
@@ -49,10 +60,13 @@ if (!getApps().length) {
 
 try {
   auth = getAuth(app);
-} catch (error) {
-    // This error would typically mean 'app' is not a valid FirebaseApp instance.
-    console.error("Firebase getAuth error (after app object retrieval/initialization attempt):", error);
-    throw new Error(`Firebase getAuth failed. This usually means the app object was not correctly initialized, likely due to earlier config issues. Original error: ${error}`);
+} catch (e) {
+  console.error("Firebase getAuth(app) threw an error:", e);
+  let detailedErrorMessage = "Firebase getAuth(app) failed. This may indicate an issue with the initialized Firebase app object or that Firebase services are not correctly configured for your project.";
+   if (e instanceof Error) {
+      detailedErrorMessage += ` Firebase reported: ${e.message}.`;
+    }
+  throw new Error(detailedErrorMessage + " Please ensure Firebase is correctly configured and all services (like Authentication) are enabled in the Firebase console if used.");
 }
 
 export { app, auth };
