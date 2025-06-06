@@ -1,0 +1,95 @@
+
+import { Metadata } from 'next';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { CreditCard, ShoppingCart, ArrowLeft } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Checkout - JuiceBox',
+  description: 'Complete your JuiceBox order.',
+};
+
+export default function CheckoutPage() {
+  // In a real application, you would fetch cart details, user info, etc.
+  // For now, this is a placeholder.
+
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <Button variant="outline" asChild className="mb-8">
+        <Link href="/cart">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Cart
+        </Link>
+      </Button>
+
+      <section className="text-center mb-10">
+        <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
+          Checkout
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          You&apos;re almost there! Please review your order and complete your purchase.
+        </p>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl">Order Details & Payment</CardTitle>
+              <CardDescription>Shipping information and payment method will be collected here.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Placeholder for shipping form */}
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold mb-2">Shipping Information</h3>
+                <p className="text-sm text-muted-foreground">Address form would go here.</p>
+              </div>
+
+              {/* Placeholder for payment form */}
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-semibold mb-2">Payment Method</h3>
+                <p className="text-sm text-muted-foreground">Payment gateway integration (e.g., Stripe, PayPal) would be here.</p>
+              </div>
+              
+              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3">
+                <CreditCard className="mr-2 h-5 w-5" /> Place Your Order (Concept)
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="md:col-span-1">
+          <Card className="shadow-lg sticky top-24">
+            <CardHeader>
+              <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* This would dynamically list items from the cart */}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Juice A x 2</span>
+                <span>$11.98</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Juice B x 1</span>
+                <span>$6.49</span>
+              </div>
+              <div className="border-t pt-3 mt-3 flex justify-between font-semibold">
+                <span>Subtotal</span>
+                <span>$18.47</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>$5.00</span>
+              </div>
+              <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
+                <span>Total</span>
+                <span>$23.47</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

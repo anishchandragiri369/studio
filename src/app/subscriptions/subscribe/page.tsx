@@ -58,15 +58,17 @@ function SubscribePageContents() {
               )}
             </div>
 
-            {/* Placeholder for actual subscription form/process */}
+            
             <div className="text-center p-4 border-dashed border-2 border-primary/50 rounded-lg">
               <h3 className="text-lg font-semibold mb-2">Next Steps</h3>
               <p className="text-muted-foreground mb-4">
                 This is where the payment and confirmation steps would go.
-                For now, you can proceed to a conceptual checkout.
+                For now, you can proceed to checkout.
               </p>
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <ShoppingCart className="mr-2 h-5 w-5" /> Proceed to Checkout (Concept)
+              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Link href="/checkout">
+                  <ShoppingCart className="mr-2 h-5 w-5" /> Proceed to Checkout
+                </Link>
               </Button>
             </div>
           </CardContent>
