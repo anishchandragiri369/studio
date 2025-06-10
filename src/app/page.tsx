@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { JUICES, SUBSCRIPTION_PLANS } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
@@ -59,6 +60,28 @@ export default function HomePage() {
         </div>
       </section>
       
+      {/* Featured Subscription Section */}
+      {featuredSubscription && (
+        <section className="py-16 bg-primary/10">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl font-headline text-center text-primary mb-4">
+              Stay Refreshed, Effortlessly
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
+              Our most popular subscription plan designed to keep you energized and healthy.
+            </p>
+            <div className="max-w-md mx-auto animate-slide-in-up">
+              <SubscriptionOptionCard plan={featuredSubscription} isFeatured />
+            </div>
+            <div className="text-center mt-10">
+              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                <Link href="/subscriptions">Explore All Subscription Plans</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* How It Works / Features Section */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -92,28 +115,6 @@ export default function HomePage() {
         </div>
       </section>
       
-      {/* Featured Subscription Section */}
-      {featuredSubscription && (
-        <section className="py-16 bg-primary/10">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-headline text-center text-primary mb-4">
-              Stay Refreshed, Effortlessly
-            </h2>
-            <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-              Our most popular subscription plan designed to keep you energized and healthy.
-            </p>
-            <div className="max-w-md mx-auto animate-slide-in-up">
-              <SubscriptionOptionCard plan={featuredSubscription} isFeatured />
-            </div>
-            <div className="text-center mt-10">
-              <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                <Link href="/subscriptions">Explore All Subscription Plans</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Call to Action (Recipe Creator) */}
       <section className="py-20 bg-accent/10 text-center">
          <div className="container mx-auto px-4">
