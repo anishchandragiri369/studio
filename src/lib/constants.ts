@@ -97,7 +97,7 @@ export const JUICES: Juice[] = [
     name: 'Morning Berry Bowl',
     flavor: 'Strawberries, Blueberries, Granola, Chia Seeds',
     price: 8.99,
-    image: '/images/fruit-bowl-custom.jpg', // Updated to use your custom image
+    image: '/images/fruit-bowl-custom.jpg', 
     dataAiHint: 'kiwi carrot',
     description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
     category: 'Fruit Bowls',
@@ -108,7 +108,7 @@ export const JUICES: Juice[] = [
     name: 'Tropical Sunshine Bowl',
     flavor: 'Mango, Pineapple, Kiwi, Coconut Flakes',
     price: 9.49,
-    image: 'https://placehold.co/600x400.png',
+    image: 'https://placehold.co/720x1280.png', // Updated placeholder size
     dataAiHint: 'mango pineapple bowl',
     description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
     category: 'Fruit Bowls',
