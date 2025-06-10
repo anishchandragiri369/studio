@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -40,30 +41,39 @@ export default function JuiceDetailPage() {
         return;
       }
 
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const { data, error } = await supabase
+        const { data, error: dbError } = await supabase
           .from('juices')
           .select('*')
           .eq('id', juiceId)
           .single();
 
-        if (error) {
-          console.error("Error fetching juice details:", error);
-          setError(`Failed to load juice details: ${error.message}`);
+        if (dbError) {
+          console.error("Error fetching juice details:", dbError);
+          if (dbError.code === 'PGRST116') { 
+            setError("Juice not found.");
+          } else {
+            setError(`Failed to load juice details: ${dbError.message}`);
+          }
         } else if (data) {
           const typedData: Juice = {
              ...data,
              price: Number(data.price) || 0,
              stockQuantity: Number(data.stock_quantity) ?? Number(data.stockQuantity) ?? 0,
              tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(',') : []),
-             // Ensure image uses image_url if available, fallback to image
              image: data.image_url || data.image,
+             dataAiHint: data.data_ai_hint || data.dataAiHint,
+             // Ensure these fields are explicitly part of the type if they might be missing from `data`
+             name: data.name || "Unnamed Juice",
+             flavor: data.flavor || "N/A",
           };
           setJuice(typedData);
           document.title = `${typedData.name} - Elixr`;
 
-           // Update availability based on fetched stock
-           const currentStock = typedData.stockQuantity;
+           const currentStock = typedData.stockQuantity || 0;
             if (currentStock <= 0) {
                 setAvailabilityStatus('Out of Stock');
             } else if (currentStock <= 10) {
@@ -89,7 +99,7 @@ export default function JuiceDetailPage() {
   const handleAddToCart = () => {
     if (!juice) return;
 
-     if (availabilityStatus === \'Out of Stock\' || juice.stockQuantity < quantity) {
+     if (availabilityStatus === 'Out of Stock' || (juice.stockQuantity || 0) < quantity) {
       toast({
         title: "Cannot Add to Cart",
         description: "This item is out of stock or has insufficient quantity.",
@@ -97,8 +107,11 @@ export default function JuiceDetailPage() {
       });
       return;
     }
-    addToCart(juice, quantity);
-    setQuantity(1); // Reset quantity after adding
+    const imageToUse = juice.image_url || juice.image || 'https://placehold.co/80x80.png';
+    const dataAiHintToUse = juice.data_ai_hint || juice.dataAiHint;
+
+    addToCart({ ...juice, image: imageToUse, dataAiHint: dataAiHintToUse }, quantity);
+    setQuantity(1); 
     toast({
       title: "Added to Cart!",
       description: `${quantity} x ${juice.name} added to your cart.`,
@@ -108,18 +121,18 @@ export default function JuiceDetailPage() {
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
-   const isEffectivelyOutOfStock = availabilityStatus === \'Out of Stock\';
+   const isEffectivelyOutOfStock = availabilityStatus === 'Out of Stock';
 
    const getAvailabilityClasses = () => {
     switch (availabilityStatus) {
-      case \'In Stock\':
-        return \'text-green-600 dark:text-green-400\';
-      case \'Low Stock\':
-        return \'text-orange-500 dark:text-orange-400\';
-      case \'Out of Stock\':
-        return \'text-red-500 dark:text-red-400\';
-      default:\
-        return \'text-green-600 dark:text-green-400\';
+      case 'In Stock':
+        return 'text-green-600 dark:text-green-400';
+      case 'Low Stock':
+        return 'text-orange-500 dark:text-orange-400';
+      case 'Out of Stock':
+        return 'text-red-500 dark:text-red-400';
+      default:
+        return 'text-muted-foreground';
     }
   };
 
@@ -163,8 +176,8 @@ export default function JuiceDetailPage() {
      );
   }
 
-  // Prefer image_url from Supabase, fallback to image from constants/local
-  const displayImage = juice.image_url || juice.image;
+  const displayImage = juice.image_url || juice.image || 'https://placehold.co/600x400.png';
+  const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
 
   return (
@@ -178,7 +191,7 @@ export default function JuiceDetailPage() {
       <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg rounded-lg">
         <div className={cn(
             "relative w-full md:w-1/2",
-             (juice.category === \'Fruit Bowls\' || juice.category === \'Detox Plans\') ? "aspect-[4/3] md:aspect-auto md:h-auto" : "h-64 md:h-auto aspect-video md:aspect-auto" // Adjust aspect ratio based on category and screen size
+             (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3] md:aspect-auto md:h-auto" : "h-64 md:h-auto aspect-video md:aspect-auto" 
           )}>
           <Image
             src={displayImage}
@@ -189,7 +202,8 @@ export default function JuiceDetailPage() {
                  "object-cover",
                 isEffectivelyOutOfStock && "grayscale"
             )}
-            priority={true} // Prioritize loading the main image
+            priority={true} 
+            data-ai-hint={displayDataAiHint}
             unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
             onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
           />
@@ -208,7 +222,7 @@ export default function JuiceDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <p className="text-2xl font-bold text-accent">Rs.{juice.price.toFixed(2)}</p>
               <p className={cn("text-sm font-medium", getAvailabilityClasses())}>
-                 {availabilityStatus} ({juice.stockQuantity} left)
+                 {availabilityStatus} ({juice.stockQuantity || 0} left)
               </p>
             </div>
           </div>
@@ -219,18 +233,18 @@ export default function JuiceDetailPage() {
                 <MinusCircle className="h-5 w-5" />
               </Button>
               <span className="w-12 text-center text-xl font-medium">{quantity}</span>
-              <Button variant="outline" size="icon" onClick={incrementQuantity} aria-label="Increase quantity" disabled={isEffectivelyOutOfStock || quantity >= juice.stockQuantity}>
+              <Button variant="outline" size="icon" onClick={incrementQuantity} aria-label="Increase quantity" disabled={isEffectivelyOutOfStock || quantity >= (juice.stockQuantity || 0)}>
                 <PlusCircle className="h-5 w-5" />
               </Button>
             </div>
             <Button
               onClick={handleAddToCart}
               className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-6 py-3"
-               disabled={isEffectivelyOutOfStock || quantity > juice.stockQuantity}
-               aria-disabled={isEffectivelyOutOfStock || quantity > juice.stockQuantity}
+               disabled={isEffectivelyOutOfStock || quantity > (juice.stockQuantity || 0)}
+               aria-disabled={isEffectivelyOutOfStock || quantity > (juice.stockQuantity || 0)}
             >
               <ShoppingCart className="mr-3 h-5 w-5" />
-               {isEffectivelyOutOfStock ? \'Out of Stock\' : (quantity > juice.stockQuantity ? \'Not Enough Stock\' : \'Add to Cart\')}\
+               {isEffectivelyOutOfStock ? 'Out of Stock' : (quantity > (juice.stockQuantity || 0) ? 'Not Enough Stock' : 'Add to Cart')}
             </Button>
           </div>
         </div>
@@ -238,3 +252,4 @@ export default function JuiceDetailPage() {
     </div>
   );
 }
+
