@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertTriangle, User, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertTriangle, User, Save, ArrowLeft, Info } from 'lucide-react';
 import Link from 'next/link';
 import { editProfileSchema } from '@/lib/zod-schemas';
 import type { EditProfileFormData } from '@/lib/types';
@@ -18,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 export default function EditProfilePage() {
-  const { user, logOut, loading: authLoading, isSupabaseConfigured, isAdmin } = useAuth(); // Assuming updateUserMetadata might be added to useAuth later
+  const { user, loading: authLoading, isSupabaseConfigured } = useAuth(); 
   const router = useRouter();
   const { toast } = useToast();
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -32,9 +32,7 @@ export default function EditProfilePage() {
       router.push('/login?redirect=/account/edit-profile');
     }
     if (user) {
-      // Pre-fill form with existing data if available
-      setValue('fullName', user.user_metadata?.full_name || '');
-      // setValue('avatarUrl', user.user_metadata?.avatar_url || '');
+      setValue('fullName', user.user_metadata?.full_name || user.email?.split('@')[0] || '');
     }
   }, [user, authLoading, router, isSupabaseConfigured, setValue]);
   
@@ -45,22 +43,44 @@ export default function EditProfilePage() {
   }, []);
 
   const onSubmit: SubmitHandler<EditProfileFormData> = async (data) => {
-    if (!user) return;
+    if (!user || !isSupabaseConfigured) {
+        toast({
+            title: "Update Failed",
+            description: "Profile update is currently unavailable or you are not logged in.",
+            variant: "destructive",
+        });
+        return;
+    }
     setSubmitLoading(true);
 
-    // Conceptual: In a real app, call a function from useAuth to update user metadata
-    // e.g., const { error } = await updateUserMetadata({ data: { full_name: data.fullName, avatar_url: data.avatarUrl } });
-    console.log("Conceptual: Updating user profile with data:", data);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+        const { error } = await supabase.auth.updateUser({
+            data: { full_name: data.fullName } 
+        });
 
-    toast({
-      title: "Profile Updated (Conceptual)",
-      description: "Your profile details have been conceptually updated.",
-    });
-    // Potentially refresh user data or redirect
-    // For now, just log and show toast
+        if (error) {
+            throw error;
+        }
+        
+        // Optionally, re-fetch user or update local user state if AuthContext doesn't auto-update on this event
+        // For Supabase, onAuthStateChange should eventually update the user object, but for immediate UI feedback:
+        if (user && user.user_metadata) {
+            user.user_metadata.full_name = data.fullName;
+        }
+
+
+        toast({
+            title: "Profile Updated",
+            description: "Your profile details have been updated.",
+        });
+    } catch (error: any) {
+        console.error("Error updating user profile:", error);
+        toast({
+            title: "Update Failed",
+            description: error.message || "Could not update your profile. Please try again.",
+            variant: "destructive",
+        });
+    }
     
     setSubmitLoading(false);
   };
@@ -140,31 +160,17 @@ export default function EditProfilePage() {
                 type="text" 
                 placeholder="Enter your full name" 
                 {...register("fullName")}
-                disabled={submitLoading}
+                disabled={submitLoading || !isSupabaseConfigured}
               />
               {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName.message}</p>}
             </div>
-
-            {/* Avatar URL input - conceptual for now 
-            <div className="space-y-1">
-              <Label htmlFor="avatarUrl">Avatar URL (Optional)</Label>
-              <Input 
-                id="avatarUrl" 
-                type="url" 
-                placeholder="https://example.com/avatar.png" 
-                {...register("avatarUrl")}
-                disabled={submitLoading}
-              />
-              {errors.avatarUrl && <p className="text-sm text-destructive mt-1">{errors.avatarUrl.message}</p>}
-              <p className="text-xs text-muted-foreground">Link to your profile picture.</p>
-            </div>
-            */}
-
+            
             <Alert variant="default" className="mt-4 p-3 text-xs bg-muted/30 border-primary/30">
-                <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+                <Info className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+                <AlertTitle className="font-semibold">Password Changes</AlertTitle>
                 <AlertDescription>
-                 This is a conceptual profile editor. Changes are logged to the console and not persisted to Supabase yet.
-                 Password change functionality would typically be separate or require current password verification.
+                 To change your password, please use the <Link href="/forgot-password" className="font-medium text-primary hover:underline">Forgot Password</Link> option after logging out if you've forgotten it.
+                 Changing passwords for logged-in users typically requires current password verification, a feature not yet implemented here.
                 </AlertDescription>
             </Alert>
 
@@ -172,7 +178,7 @@ export default function EditProfilePage() {
           <CardFooter className="flex-col gap-3">
             <Button type="submit" className="w-full" disabled={submitLoading || !isSupabaseConfigured}>
               {submitLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Save Changes (Conceptual)
+              Save Changes
             </Button>
           </CardFooter>
         </form>
@@ -180,3 +186,4 @@ export default function EditProfilePage() {
     </div>
   );
 }
+

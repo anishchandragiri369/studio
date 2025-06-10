@@ -34,9 +34,11 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router, isSupabaseConfigured]);
   
-  if (typeof window !== 'undefined') {
-    document.title = 'Login - Elixr';
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.title = 'Login - Elixr';
+    }
+  }, []);
 
   const onSubmit = async (data: LoginFormData) => {
     if (!isSupabaseConfigured) {
@@ -58,7 +60,7 @@ export default function LoginPage() {
       } else {
         setError(supabaseError.message || "An unexpected error occurred. Please try again.");
       }
-    } else if (result && 'code' in result && result.code === 'supabase/not-configured') { // Handle the specific error structure
+    } else if (result && 'code' in result && result.code === 'supabase/not-configured') { 
         setError(result.message);
     }
     else {
@@ -75,8 +77,6 @@ export default function LoginPage() {
     );
   }
   
-  // Check if user exists AND Supabase is configured before redirecting
-  // This prevents redirect loops if Supabase is not configured but a stale user object exists.
   if (user && isSupabaseConfigured) return null; 
 
   return (
@@ -92,7 +92,7 @@ export default function LoginPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Authentication Unavailable</AlertTitle>
               <AlertDescription>
-                Login features are currently disabled due to a configuration issue. The site administrator has been notified. Please try again later or continue browsing other parts of the site.
+                Login features are currently disabled due to a configuration issue. Please try again later or continue browsing other parts of the site.
               </AlertDescription>
             </Alert>
           )}
