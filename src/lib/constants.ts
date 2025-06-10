@@ -13,6 +13,7 @@ export const JUICES: Juice[] = [
     category: 'Fruit Blast',
     tags: ['energizing', 'vitamin c', 'morning', 'Immunity Booster', 'Seasonal Specials'],
     availability: 'In Stock',
+    stockQuantity: 50,
   },
   {
     id: '2',
@@ -25,6 +26,7 @@ export const JUICES: Juice[] = [
     category: 'Green Power',
     tags: ['detox', 'healthy', 'greens', 'Immunity Booster', 'Radiant Health', 'Detoxify', 'Daily Wellness'],
     availability: 'In Stock',
+    stockQuantity: 75,
   },
   {
     id: '3',
@@ -37,6 +39,7 @@ export const JUICES: Juice[] = [
     category: 'Fruit Blast',
     tags: ['antioxidant', 'sweet', 'smoothie', 'Skin Glow', 'Kids Friendly'],
     availability: 'Low Stock',
+    stockQuantity: 5,
   },
   {
     id: '4',
@@ -49,6 +52,7 @@ export const JUICES: Juice[] = [
     category: 'Exotic Flavors',
     tags: ['tropical', 'hydrating', 'refreshing', 'Energy Kick', 'Seasonal Specials'],
     availability: 'In Stock',
+    stockQuantity: 60,
   },
   {
     id: '5',
@@ -61,6 +65,7 @@ export const JUICES: Juice[] = [
     category: 'Veggie Fusion',
     tags: ['earthy', 'stamina', 'nutrient-rich', 'Workout Fuel', 'Detoxify'],
     availability: 'Out of Stock',
+    stockQuantity: 0,
   },
   {
     id: '6',
@@ -73,6 +78,7 @@ export const JUICES: Juice[] = [
     category: 'Fruit Blast',
     tags: ['tangy', 'refreshing', 'vitamin c', 'Immunity Booster', 'Daily Wellness', 'Energy Kick'],
     availability: 'In Stock',
+    stockQuantity: 40,
   },
   // New Daily Detox Plans
   {
@@ -86,6 +92,7 @@ export const JUICES: Juice[] = [
     category: 'Detox Plans',
     tags: ['cleanse', 'green juices', '3-day plan', 'healthy reset', 'Detoxify', 'Radiant Health'],
     availability: 'In Stock',
+    stockQuantity: 15, // Represents number of plans available
   },
   {
     id: 'dtx2',
@@ -98,6 +105,7 @@ export const JUICES: Juice[] = [
     category: 'Detox Plans',
     tags: ['full detox', '7-day plan', 'wellness', 'variety pack', 'Detoxify', 'Daily Wellness'],
     availability: 'In Stock',
+    stockQuantity: 10, // Represents number of plans available
   },
   // New Fruit Bowls
   {
@@ -111,6 +119,7 @@ export const JUICES: Juice[] = [
     category: 'Fruit Bowls',
     tags: ['breakfast', 'healthy snack', 'berries', 'fresh', 'granola', 'Skin Glow', 'Kids Friendly'],
     availability: 'In Stock',
+    stockQuantity: 25,
   },
   {
     id: 'fb2',
@@ -123,6 +132,7 @@ export const JUICES: Juice[] = [
     category: 'Fruit Bowls',
     tags: ['tropical fruits', 'breakfast bowl', 'refreshing', 'exotic', 'Energy Kick', 'Seasonal Specials'],
     availability: 'Low Stock',
+    stockQuantity: 8,
   },
 ];
 
@@ -153,7 +163,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { juiceId: '2', quantity: 4 },
       { juiceId: '3', quantity: 4 },
       { juiceId: '4', quantity: 4 },
-      { juiceId: '5', quantity: 2 }, // Note: Juice '5' is Out of Stock
+      { juiceId: '5', quantity: 2 }, // Note: Juice '5' is Out of Stock by quantity
       { juiceId: '6', quantity: 2 },
     ],
     isCustomizable: true,
