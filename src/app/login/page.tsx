@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -15,44 +15,64 @@ import { useAuth } from '@/context/AuthContext';
 import { loginSchema } from '@/lib/zod-schemas';
 import type { LoginFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import type { AuthError } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { logIn, user } = useAuth();
+  const { logIn, user, loading: authLoading, isFirebaseConfigured } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  if (user) {
-    router.push('/'); // Redirect if already logged in
-    return null;
-  }
-
-  const onSubmit = async (data: LoginFormData) => {
-    setError(null);
-    setLoading(true);
-    const result = await logIn(data);
-    if ('code' in result) { // It's an AuthError
-      const authError = result as AuthError;
-      if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password') {
-        setError("Invalid email or password. Please try again.");
-      } else {
-        setError(authError.message || "An unexpected error occurred. Please try again.");
-      }
-    } else { // It's a User
-      router.push('/');
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/'); // Redirect if already logged in
     }
-    setLoading(false);
-  };
+  }, [user, authLoading, router]);
   
   if (typeof window !== 'undefined') {
     document.title = 'Login - Elixr';
   }
+
+  const onSubmit = async (data: LoginFormData) => {
+    if (!isFirebaseConfigured) {
+      setError("Authentication is currently unavailable. Please try again later.");
+      return;
+    }
+    setError(null);
+    setSubmitLoading(true);
+    const result = await logIn(data);
+    // Check if result is User (success) or AuthError/CustomError (failure)
+    if (result && 'uid' in result && typeof result.uid === 'string') { // It's a User
+      router.push('/');
+    } else { // It's an AuthError or our custom NOT_CONFIGURED_ERROR
+      const errorResult = result as AuthError | { code: string; message: string };
+      if (errorResult.code === 'auth/invalid-credential' || errorResult.code === 'auth/user-not-found' || errorResult.code === 'auth/wrong-password') {
+        setError("Invalid email or password. Please try again.");
+      } else if (errorResult.code === 'auth/not-configured') {
+        setError(errorResult.message);
+      }
+      else {
+        setError(errorResult.message || "An unexpected error occurred. Please try again.");
+      }
+    }
+    setSubmitLoading(false);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (user) return null; // Already redirecting via useEffect
+
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
@@ -62,6 +82,15 @@ export default function LoginPage() {
           <CardDescription>Log in to your Elixr account.</CardDescription>
         </CardHeader>
         <CardContent>
+          {!isFirebaseConfigured && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Authentication Unavailable</AlertTitle>
+              <AlertDescription>
+                Login features are currently disabled due to a configuration issue. Please try again later.
+              </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <Alert variant="destructive">
@@ -71,28 +100,28 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
+              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isFirebaseConfigured || submitLoading} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
+              <Input id="password" type="password" placeholder="••••••••" {...register("password")} disabled={!isFirebaseConfigured || submitLoading} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isFirebaseConfigured || submitLoading}>
+              {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Link href="/forgot-password" passHref legacyBehavior>
-             <a className="text-sm text-primary hover:underline text-center">Forgot your password?</a>
+             <a className={`text-sm text-primary hover:underline text-center ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>Forgot your password?</a>
           </Link>
           <p className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{' '}
             <Link href="/signup" passHref legacyBehavior>
-              <a className="font-semibold text-primary hover:underline">Sign up</a>
+              <a className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>Sign up</a>
             </Link>
           </p>
         </CardFooter>
