@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle } from 'lucide-react';
+import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet } from 'lucide-react'; // Added Wallet
 import { useToast } from "@/hooks/use-toast";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,7 @@ import type { CheckoutAddressFormData } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import AddressAutocomplete from '@/components/checkout/AddressAutocomplete'; // Import the new component
+import AddressAutocomplete from '@/components/checkout/AddressAutocomplete';
 
 export default function CheckoutPage() {
   const { toast } = useToast();
@@ -30,8 +30,10 @@ export default function CheckoutPage() {
     console.log("Checkout Form Data:", data);
     toast({
       title: "Order Placed (Conceptual)",
-      description: "Thank you for your order! Address details logged. This is a conceptual confirmation.",
+      description: "Thank you for your order! Address details logged. This is a conceptual confirmation for standard checkout.",
     });
+    // In a real scenario, after address submission, you might proceed to a payment step
+    // or integrate payment directly after address validation if using a single-step checkout.
   };
 
   const handlePlaceSelected = (placeDetails: {
@@ -45,9 +47,21 @@ export default function CheckoutPage() {
     setValue('city', placeDetails.city, { shouldValidate: true });
     setValue('state', placeDetails.state, { shouldValidate: true });
     setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
-    setValue('country', placeDetails.country || 'India', { shouldValidate: true }); // Default to India if not provided
+    setValue('country', placeDetails.country || 'India', { shouldValidate: true });
   };
   
+  const handleCashfreePayment = () => {
+    // 1. In a real app, collect order details (amount, items) from cart/state.
+    // 2. Call your backend API (e.g., /api/cashfree/create-order) with order details.
+    // 3. Backend creates order with Cashfree and returns order_token.
+    // 4. Use Cashfree's JS SDK with the order_token to initiate payment.
+    toast({
+      title: "Cashfree Payment (Conceptual)",
+      description: "In a real integration: 1. Call backend to create Cashfree order. 2. Use Cashfree SDK to open payment page.",
+    });
+    console.log("Conceptual Cashfree payment initiated. Order details would be sent to backend here.");
+  };
+
   if (typeof window !== 'undefined') {
     document.title = 'Checkout - Elixr';
   }
@@ -99,7 +113,6 @@ export default function CheckoutPage() {
                           </AlertDescription>
                        </Alert>
                      )}
-
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -175,8 +188,20 @@ export default function CheckoutPage() {
                     <div className="p-4 border rounded-lg bg-muted/30">
                       <h4 className="font-semibold mb-1">PayPal</h4>
                       <p className="text-sm text-muted-foreground">PayPal button and integration would appear here.</p>
-                      <Button variant="outline" className="mt-2 w-full" disabled>
+                      <Button type="button" variant="outline" className="mt-2 w-full" disabled>
                         Pay with PayPal (Placeholder)
+                      </Button>
+                    </div>
+                     <div className="p-4 border rounded-lg bg-muted/30">
+                      <h4 className="font-semibold mb-1">Cashfree</h4>
+                      <p className="text-sm text-muted-foreground">Securely pay using Cashfree Payment Gateway.</p>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="mt-2 w-full border-primary text-primary hover:bg-primary/10"
+                        onClick={handleCashfreePayment}
+                      >
+                        <Wallet className="mr-2 h-4 w-4" /> Pay with Cashfree (Conceptual)
                       </Button>
                     </div>
                   </CardContent>
@@ -187,8 +212,14 @@ export default function CheckoutPage() {
                   size="lg" 
                   className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
                 >
-                  <CreditCard className="mr-2 h-5 w-5" /> Confirm & Pay (Concept)
+                  <CreditCard className="mr-2 h-5 w-5" /> Confirm Details & Proceed (Concept)
                 </Button>
+                 <Alert variant="default" className="mt-4 p-3 text-xs bg-muted/30 border-primary/30">
+                    <Info className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+                    <AlertDescription>
+                    This is a conceptual checkout. Clicking 'Confirm Details' will log your address. Payment method selection is for demonstration.
+                    </AlertDescription>
+                </Alert>
               </form>
             </CardContent>
           </Card>
@@ -200,6 +231,7 @@ export default function CheckoutPage() {
               <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* This should be dynamically populated from the cart */}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Juice A x 2</span>
                 <span className="font-semibold text-accent">Rs.11.98</span>
@@ -227,3 +259,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    
