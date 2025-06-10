@@ -4,12 +4,12 @@ import type { Juice, SubscriptionPlan } from './types';
 export const JUICES: Juice[] = [
   {
     id: '1',
-    name: 'Sunrise Orange',
+    name: 'Rejoice',
     flavor: 'Orange, Carrot, Ginger',
     price: 5.99,
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'orange juice',
-    description: 'A vibrant blend of sweet oranges, earthy carrots, and a spicy kick of ginger. Perfect to start your day.',
+    dataAiHint: 'pomogranate grape juice',
+    description: 'A vibrant blend of sweet pomogranate, grapes, and a spicy kick of ginger. Perfect to start your day.',
     category: 'Fruit Blast',
     tags: ['energizing', 'vitamin c', 'morning'],
   },
