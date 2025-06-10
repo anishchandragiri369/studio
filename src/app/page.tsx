@@ -16,17 +16,17 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/20 via-background to-background py-12 md:py-20 text-center overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary/20 via-background to-background py-10 md:py-16 text-center overflow-hidden">
         <div className="absolute inset-0 opacity-30">
             {/* Decorative background elements */}
             <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-accent/30 rounded-full filter blur-2xl animate-pulse"></div>
             <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-primary/30 rounded-full filter blur-2xl animate-pulse animation-delay-2000"></div>
         </div>
         <div className="container mx-auto px-4 relative z-10">
-          <h1 className="text-5xl md:text-7xl font-headline font-bold text-primary mb-6 animate-fade-in">
+          <h1 className="text-5xl md:text-7xl font-headline font-bold text-primary mb-4 animate-fade-in">
             Taste the Freshness.
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fade-in animation-delay-300">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 animate-fade-in animation-delay-300">
             Discover vibrant, delicious juices made from the finest ingredients, delivered right to your door.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in animation-delay-600">
@@ -41,9 +41,9 @@ export default function HomePage() {
       </section>
 
       {/* New Categories Section */}
-      <section className="py-16 bg-muted/20">
+      <section className="py-10 bg-muted/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">
             Shop by Category
           </h2>
           <CategoryScroller categories={HOME_CATEGORIES} />
@@ -51,9 +51,9 @@ export default function HomePage() {
       </section>
 
       {/* Featured Juices Section */}
-      <section className="py-16 bg-background">
+      <section className="py-10 bg-background">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">
             Our Most Popular Blends
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -63,7 +63,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <Button asChild variant="link" className="text-primary text-lg hover:underline">
               <Link href="/menu">See All Juices <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
@@ -73,18 +73,18 @@ export default function HomePage() {
       
       {/* Featured Subscription Section */}
       {featuredSubscription && (
-        <section className="py-16 bg-primary/10">
+        <section className="py-10 bg-primary/10">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-headline text-center text-primary mb-4">
+            <h2 className="text-3xl md:text-4xl font-headline text-center text-primary mb-3">
               Stay Refreshed, Effortlessly
             </h2>
-            <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
+            <p className="text-center text-muted-foreground mb-8 max-w-xl mx-auto">
               Our most popular subscription plan designed to keep you energized and healthy.
             </p>
             <div className="max-w-md mx-auto animate-slide-in-up">
               <SubscriptionOptionCard plan={featuredSubscription} isFeatured />
             </div>
-            <div className="text-center mt-10">
+            <div className="text-center mt-8">
               <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 <Link href="/subscriptions">Explore All Subscription Plans</Link>
               </Button>
@@ -94,9 +94,9 @@ export default function HomePage() {
       )}
 
       {/* How It Works / Features Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-10 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">Why Choose Elixr?</h2>
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">Why Choose Elixr?</h2>
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div className="p-6 bg-card rounded-lg shadow-md animate-slide-in-up">
               <Gift className="h-12 w-12 text-primary mx-auto mb-4" />
@@ -118,7 +118,7 @@ export default function HomePage() {
       </section>
 
       {/* AI Recommendation Section */}
-      <section className="py-16">
+      <section className="py-10">
         <div className="container mx-auto px-4">
            <div className="max-w-3xl mx-auto">
              <JuiceRecommenderClient />
@@ -127,13 +127,13 @@ export default function HomePage() {
       </section>
       
       {/* Call to Action (Recipe Creator) */}
-      <section className="py-20 bg-accent/10 text-center">
+      <section className="py-12 bg-accent/10 text-center">
          <div className="container mx-auto px-4">
-            <Sparkles className="h-16 w-16 text-accent mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-headline text-accent mb-6">
+            <Sparkles className="h-16 w-16 text-accent mx-auto mb-4" />
+            <h2 className="text-3xl md:text-4xl font-headline text-accent mb-4">
                 Become a Juice Mixologist!
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
                 Got some favorite flavors in mind? Use our AI Recipe Creator to invent your own unique juice blend.
             </p>
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground text-lg px-8 py-6 shadow-lg transform hover:scale-105 transition-transform">
