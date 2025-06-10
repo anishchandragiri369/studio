@@ -28,7 +28,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   return (
     <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card">
       <CardHeader className="p-0">
-        <div className="relative w-full h-48 md:h-56">
+        <div className="relative w-full aspect-[9/16]"> {/* Changed from h-48 md:h-56 to aspect-[9/16] */}
           <Image
             src={juice.image}
             alt={juice.name}
