@@ -1,5 +1,5 @@
 
-import type { Juice, SubscriptionPlan } from './types';
+import type { Juice, SubscriptionPlan, Order } from './types';
 
 export const JUICES: Juice[] = [
   {
@@ -285,4 +285,44 @@ export const HOME_CATEGORIES: HomeCategory[] = [
   },
 ];
 
-    
+export const MOCK_USER_ORDERS: Order[] = [
+  {
+    id: 'ORD001',
+    orderDate: '2024-05-15T10:30:00Z',
+    totalAmount: 240.00,
+    status: 'Delivered',
+    items: [
+      { juiceId: '1', juiceName: 'Rejoice', quantity: 1, pricePerItem: 120.00, image: JUICES.find(j => j.id === '1')?.image },
+      { juiceId: '2', juiceName: 'Green Vitality', quantity: 1, pricePerItem: 120.00, image: JUICES.find(j => j.id === '2')?.image },
+    ],
+    shippingAddress: {
+        email: "test@example.com",
+        firstName: "Mock",
+        lastName: "User",
+        addressLine1: "123 Test St",
+        city: "Testville",
+        state: "TS",
+        zipCode: "12345",
+        country: "Testland"
+    }
+  },
+  {
+    id: 'ORD002',
+    orderDate: '2024-05-28T14:00:00Z',
+    totalAmount: 360.00,
+    status: 'Shipped',
+    items: [
+      { juiceId: '3', juiceName: 'Berry Bliss', quantity: 2, pricePerItem: 120.00, image: JUICES.find(j => j.id === '3')?.image },
+      { juiceId: '4', juiceName: 'Tropical Escape', quantity: 1, pricePerItem: 120.00, image: JUICES.find(j => j.id === '4')?.image },
+    ],
+  },
+  {
+    id: 'ORD003',
+    orderDate: '2024-06-01T09:15:00Z',
+    totalAmount: 120.00,
+    status: 'Processing',
+    items: [
+      { juiceId: '6', juiceName: 'Citrus Zing', quantity: 1, pricePerItem: 120.00, image: JUICES.find(j => j.id === '6')?.image },
+    ],
+  },
+];

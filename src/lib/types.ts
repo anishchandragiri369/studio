@@ -66,3 +66,20 @@ export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type CheckoutAddressFormData = z.infer<typeof checkoutAddressSchema>;
 
+// Order History Types
+export interface OrderItem {
+  juiceId: string;
+  juiceName: string;
+  image?: string; // Optional: if you want to show item images in order history
+  quantity: number;
+  pricePerItem: number; // Price at the time of order
+}
+
+export interface Order {
+  id: string;
+  orderDate: string; // ISO string or formatted date string
+  totalAmount: number;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  items: OrderItem[];
+  shippingAddress?: CheckoutAddressFormData; // Optional: if you want to show where it was shipped
+}

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -22,7 +22,7 @@ import {
 
 const Navbar = () => {
   const { getItemCount } = useCart();
-  const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth(); // Updated to use isSupabaseConfigured
+  const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -35,11 +35,12 @@ const Navbar = () => {
   const itemCount = mounted ? getItemCount() : 0;
 
   const handleLogout = async () => {
+    setIsMenuOpen(false); // Close mobile menu if open
     await logOut();
     router.push('/'); 
   };
 
-  const navLinks = (user || !isSupabaseConfigured) // Use the flag from context
+  const navLinks = (user || !isSupabaseConfigured)
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
 
@@ -84,14 +85,20 @@ const Navbar = () => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">My Account</p>
+                        <p className="text-sm font-medium leading-none">Hello, {user.email?.split('@')[0] || 'User'}</p>
                         <p className="text-xs leading-none text-muted-foreground truncate">
                           {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuItem asChild>
+                      <Link href="/account" className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>My Account</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -148,11 +155,18 @@ const Navbar = () => {
                   {!authLoading && (
                     <>
                       {user && isSupabaseConfigured ? ( 
+                        <>
                         <SheetClose asChild>
-                          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
-                            <LogOut className="mr-2 h-5 w-5" /> Logout
-                          </Button>
-                        </SheetClose>
+                            <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
+                              <Settings className="mr-2 h-5 w-5" /> My Account
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
+                              <LogOut className="mr-2 h-5 w-5" /> Logout
+                            </Button>
+                          </SheetClose>
+                        </>
                       ) : isSupabaseConfigured ? ( 
                         <>
                           <SheetClose asChild>
