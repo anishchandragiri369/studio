@@ -2,7 +2,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation'; // Added useRouter
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ type CustomSelections = Record<string, number>; // { juiceId: quantity }
 
 function SubscribePageContents() {
   const searchParams = useSearchParams();
+  const router = useRouter(); // Initialize useRouter
   const planId = searchParams.get('plan');
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
 
@@ -69,6 +70,22 @@ function SubscribePageContents() {
   };
 
   const canAddMore = selectedPlan?.maxJuices ? totalSelectedJuices < selectedPlan.maxJuices : true;
+
+  const handleProceedToCheckout = () => {
+    if (!selectedPlan) return;
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('planId', selectedPlan.id);
+    queryParams.append('planName', selectedPlan.name);
+    queryParams.append('planPrice', selectedPlan.pricePerDelivery.toString());
+    queryParams.append('planFrequency', selectedPlan.frequency);
+
+    if (selectedPlan.isCustomizable && Object.keys(customSelections).length > 0) {
+      queryParams.append('selectedJuices', JSON.stringify(customSelections));
+    }
+    
+    router.push(`/checkout?${queryParams.toString()}`);
+  };
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -184,14 +201,12 @@ function SubscribePageContents() {
                 Confirm your selections and proceed to checkout.
               </p>
               <Button 
-                asChild 
+                onClick={handleProceedToCheckout}
                 size="lg" 
                 className="bg-accent hover:bg-accent/90 text-accent-foreground"
                 disabled={selectedPlan.isCustomizable && selectedPlan.maxJuices && totalSelectedJuices > selectedPlan.maxJuices}
               >
-                <Link href="/checkout">
-                  <ShoppingCart className="mr-2 h-5 w-5" /> Proceed to Checkout
-                </Link>
+                <ShoppingCart className="mr-2 h-5 w-5" /> Proceed to Checkout
               </Button>
             </div>
           </CardContent>
