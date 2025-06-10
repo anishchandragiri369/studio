@@ -20,7 +20,7 @@ import type { AuthError } from 'firebase/auth';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp, user, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured
+  const { signUp, user, loading: authLoading, isSupabaseConfigured } = useAuth(); // Use isSupabaseConfigured
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -29,17 +29,17 @@ export default function SignUpPage() {
   });
 
  useEffect(() => {
-    if (!authLoading && user && isFirebaseConfigured) { // Only redirect if configured and user exists
+    if (!authLoading && user && isSupabaseConfigured) { // Only redirect if configured and user exists
       router.push('/'); 
     }
-  }, [user, authLoading, router, isFirebaseConfigured]);
+  }, [user, authLoading, router, isSupabaseConfigured]);
 
   if (typeof window !== 'undefined') {
     document.title = 'Sign Up - Elixr';
   }
 
   const onSubmit = async (data: SignUpFormData) => {
-     if (!isFirebaseConfigured) {
+     if (!isSupabaseConfigured) {
       setError("Account creation is currently unavailable. Please check application configuration.");
       return;
     }
@@ -69,7 +69,7 @@ export default function SignUpPage() {
       </div>
     );
   }
-  if (user && isFirebaseConfigured) return null;
+  if (user && isSupabaseConfigured) return null;
 
 
   return (
@@ -80,7 +80,7 @@ export default function SignUpPage() {
           <CardDescription>Join Elixr and start your fresh juice journey!</CardDescription>
         </CardHeader>
         <CardContent>
-           {!isFirebaseConfigured && (
+           {!isSupabaseConfigured && (
             <Alert variant="destructive" className="mb-6">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Sign Up Unavailable</AlertTitle>
@@ -98,20 +98,20 @@ export default function SignUpPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isFirebaseConfigured || submitLoading} />
+              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" {...register("password")} disabled={!isFirebaseConfigured || submitLoading}/>
+              <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} disabled={!isFirebaseConfigured || submitLoading}/>
+              <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isFirebaseConfigured || submitLoading}>
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
               {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign Up
             </Button>
@@ -120,7 +120,7 @@ export default function SignUpPage() {
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">
             Already have an account?{' '}
-            <Link href="/login" className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+            <Link href="/login" className={`font-semibold text-primary hover:underline ${!isSupabaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
                Log in
             </Link>
           </p>

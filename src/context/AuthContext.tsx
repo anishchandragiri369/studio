@@ -23,7 +23,9 @@ interface AuthContextType {
   logIn: (data: LoginFormData) => Promise<{ data: { user: User | null } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logOut: () => Promise<void>;
   sendPasswordReset: (data: ForgotPasswordFormData) => Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }>;
-  isSupabaseConfigured: boolean; // Changed from isFirebaseConfigured
+  sendMagicLink: (email: string) => Promise<{ error: SupabaseAuthError | null } | { error: { name: string; message: string } }>;
+  verifyOtpCode: (email: string, token: string) => Promise<any | { error: { name: string; message: string } }>;
+  isSupabaseConfigured: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,12 +109,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
     const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`, // Optional: specify redirect URL
+      redirectTo: `${window.location.origin}/reset-password`, 
     });
     return { error };
   };
 
-  // Supabase specific OTP/Magic Link methods (Example - adjust as per your app's needs)
   const sendMagicLink = async (email: string) => {
     if (!isActuallyConfiguredAndAuthReady) return { error: { name: "NotConfigured", message: NOT_CONFIGURED_ERROR_PAYLOAD.message } };
     return supabase!.auth.signInWithOtp({ email });
@@ -133,6 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logIn, 
       logOut, 
       sendPasswordReset, 
+      sendMagicLink,
+      verifyOtpCode,
       isSupabaseConfigured: isActuallyConfiguredAndAuthReady
     }}>
       {children}
@@ -145,7 +148,5 @@ export const useAuth = () => {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  // Expose Supabase specific methods if needed, or keep it generic
-  // For now, keeping it as defined in AuthContextType
   return context;
 };
