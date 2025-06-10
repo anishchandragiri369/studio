@@ -34,7 +34,30 @@ export const checkoutAddressSchema = z.object({
 
 export const editProfileSchema = z.object({
   fullName: z.string().min(1, { message: "Full name is required." }).optional(),
-  // Supabase user_metadata usually stores avatar_url, not the file itself directly from a form like this.
-  // For simplicity, we'll omit avatar direct upload here. It's a more complex feature.
-  // avatarUrl: z.string().url({ message: "Invalid URL format." }).optional(), 
+  newPassword: z.string().min(6, { message: "New password must be at least 6 characters." }).optional().or(z.literal('')),
+  confirmNewPassword: z.string().optional().or(z.literal('')),
+}).refine(data => {
+  // If newPassword is provided and not empty, confirmNewPassword must match.
+  if (data.newPassword && data.newPassword.length > 0) {
+    return data.newPassword === data.confirmNewPassword;
+  }
+  // If newPassword is not provided or empty, no validation needed for confirmNewPassword regarding matching.
+  return true;
+}, {
+  message: "New passwords don't match.",
+  path: ["confirmNewPassword"],
+}).refine(data => {
+  // If newPassword is provided but too short (and not empty), this will be caught by its own min(6)
+  // This refinement specifically checks: if confirmNewPassword is provided but newPassword is not (or vice-versa, though less likely with UI)
+  if (data.newPassword && !data.confirmNewPassword && data.newPassword.length > 0) {
+    return false; // Requires confirm if new is set
+  }
+  if (!data.newPassword && data.confirmNewPassword) {
+    return false; // Requires new if confirm is set
+  }
+  return true;
+}, {
+    message: "Both password fields are required if changing password.",
+    path: ["newPassword"] // Could also be confirmNewPassword, depending on which field to highlight
 });
+

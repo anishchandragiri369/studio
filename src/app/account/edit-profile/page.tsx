@@ -10,12 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertTriangle, User, Save, ArrowLeft, Info } from 'lucide-react';
+import { Loader2, AlertTriangle, User, Save, ArrowLeft, Info, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { editProfileSchema } from '@/lib/zod-schemas';
 import type { EditProfileFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabaseClient'; // Import supabase client for direct auth method
+import { Separator } from '@/components/ui/separator';
+
 
 export default function EditProfilePage() {
   const { user, loading: authLoading, isSupabaseConfigured } = useAuth(); 
@@ -23,8 +26,13 @@ export default function EditProfilePage() {
   const { toast } = useToast();
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<EditProfileFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<EditProfileFormData>({
     resolver: zodResolver(editProfileSchema),
+    defaultValues: {
+      fullName: '',
+      newPassword: '',
+      confirmNewPassword: '',
+    }
   });
 
   useEffect(() => {
@@ -43,7 +51,7 @@ export default function EditProfilePage() {
   }, []);
 
   const onSubmit: SubmitHandler<EditProfileFormData> = async (data) => {
-    if (!user || !isSupabaseConfigured) {
+    if (!user || !isSupabaseConfigured || !supabase) { // also check for supabase client instance
         toast({
             title: "Update Failed",
             description: "Profile update is currently unavailable or you are not logged in.",
@@ -53,31 +61,61 @@ export default function EditProfilePage() {
     }
     setSubmitLoading(true);
 
+    let profileUpdated = false;
+    let passwordChanged = false;
+
     try {
-        const { error } = await supabase.auth.updateUser({
+      // Update full name if it has changed
+      if (data.fullName && data.fullName !== (user.user_metadata?.full_name || user.email?.split('@')[0])) {
+        const { error: nameError } = await supabase.auth.updateUser({
             data: { full_name: data.fullName } 
         });
+        if (nameError) throw nameError;
+        profileUpdated = true;
+        // Update user context (optional, as onAuthStateChange should eventually catch it)
+        if (user && user.user_metadata) user.user_metadata.full_name = data.fullName;
+      }
 
-        if (error) {
-            throw error;
-        }
-        
-        // Optionally, re-fetch user or update local user state if AuthContext doesn't auto-update on this event
-        // For Supabase, onAuthStateChange should eventually update the user object, but for immediate UI feedback:
-        if (user && user.user_metadata) {
-            user.user_metadata.full_name = data.fullName;
-        }
-
-
+      // Update password if new password is provided and valid
+      if (data.newPassword && data.newPassword.length >= 6 && data.newPassword === data.confirmNewPassword) {
+        const { error: passwordError } = await supabase.auth.updateUser({ 
+          password: data.newPassword 
+        });
+        if (passwordError) throw passwordError;
+        passwordChanged = true;
+      }
+      
+      if (profileUpdated && passwordChanged) {
+        toast({
+            title: "Profile & Password Updated",
+            description: "Your details and password have been successfully updated.",
+        });
+      } else if (profileUpdated) {
         toast({
             title: "Profile Updated",
             description: "Your profile details have been updated.",
         });
+      } else if (passwordChanged) {
+        toast({
+            title: "Password Updated",
+            description: "Your password has been successfully changed.",
+        });
+      } else {
+         toast({
+            title: "No Changes",
+            description: "No changes were submitted.",
+            variant: "default"
+        });
+      }
+      
+      // Reset password fields after successful submission
+      reset({ fullName: data.fullName, newPassword: '', confirmNewPassword: '' });
+
     } catch (error: any) {
-        console.error("Error updating user profile:", error);
+        console.error("Error updating user profile/password:", error);
         toast({
             title: "Update Failed",
-            description: error.message || "Could not update your profile. Please try again.",
+            description: error.message || "Could not update your profile/password. Please try again.",
             variant: "destructive",
         });
     }
@@ -137,23 +175,23 @@ export default function EditProfilePage() {
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-3">
           Edit Profile
         </h1>
-        <p className="text-lg text-muted-foreground">Update your account information.</p>
+        <p className="text-lg text-muted-foreground">Update your account information and password.</p>
       </section>
 
       <Card className="max-w-xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Your Details</CardTitle>
-          <CardDescription>Keep your profile information up to date.</CardDescription>
+          <CardDescription>Keep your profile information and password up to date.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
-            <div className="space-y-1">
+            <div>
               <Label htmlFor="email">Email Address</Label>
               <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted/50" />
               <p className="text-xs text-muted-foreground">Your email address cannot be changed here.</p>
             </div>
             
-            <div className="space-y-1">
+            <div>
               <Label htmlFor="fullName">Full Name</Label>
               <Input 
                 id="fullName" 
@@ -165,12 +203,45 @@ export default function EditProfilePage() {
               {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName.message}</p>}
             </div>
             
+            <Separator className="my-6" />
+
+            <div className="space-y-1">
+                <div className="flex items-center gap-2 mb-1">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold font-headline">Change Password</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Leave these fields blank if you do not want to change your password.</p>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input 
+                id="newPassword" 
+                type="password" 
+                placeholder="Enter new password (min. 6 characters)" 
+                {...register("newPassword")}
+                disabled={submitLoading || !isSupabaseConfigured}
+              />
+              {errors.newPassword && <p className="text-sm text-destructive mt-1">{errors.newPassword.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+              <Input 
+                id="confirmNewPassword" 
+                type="password" 
+                placeholder="Confirm new password" 
+                {...register("confirmNewPassword")}
+                disabled={submitLoading || !isSupabaseConfigured}
+              />
+              {errors.confirmNewPassword && <p className="text-sm text-destructive mt-1">{errors.confirmNewPassword.message}</p>}
+            </div>
+            
             <Alert variant="default" className="mt-4 p-3 text-xs bg-muted/30 border-primary/30">
                 <Info className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                <AlertTitle className="font-semibold">Password Changes</AlertTitle>
+                <AlertTitle className="font-semibold">Security Note</AlertTitle>
                 <AlertDescription>
-                 To change your password, please use the <Link href="/forgot-password" className="font-medium text-primary hover:underline">Forgot Password</Link> option after logging out if you've forgotten it.
-                 Changing passwords for logged-in users typically requires current password verification, a feature not yet implemented here.
+                 If you&apos;ve forgotten your current password and cannot log in, please use the <Link href="/forgot-password" className="font-medium text-primary hover:underline">Forgot Password</Link> option.
                 </AlertDescription>
             </Alert>
 
@@ -186,4 +257,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-
