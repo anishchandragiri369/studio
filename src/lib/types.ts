@@ -1,6 +1,6 @@
 
 import type { z } from 'zod';
-import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema, editProfileSchema } from '@/lib/zod-schemas';
+import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema, editProfileSchema, addProductSchema } from '@/lib/zod-schemas';
 
 
 export interface Juice {
@@ -66,6 +66,7 @@ export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type CheckoutAddressFormData = z.infer<typeof checkoutAddressSchema>;
 export type EditProfileFormData = z.infer<typeof editProfileSchema>;
+export type AddProductFormData = z.infer<typeof addProductSchema>;
 
 // Order History Types
 export interface OrderItem {

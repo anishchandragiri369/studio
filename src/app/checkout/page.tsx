@@ -41,7 +41,7 @@ function CheckoutPageContents() {
     planName: string;
     planPrice: number;
     planFrequency: string;
-  } | null>(null);
+  } | null>(null); // Explicitly initialize as null
   const [subscriptionOrderItems, setSubscriptionOrderItems] = useState<SubscriptionOrderItem[]>([]);
   const [currentOrderTotal, setCurrentOrderTotal] = useState(0);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
@@ -58,10 +58,10 @@ function CheckoutPageContents() {
 
   useEffect(() => {
     setIsLoadingSummary(true);
-    const planId = searchParams.get('planId');
-    const planName = searchParams.get('planName');
-    const planPriceStr = searchParams.get('planPrice');
-    const planFrequency = searchParams.get('planFrequency');
+    const planId = searchParams.get('planId') as string | null;
+    const planName = searchParams.get('planName') as string | null;
+    const planPriceStr = searchParams.get('planPrice') as string | null;
+    const planFrequency = searchParams.get('planFrequency') as string | null;
     const selectedJuicesStr = searchParams.get('selectedJuices');
 
     if (planId && planName && planPriceStr && planFrequency) {
@@ -117,6 +117,17 @@ function CheckoutPageContents() {
     });
     // Potentially redirect or clear cart/subscription state here
   };
+
+  useEffect(() => {
+    if (!isSubscriptionCheckout && cartItems.length === 0 && !isLoadingSummary) {
+      // Only show toast if not subscription checkout AND cart is empty
+      toast({
+        title: "Your cart is empty",
+        description: "Please add items to your cart before checking out.",
+        variant: "default"
+      });
+    }
+  }, [cartItems, isSubscriptionCheckout, isLoadingSummary, toast]);
   
   const handlePlaceSelected = (placeDetails: {
     addressLine1: string;
@@ -192,7 +203,7 @@ function CheckoutPageContents() {
     }
   };
 
-  const isCheckoutDisabled = isLoadingSummary || ( !isSubscriptionCheckout && cartItems.length === 0);
+  const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -264,7 +275,7 @@ function CheckoutPageContents() {
                       <div>
                         <Label htmlFor="mobileNumber">Mobile Number</Label>
                         <Input id="mobileNumber" type="tel" {...register("mobileNumber")} placeholder="+91 98765 43210" />
-                      </div>
+                      </div> 
                       <div>
                         <Label htmlFor="addressLine1">Address Line 1 *</Label>
                         <Input id="addressLine1" {...register("addressLine1")} placeholder="123 Juice Street" />
@@ -305,17 +316,19 @@ function CheckoutPageContents() {
                     <CardHeader>
                       <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pb-0">
                        {isCheckoutDisabled && (
                            <Alert variant="default" className="text-center">
                                <ShoppingBag className="mx-auto h-6 w-6 mb-2 text-muted-foreground" />
                                <AlertTitle>No items to checkout</AlertTitle>
                                <AlertDescription>
                                    {isSubscriptionCheckout ? "Subscription details are missing." : "Your cart is empty."} Please add items or select a subscription to proceed.
+                                   {isSubscriptionCheckout && !subscriptionDetails && " You might need to go back and select a plan."}
                                </AlertDescription>
                                 {!isSubscriptionCheckout && (
                                     <Button asChild variant="link" className="mt-2 text-primary">
                                         <Link href="/menu">Browse Juices</Link>
+ 
                                     </Button>
                                 )}
                            </Alert>
@@ -344,6 +357,7 @@ function CheckoutPageContents() {
                       </div>
                     </CardContent>
                   </Card>
+                 
                   
                   <Button 
                     type="submit"
@@ -371,12 +385,13 @@ function CheckoutPageContents() {
                 <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+
                 {isSubscriptionCheckout && subscriptionDetails ? (
                   <>
                     <h3 className="font-semibold text-primary">{subscriptionDetails.planName}</h3>
                     <p className="text-sm text-muted-foreground capitalize">{subscriptionDetails.planFrequency} Delivery</p>
                     {subscriptionOrderItems.length > 0 && (
-                      <>
+                       <>
                         <Separator className="my-2" />
                         <h4 className="text-sm font-medium mb-1">Selected Juices:</h4>
                         {subscriptionOrderItems.map(item => (
@@ -396,7 +411,7 @@ function CheckoutPageContents() {
                             <span className="flex-grow">{item.quantity}x {item.name}</span>
                           </div>
                         ))}
-                      </>
+                       </>
                     )}
                      <Separator className="my-2" />
                     <div className="flex justify-between text-sm">
@@ -407,6 +422,7 @@ function CheckoutPageContents() {
                       <span>Total</span>
                       <span>Rs.{currentOrderTotal.toFixed(2)}</span>
                     </div>
+
                   </>
                 ) : cartItems.length > 0 ? (
                   <>
@@ -441,6 +457,7 @@ function CheckoutPageContents() {
                       <span>Total</span>
                       <span>Rs.{currentOrderTotal.toFixed(2)}</span>
                     </div>
+
                   </>
                 ) : (
                   <div className="text-center py-6">
