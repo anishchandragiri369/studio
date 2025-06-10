@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
@@ -18,7 +19,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const Navbar = () => {
   const { getItemCount } = useCart();
@@ -55,13 +61,42 @@ const Navbar = () => {
         <Logo />
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           {navLinks.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`transition-colors hover:text-primary ${pathname === link.href ? "text-primary font-semibold" : "text-foreground/70"}`}
-            >
-              {link.label}
-            </Link>
+            link.label === 'Subscriptions' && 'subLinks' in link ? (
+              <DropdownMenu key={link.href}>
+                <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}>
+                  {link.label}
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>{link.label}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {link.subLinks?.map(subLink => (
+                    <DropdownMenuItem key={subLink.href} asChild>
+                      <Link href={subLink.href} className={`cursor-pointer ${pathname === subLink.href ? 'text-primary font-semibold' : ''}`}>
+                        {subLink.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`transition-colors hover:text-primary ${
+                  // Highlight if the current path exactly matches the link href
+                  pathname === link.href ||
+                  // Or if it's a base path match (for subscriptions dropdown)
+                  ('basePath' in link && link.basePath && pathname.startsWith(link.basePath)) ||
+                  // Or if it's a sub-link within a dropdown that matches the current path
+                  ('subLinks' in link && link.subLinks?.some(subLink => pathname === subLink.href))
+                    ? "text-primary font-semibold"
+                    : "text-foreground/70"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
           ))}
         </nav>
         <div className="flex items-center gap-2 sm:gap-4">

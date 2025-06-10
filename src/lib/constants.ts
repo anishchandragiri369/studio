@@ -203,7 +203,18 @@ export const NAV_LINKS = [
   { href: '/menu', label: 'Juices' },
   { href: '/daily-detox', label: 'Daily Detox' },
   { href: '/fruit-bowls', label: 'Fruit Bowls' },
-  { href: '/subscriptions', label: 'Subscriptions' },
+  { 
+    label: 'Subscriptions', 
+    href: '/subscriptions', // Base href for highlighting
+    basePath: '/subscriptions', // Base path for highlighting
+    subLinks: [
+      { href: '/subscriptions?frequency=weekly', label: 'Weekly Plans' },
+      { href: '/subscriptions?frequency=monthly', label: 'Monthly Plans' },
+      { href: '/subscriptions', label: 'View All Plans' },
+    ]
+  },
+  // { href: '/subscriptions', label: 'Subscriptions' }, // Old subscription link
+
   { href: '/recipe-creator', label: 'Recipe Creator' },
   { href: '/contact', label: 'Contact Us' },
   // Login/Signup links will be handled dynamically in Navbar
