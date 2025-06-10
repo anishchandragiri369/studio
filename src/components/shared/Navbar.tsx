@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
 import { NAV_LINKS as DEFAULT_NAV_LINKS } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter, redirect } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
+const Navbar = () => {
   const { getItemCount } = useCart();
-  const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
+  const { user, logOut, loading: authLoading, isSupabaseConfigured, isAdmin } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -30,16 +30,15 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
 
   useEffect(() => {
     setMounted(true);
-    // Redirect non-admins away from admin page if user is loaded
-    if (!authLoading && isSupabaseConfigured && pathname.startsWith('/admin') && !user?.user_metadata?.role?.includes('admin')) {
-      redirect('/');
+    if (!authLoading && isSupabaseConfigured && pathname.startsWith('/admin') && user && !isAdmin) {
+      router.push('/');
     }
-  }, []);
+  }, [authLoading, isSupabaseConfigured, pathname, isAdmin, user, router]);
   
   const itemCount = mounted ? getItemCount() : 0;
 
   const handleLogout = async () => {
-    setIsMenuOpen(false); // Close mobile menu if open
+    setIsMenuOpen(false); 
     await logOut();
     router.push('/');
   };
@@ -89,7 +88,7 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Hello, {user.email?.split('@')[0] || 'User'}</p>
+                        <p className="text-sm font-medium leading-none">Hello, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}</p>
                         <p className="text-xs leading-none text-muted-foreground truncate">
                           {user.email}
                         </p>
@@ -102,10 +101,12 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
                         <span>My Account</span>
                       </Link>
                     </DropdownMenuItem>
-                    {user?.user_metadata?.role?.includes('admin') && (
+                    {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin/add-product" className="cursor-pointer">
-                          <LogOut className="mr-2 h-4 w-4 rotate-90" /> {/* Using LogOut rotated for a product icon */}
+                          {/* Using a different icon for "Add Product" if available or a generic one */}
+                          {/* For example, PackagePlus or similar. If not, keeping a distinct one. */}
+                          <LogInIcon className="mr-2 h-4 w-4 rotate-90 scale-y-[-1]" /> {/* Example distinct icon */}
                           <span>Add Product</span>
                         </Link>
                       </DropdownMenuItem>
@@ -164,13 +165,13 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
                     </SheetClose>
                   ))}
                   <hr className="my-2"/>
-                  {!authLoading && isSupabaseConfigured && (
+                  !authLoading && isSupabaseConfigured && (
                     user ? (
                       <>
-                         {user?.user_metadata?.role?.includes('admin') && (
+                         {isAdmin && (
                            <SheetClose asChild>
                              <Link href="/admin/add-product" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
-                               <LogOut className="mr-2 h-5 w-5 rotate-90" /> Add Product
+                               <LogInIcon className="mr-2 h-5 w-5 rotate-90 scale-y-[-1]" /> Add Product
                              </Link>
                            </SheetClose>
                          )}
@@ -198,7 +199,6 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
                             </Link>
                           </SheetClose>
                       </>))
-                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -210,3 +210,5 @@ const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
 };
 
 export default Navbar;
+
+    
