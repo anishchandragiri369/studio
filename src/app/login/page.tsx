@@ -17,14 +17,21 @@ import type { LoginFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import type { AuthError } from 'firebase/auth';
-
 export default function LoginPage() {
+  const [step, setStep] = useState<'input' | 'otp'>('input'); // 'input' for email/phone, 'otp' for verification
+  const [identifier, setIdentifier] = useState(''); // To store email or phone number
+  const [otp, setOtp] = useState(''); // To store the OTP
+  const [confirmationResult, setConfirmationResult] = useState<any>(null); // To store the confirmation result for phone auth
+
   const router = useRouter();
-  const { logIn, user, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured
+  const { logIn, user, loading: authLoading, isFirebaseConfigured, sendMagicLink, verifyOtpCode } = useAuth(); // Use isFirebaseConfigured and Supabase methods
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  // Adjust form schema to be optional for password when using OTP
+  const formSchema = loginSchema.partial();
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(loginSchema),
   });
 
@@ -38,7 +45,7 @@ export default function LoginPage() {
     document.title = 'Login - Elixr';
   }
 
-  const onSubmit = async (data: LoginFormData) => {
+  const handleEmailPasswordLogin = async (data: z.infer<typeof formSchema>) => {
     if (!isFirebaseConfigured) {
       setError("Authentication is currently unavailable. Please check application configuration.");
       return;
@@ -63,6 +70,54 @@ export default function LoginPage() {
     setSubmitLoading(false);
   };
 
+  const handleSendOtp = async (type: 'email' | 'phone') => {
+    if (!isFirebaseConfigured) {
+      setError("Authentication is currently unavailable. Please check application configuration.");
+      return;
+    }
+    if (!identifier) {
+      setError(`Please enter your ${type === 'email' ? 'email' : 'phone number'}.`);
+      return;
+    }
+    setError(null);
+    setSubmitLoading(true);
+    try {
+      if (type === 'email') {
+        // Supabase email OTP/magic link
+        const { error } = await sendMagicLink(identifier);
+        if (error) throw error;
+      } else {
+        // Supabase phone OTP (requires Twilio or similar setup in Supabase)
+        // You might need a recaptcha verifier for phone sign-in
+        // const { data, error } = await supabase.auth.signInWithOtp({ phone: identifier });
+      }
+      setStep('otp');
+      setSubmitLoading(false);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+      setSubmitLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError(null);
+    if (!identifier || !otp) {
+      setError("Please enter both the identifier and the OTP.");
+      return;
+    }
+    setSubmitLoading(true);
+    try {
+      const { data, error: verifyError } = await verifyOtpCode(identifier, otp);
+      if (verifyError) throw verifyError;
+      router.push('/'); // Redirect on successful verification
+    } catch (err: any) {
+       // Supabase verification errors have specific codes or messages
+      setError(err.message || "Failed to verify OTP. Please try again.");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
@@ -73,6 +128,12 @@ export default function LoginPage() {
   
   if (user && isFirebaseConfigured) return null; 
 
+  // Determine if authentication is available based on Supabase config
+  // Assuming isFirebaseConfigured now checks for Supabase configuration
+  const isAuthenticationAvailable = isFirebaseConfigured; 
+
+  const onSubmit = handleSubmit(handleEmailPasswordLogin);
+
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
@@ -81,7 +142,7 @@ export default function LoginPage() {
           <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>
           <CardDescription>Log in to your Elixr account.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           {!isFirebaseConfigured && (
             <Alert variant="destructive" className="mb-6">
               <AlertTriangle className="h-4 w-4" />
