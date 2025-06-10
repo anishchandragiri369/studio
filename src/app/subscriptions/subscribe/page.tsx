@@ -125,7 +125,7 @@ function SubscribePageContents() {
                   {JUICES.map(juice => (
                     <div key={juice.id} className="flex items-center justify-between gap-4 p-3 border rounded-md hover:bg-muted/20">
                       <div className="flex items-center gap-3">
-                        <Image src={juice.image} alt={juice.name} width={40} height={40} className="rounded-sm object-cover" data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()} />
+                        <Image src={juice.image} alt={juice.name} width={60} height={60} className="rounded-md object-cover" data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()} />
                         <div>
                           <p className="font-medium text-sm">{juice.name}</p>
                           <p className="text-xs text-muted-foreground">Rs.{juice.price.toFixed(2)}</p>
@@ -219,3 +219,4 @@ export default function SubscribePage() {
     </Suspense>
   );
 }
+
