@@ -13,6 +13,7 @@ export interface Juice {
   category?: string; // e.g., 'Fruit Blast', 'Green Power', 'Detox'
   tags?: string[]; // e.g., 'sweet', 'organic', 'low-calorie'
   dataAiHint?: string; // For placeholder images
+  availability?: 'In Stock' | 'Low Stock' | 'Out of Stock'; // New field
 }
 
 export interface CartItem extends Juice {

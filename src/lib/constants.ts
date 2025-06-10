@@ -12,6 +12,7 @@ export const JUICES: Juice[] = [
     description: 'A vibrant blend of sweet pomogranate, grapes, and a spicy kick of ginger. Perfect to start your day.',
     category: 'Fruit Blast',
     tags: ['energizing', 'vitamin c', 'morning', 'Immunity Booster', 'Seasonal Specials'],
+    availability: 'In Stock',
   },
   {
     id: '2',
@@ -23,6 +24,7 @@ export const JUICES: Juice[] = [
     description: 'Packed with leafy greens, crisp apple, and zesty lemon for a refreshing and nutritious boost.',
     category: 'Green Power',
     tags: ['detox', 'healthy', 'greens', 'Immunity Booster', 'Radiant Health', 'Detoxify', 'Daily Wellness'],
+    availability: 'In Stock',
   },
   {
     id: '3',
@@ -34,6 +36,7 @@ export const JUICES: Juice[] = [
     description: 'A delightful mix of sweet berries and creamy banana, rich in antioxidants.',
     category: 'Fruit Blast',
     tags: ['antioxidant', 'sweet', 'smoothie', 'Skin Glow', 'Kids Friendly'],
+    availability: 'Low Stock',
   },
   {
     id: '4',
@@ -45,6 +48,7 @@ export const JUICES: Juice[] = [
     description: 'Experience a taste of the tropics with this exotic blend of pineapple, mango, and hydrating coconut water.',
     category: 'Exotic Flavors',
     tags: ['tropical', 'hydrating', 'refreshing', 'Energy Kick', 'Seasonal Specials'],
+    availability: 'In Stock',
   },
   {
     id: '5',
@@ -56,6 +60,7 @@ export const JUICES: Juice[] = [
     description: 'An earthy and energizing juice featuring beetroot, balanced with sweet apple and carrot.',
     category: 'Veggie Fusion',
     tags: ['earthy', 'stamina', 'nutrient-rich', 'Workout Fuel', 'Detoxify'],
+    availability: 'Out of Stock',
   },
   {
     id: '6',
@@ -67,6 +72,7 @@ export const JUICES: Juice[] = [
     description: 'A zesty and invigorating explosion of citrus fruits, perfect for a pick-me-up.',
     category: 'Fruit Blast',
     tags: ['tangy', 'refreshing', 'vitamin c', 'Immunity Booster', 'Daily Wellness', 'Energy Kick'],
+    availability: 'In Stock',
   },
   // New Daily Detox Plans
   {
@@ -79,6 +85,7 @@ export const JUICES: Juice[] = [
     description: 'A 3-day supply of potent green juices designed to reset your system. Includes a variety of 5 green juices per day.',
     category: 'Detox Plans',
     tags: ['cleanse', 'green juices', '3-day plan', 'healthy reset', 'Detoxify', 'Radiant Health'],
+    availability: 'In Stock',
   },
   {
     id: 'dtx2',
@@ -90,6 +97,7 @@ export const JUICES: Juice[] = [
     description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
     category: 'Detox Plans',
     tags: ['full detox', '7-day plan', 'wellness', 'variety pack', 'Detoxify', 'Daily Wellness'],
+    availability: 'In Stock',
   },
   // New Fruit Bowls
   {
@@ -102,6 +110,7 @@ export const JUICES: Juice[] = [
     description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
     category: 'Fruit Bowls',
     tags: ['breakfast', 'healthy snack', 'berries', 'fresh', 'granola', 'Skin Glow', 'Kids Friendly'],
+    availability: 'In Stock',
   },
   {
     id: 'fb2',
@@ -113,6 +122,7 @@ export const JUICES: Juice[] = [
     description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
     category: 'Fruit Bowls',
     tags: ['tropical fruits', 'breakfast bowl', 'refreshing', 'exotic', 'Energy Kick', 'Seasonal Specials'],
+    availability: 'Low Stock',
   },
 ];
 
@@ -143,7 +153,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { juiceId: '2', quantity: 4 },
       { juiceId: '3', quantity: 4 },
       { juiceId: '4', quantity: 4 },
-      { juiceId: '5', quantity: 2 },
+      { juiceId: '5', quantity: 2 }, // Note: Juice '5' is Out of Stock
       { juiceId: '6', quantity: 2 },
     ],
     isCustomizable: true,
