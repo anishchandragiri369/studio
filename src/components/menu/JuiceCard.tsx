@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
-import { PlusCircle, MinusCircle, ShoppingCart, PackageX, Edit, Save, Minus, Plus, Loader2 } from 'lucide-react';
+import { PlusCircle, MinusCircle, ShoppingCart, PackageX, Save, Minus, Plus, Loader2 } from 'lucide-react'; // Removed Edit
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
@@ -23,17 +23,17 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1); // For adding to cart
-  const [currentStock, setCurrentStock] = useState<number>(juice.stockQuantity ?? 0);
-  const [editedStock, setEditedStock] = useState<number>(juice.stockQuantity ?? 0);
+  const [quantity, setQuantity] = useState(1);
+  const [currentStock, setCurrentStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0); // Prioritize snake_case from DB
+  const [editedStock, setEditedStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [availabilityStatus, setAvailabilityStatus] = useState<'In Stock' | 'Low Stock' | 'Out of Stock'>('In Stock');
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
 
   useEffect(() => {
-    const initialStock = juice.stockQuantity ?? 0;
+    const initialStock = juice.stock_quantity ?? juice.stockQuantity ?? 0;
     setCurrentStock(initialStock);
     setEditedStock(initialStock);
-  }, [juice.stockQuantity]);
+  }, [juice.stock_quantity, juice.stockQuantity]);
 
   useEffect(() => {
     if (currentStock <= 0) {
@@ -54,8 +54,10 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
       });
       return;
     }
-    addToCart(juice, quantity);
-    setQuantity(1); // Reset quantity for next addition
+    // Use juice.image_url if available (from DB), fallback to juice.image (from constants)
+    const imageToUse = juice.image_url || juice.image;
+    addToCart({ ...juice, image: imageToUse }, quantity);
+    setQuantity(1);
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -89,17 +91,16 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
 
     setIsUpdatingStock(true);
     try {
-      // Assuming 'stock_quantity' is the column name in your Supabase table
       const { error } = await supabase
         .from('juices')
-        .update({ stock_quantity: editedStock })
+        .update({ stock_quantity: editedStock }) // Assuming 'stock_quantity' is your DB column
         .eq('id', juice.id);
 
       if (error) {
         throw error;
       }
 
-      setCurrentStock(editedStock); // Update local state on successful DB update
+      setCurrentStock(editedStock);
       toast({
         title: "Stock Updated",
         description: `${juice.name} stock quantity set to ${editedStock}.`,
@@ -130,6 +131,11 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
         return 'text-green-600 dark:text-green-400';
     }
   };
+  
+  // Prefer image_url from Supabase, fallback to image from constants/local
+  const displayImage = juice.image_url || juice.image;
+  // Ensure dataAiHint uses the correct source, preferring the direct DB field if available
+  const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase();
 
   return (
     <Card className={cn(
@@ -140,11 +146,11 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
         <div
           className={cn(
             "relative w-full",
-            juice.category === 'Fruit Bowls' ? "aspect-[9/16]" : "h-48 md:h-56" // Adjusted for Fruit Bowls if that category exists
+            (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3]" : "h-48 md:h-56" // Standard aspect ratio for most, adjusted for bowls/plans
           )}
         >
           <Image
-            src={juice.image}
+            src={displayImage}
             alt={juice.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -152,9 +158,9 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
                 "transition-transform duration-300 group-hover:scale-105 object-cover",
                 isEffectivelyOutOfStock && "grayscale"
             )}
-            data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()}
-             unoptimized={juice.image.startsWith('https://placehold.co')}
-             onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
+            data-ai-hint={displayDataAiHint}
+            unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
+            onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
           />
            {isEffectivelyOutOfStock && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
@@ -228,3 +234,5 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
 };
 
 export default JuiceCard;
+
+    
