@@ -105,23 +105,23 @@ export default function CheckoutPage() {
               {/* This would dynamically list items from the cart */}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Juice A x 2</span>
-                <span className="font-semibold text-accent">$11.98</span>
+                <span className="font-semibold text-accent">₹11.98</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Juice B x 1</span>
-                <span className="font-semibold text-accent">$6.49</span>
+                <span className="font-semibold text-accent">₹6.49</span>
               </div>
               <div className="border-t pt-3 mt-3 flex justify-between font-semibold">
                 <span>Subtotal</span>
-                <span className="text-accent">$18.47</span>
+                <span className="text-accent">₹18.47</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
-                <span className="font-semibold text-accent">$5.00</span>
+                <span className="font-semibold text-accent">₹5.00</span>
               </div>
               <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
                 <span>Total</span>
-                <span>$23.47</span>
+                <span>₹23.47</span>
               </div>
             </CardContent>
           </Card>
