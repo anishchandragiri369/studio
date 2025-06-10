@@ -59,16 +59,18 @@ const Navbar = () => {
           ))}
         </nav>
         <div className="flex items-center gap-2 sm:gap-4">
-          <Link href="/cart" passHref legacyBehavior>
-            <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                  {itemCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative" asChild>
+            <Link href="/cart">
+              <>
+                <ShoppingCart className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    {itemCount}
+                  </span>
+                )}
+              </>
+            </Link>
+          </Button>
 
           {!authLoading && (
             <>

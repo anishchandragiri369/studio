@@ -115,13 +115,13 @@ export default function LoginPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Link href="/forgot-password" passHref legacyBehavior>
-             <a className={`text-sm text-primary hover:underline text-center ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>Forgot your password?</a>
+          <Link href="/forgot-password" className={`text-sm text-primary hover:underline text-center ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+            Forgot your password?
           </Link>
           <p className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" passHref legacyBehavior>
-              <a className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>Sign up</a>
+            <Link href="/signup" className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+              Sign up
             </Link>
           </p>
         </CardFooter>

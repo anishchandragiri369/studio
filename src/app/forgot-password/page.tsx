@@ -119,8 +119,8 @@ export default function ForgotPasswordPage() {
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">
             Remembered your password?{' '}
-            <Link href="/login" passHref legacyBehavior>
-              <a className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>Log in</a>
+            <Link href="/login" className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+              Log in
             </Link>
           </p>
         </CardFooter>
