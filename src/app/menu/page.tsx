@@ -12,28 +12,17 @@ interface MenuPageProps {
   };
 }
 
-export async function generateMetadata({ searchParams }: MenuPageProps): Promise<Metadata> {
-  const categoryName = searchParams?.category ? decodeURIComponent(searchParams.category) : null;
-
-  if (categoryName) {
-    const categoryDetails = HOME_CATEGORIES.find(cat => cat.name === categoryName);
-    return {
-      title: `${categoryDetails ? categoryDetails.name : categoryName} Juices - Elixr`,
-      description: `Explore our selection of ${categoryName.toLowerCase()} juices.`,
-    };
-  }
-
-  return {
-    title: 'Our Juices - Elixr',
-    description: 'Explore our wide selection of fresh and delicious juices.',
-  };
-}
+// Replaced dynamic generateMetadata with a static metadata object
+export const metadata: Metadata = {
+  title: 'Our Juices - Elixr',
+  description: 'Explore our wide selection of fresh and delicious juices. Filter by category to find your perfect blend!',
+};
 
 export default function MenuPage({ searchParams }: MenuPageProps) {
   const selectedCategory = searchParams?.category ? decodeURIComponent(searchParams.category) : null;
 
   let displayedJuices;
-  let pageTitle = "Our Fresh Juices";
+  let pageTitle = "Our Fresh Juices"; // This H1 title can still be dynamic
   let pageDescription = "Discover a world of flavor with our handcrafted juices, made from the freshest ingredients.";
 
   if (selectedCategory) {
@@ -42,12 +31,23 @@ export default function MenuPage({ searchParams }: MenuPageProps) {
     );
     const categoryDetails = HOME_CATEGORIES.find(cat => cat.name === selectedCategory);
     pageTitle = categoryDetails ? `${categoryDetails.name}` : `${selectedCategory} Juices`;
-    pageDescription = `Fresh and delicious juices for ${selectedCategory.toLowerCase()}.`;
+    pageDescription = `Fresh and delicious ${categoryDetails ? categoryDetails.name.toLowerCase() : selectedCategory.toLowerCase()} juices.`;
+    
+    // Update document title on client-side if category is selected
+    if (typeof window !== 'undefined') {
+        document.title = `${categoryDetails ? categoryDetails.name : selectedCategory} - Elixr`;
+    }
+
   } else {
     displayedJuices = JUICES.filter(juice => 
       juice.category && TRADITIONAL_JUICE_CATEGORIES.includes(juice.category)
     );
+    // Reset document title for the main menu page
+     if (typeof window !== 'undefined') {
+        document.title = 'Our Juices - Elixr';
+    }
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -89,5 +89,3 @@ export default function MenuPage({ searchParams }: MenuPageProps) {
     </div>
   );
 }
-
-    
