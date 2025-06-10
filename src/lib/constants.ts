@@ -180,9 +180,13 @@ export const MOCK_AI_PREFERENCES_INPUT = JSON.stringify({
 
 export const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/menu', label: 'Menu' },
+  { href: '/menu', label: 'Juices' }, // Renamed for clarity
+  { href: '/daily-detox', label: 'Daily Detox' },
+  { href: '/fruit-bowls', label: 'Fruit Bowls' },
   { href: '/subscriptions', label: 'Subscriptions' },
   { href: '/recipe-creator', label: 'Recipe Creator' },
   { href: '/contact', label: 'Contact Us' },
   // Login/Signup links will be handled dynamically in Navbar
 ];
+
+export const TRADITIONAL_JUICE_CATEGORIES = ['Fruit Blast', 'Green Power', 'Exotic Flavors', 'Veggie Fusion'];

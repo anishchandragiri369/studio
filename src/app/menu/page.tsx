@@ -1,6 +1,7 @@
-import { JUICES } from '@/lib/constants';
+
+import { JUICES, TRADITIONAL_JUICE_CATEGORIES } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Our Juices - Elixr',
@@ -8,6 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function MenuPage() {
+  const traditionalJuices = JUICES.filter(juice => 
+    juice.category && TRADITIONAL_JUICE_CATEGORIES.includes(juice.category)
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <section className="text-center mb-12">
@@ -21,13 +26,17 @@ export default function MenuPage() {
 
       {/* TODO: Add filtering/sorting options here if needed */}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-        {JUICES.map((juice, index) => (
-          <div key={juice.id} className="animate-slide-in-up" style={{ animationDelay: `${index * 100}ms`}}>
-            <JuiceCard juice={juice} />
-          </div>
-        ))}
-      </div>
+      {traditionalJuices.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+          {traditionalJuices.map((juice, index) => (
+            <div key={juice.id} className="animate-slide-in-up" style={{ animationDelay: `${index * 100}ms`}}>
+              <JuiceCard juice={juice} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-muted-foreground text-lg">No juices available at the moment. Please check back later!</p>
+      )}
     </div>
   );
 }
