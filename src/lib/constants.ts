@@ -180,7 +180,7 @@ export const MOCK_AI_PREFERENCES_INPUT = JSON.stringify({
 
 export const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/menu', label: 'Juices' }, // Renamed for clarity
+  { href: '/menu', label: 'Juices' },
   { href: '/daily-detox', label: 'Daily Detox' },
   { href: '/fruit-bowls', label: 'Fruit Bowls' },
   { href: '/subscriptions', label: 'Subscriptions' },
@@ -190,3 +190,4 @@ export const NAV_LINKS = [
 ];
 
 export const TRADITIONAL_JUICE_CATEGORIES = ['Fruit Blast', 'Green Power', 'Exotic Flavors', 'Veggie Fusion'];
+
