@@ -8,8 +8,8 @@ import {
   useState, 
   ReactNode 
 } from 'react';
-import type { User, AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // Import Supabase User and AuthError
-import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient'; // Import Supabase client and its configured status
+import type { User, AuthError as SupabaseAuthError, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
 
 // Define a constant for the admin email for easy modification
@@ -19,12 +19,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (data: SignUpFormData) => Promise<{ data: { user: User | null } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
-  logIn: (data: LoginFormData) => Promise<{ data: { user: User | null } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
+  signUp: (data: SignUpFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
+  logIn: (data: LoginFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logOut: () => Promise<void>;
   sendPasswordReset: (data: ForgotPasswordFormData) => Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }>;
-  sendMagicLink: (email: string) => Promise<{ error: SupabaseAuthError | null } | { error: { name: string; message: string } }>;
-  verifyOtpCode: (email: string, token: string) => Promise<any | { error: { name: string; message: string } }>;
   isSupabaseConfigured: boolean;
 }
 
@@ -40,7 +38,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Use isSupabaseConfigured and check if the supabase client instance is available
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
 
   useEffect(() => {
@@ -52,7 +49,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // supabase is guaranteed to be non-null here if isActuallyConfiguredAndAuthReady is true
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
@@ -69,24 +65,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isActuallyConfiguredAndAuthReady]);
 
-  const signUp = async (data: SignUpFormData): Promise<{ data: { user: User | null } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
+  const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
-    const { data: result, error } = await supabase!.auth.signUp({
-      email: data.email,
-      password: data.password,
-    });
-    return { data: { user: result.user }, error };
+    try {
+      const { data, error } = await supabase!.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+      });
+      if (error) return { data: null, error };
+      return { data: { user: data.user, session: data.session }, error: null };
+    } catch (e: any) {
+      return { data: null, error: { name: 'SignUpError', message: e.message || "An unexpected error occurred during sign up." } as SupabaseAuthError };
+    }
   };
 
-  const logIn = async (data: LoginFormData): Promise<{ data: { user: User | null } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
+  const logIn = async (credentials: LoginFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
 
-    const { data: result, error } = await supabase!.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    return { data: { user: result.user }, error };
+    try {
+      const { data, error } = await supabase!.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+      if (error) return { data: null, error };
+      return { data: { user: data.user, session: data.session }, error: null };
+    } catch (e: any) {
+      return { data: null, error: { name: 'LoginError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
+    }
   };
 
   const logOut = async (): Promise<void> => {
@@ -108,22 +114,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const sendPasswordReset = async (data: ForgotPasswordFormData): Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
+    // Default to current origin if window is defined, otherwise you might need a specific env var for server-side scenarios
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+
     const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/reset-password`, 
+      redirectTo, 
     });
-    return { error };
+    if (error) return { error };
+    return { error: null };
   };
-
-  const sendMagicLink = async (email: string) => {
-    if (!isActuallyConfiguredAndAuthReady) return { error: { name: "NotConfigured", message: NOT_CONFIGURED_ERROR_PAYLOAD.message } };
-    return supabase!.auth.signInWithOtp({ email });
-  };
-
-  const verifyOtpCode = async (email: string, token: string) => {
-    if (!isActuallyConfiguredAndAuthReady) return { error: { name: "NotConfigured", message: NOT_CONFIGURED_ERROR_PAYLOAD.message } };
-    return supabase!.auth.verifyOtp({ email, token, type: 'email' });
-  };
-
 
   return (
     <AuthContext.Provider value={{
@@ -134,8 +133,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logIn, 
       logOut, 
       sendPasswordReset, 
-      sendMagicLink,
-      verifyOtpCode,
       isSupabaseConfigured: isActuallyConfiguredAndAuthReady
     }}>
       {children}

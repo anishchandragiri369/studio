@@ -66,7 +66,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
         <div 
           className={cn(
             "relative w-full",
-            isFruitBowl ? "aspect-[9/16]" : "h-48 md:h-56"
+            isFruitBowl ? "aspect-[9/16]" : "h-48 md:h-56" // Adjusted height for juices
           )}
         >
           <Image
@@ -94,7 +94,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
         
         {isAdmin ? (
           <div className="my-3 space-y-1">
-            <Label htmlFor={`stock-status-${juice.id}`} className="text-xs font-medium">Manage Stock:</Label>
+            <Label htmlFor={`stock-status-${juice.id}`} className="text-xs font-medium">Manage Stock (Demo):</Label>
             <Select
               value={currentAvailability}
               onValueChange={(value: 'In Stock' | 'Low Stock' | 'Out of Stock') => handleAdminStockChange(value)}
@@ -137,13 +137,13 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
           </div>
         )}
         <Button 
-            onClick={handleAddToCart} 
+            onClick={isAdmin ? () => {} : handleAddToCart} // Admin button is demo, no action needed for now
             className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground" 
-            disabled={isOutOfStock && !isAdmin} // Admin can conceptually always add (for testing) or this button could be repurposed for admin
+            disabled={isOutOfStock && !isAdmin}
             aria-disabled={isOutOfStock && !isAdmin}
         >
           {isAdmin ? <Edit className="mr-2 h-4 w-4" /> : <ShoppingCart className="mr-2 h-4 w-4" />} 
-          {isOutOfStock && !isAdmin ? 'Out of Stock' : isAdmin ? 'Update Stock (Demo)' : 'Add to Cart'}
+          {isOutOfStock && !isAdmin ? 'Out of Stock' : isAdmin ? 'Manage Stock' : 'Add to Cart'}
         </Button>
       </CardFooter>
     </Card>
