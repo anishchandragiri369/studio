@@ -61,6 +61,23 @@ export const editProfileSchema = z.object({
     path: ["newPassword"] // Could also be confirmNewPassword, depending on which field to highlight
 });
 
-export const addProductSchema = z.object({
-  name: z.string().min(1, { message: "Product name is required." }), description: z.string().optional(), price: z.number().positive({ message: "Price must be a positive number." }), category: z.string().min(1, { message: "Category is required." }), stock: z.number().int().nonnegative({ message: "Stock must be a non-negative integer." }),
+// Zod schema for the add product form
+export const addProductFormSchema = z.object({
+  name: z.string().min(1, { message: "Product name is required." }),
+  description: z.string().optional(),
+  flavor: z.string().optional(),
+  price: z.preprocess( // Preprocess to convert string to number if needed
+    (val) => (typeof val === 'string' ? parseFloat(val) : val),
+    z.number().positive({ message: "Price must be a positive number." })
+  ),
+  imageUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')), // Optional and can be empty string
+  dataAiHint: z.string().max(50, "Hint too long").optional(), // Example constraint
+  category: z.string().min(1, { message: "Category is required." }),
+  tags: z.string().optional(), // Will be processed into an array of strings
+  stockQuantity: z.preprocess( // Preprocess to convert string to number
+    (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
+    z.number().int().nonnegative({ message: "Stock must be a non-negative integer." })
+  ),
 });
+
+    

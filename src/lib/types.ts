@@ -1,6 +1,6 @@
 
 import type { z } from 'zod';
-import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema, editProfileSchema, addProductSchema } from '@/lib/zod-schemas';
+import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema, editProfileSchema, addProductFormSchema } from '@/lib/zod-schemas';
 
 
 export interface Juice {
@@ -9,12 +9,15 @@ export interface Juice {
   flavor: string;
   price: number;
   image: string;
+  image_url?: string; // Potential alias from Supabase
   description?: string;
   category?: string; // e.g., 'Fruit Blast', 'Green Power', 'Detox'
   tags?: string[]; // e.g., 'sweet', 'organic', 'low-calorie'
   dataAiHint?: string; // For placeholder images
+  data_ai_hint?: string; // Potential alias from Supabase
   availability?: 'In Stock' | 'Low Stock' | 'Out of Stock'; // Kept for potential fallback, but stockQuantity is primary
   stockQuantity?: number; // New field for numerical stock
+  stock_quantity?: number; // Potential alias from Supabase
 }
 
 export interface CartItem extends Juice {
@@ -85,11 +88,7 @@ export interface Order {
   shippingAddress?: CheckoutAddressFormData; // Optional: if you want to show where it was shipped
 }
 
-// New Product Form Data Type
-export type AddProductFormData = {
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  stock: number;
-};
+// New Product Form Data Type (using addProductFormSchema)
+export type AddProductFormData = z.infer<typeof addProductFormSchema>;
+
+    

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -30,6 +30,8 @@ const Navbar = () => {
 
   useEffect(() => {
     setMounted(true);
+    // This effect handles redirection if a non-admin tries to access an admin page.
+    // It should not prevent an admin from seeing the link itself.
     if (!authLoading && isSupabaseConfigured && pathname.startsWith('/admin') && user && !isAdmin) {
       router.push('/');
     }
@@ -104,9 +106,7 @@ const Navbar = () => {
                     {isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin/add-product" className="cursor-pointer">
-                          {/* Using a different icon for "Add Product" if available or a generic one */}
-                          {/* For example, PackagePlus or similar. If not, keeping a distinct one. */}
-                          <LogInIcon className="mr-2 h-4 w-4 rotate-90 scale-y-[-1]" /> {/* Example distinct icon */}
+                          <PackagePlus className="mr-2 h-4 w-4" /> {/* Using PackagePlus for add product */}
                           <span>Add Product</span>
                         </Link>
                       </DropdownMenuItem>
@@ -165,13 +165,13 @@ const Navbar = () => {
                     </SheetClose>
                   ))}
                   <hr className="my-2"/>
-                  !authLoading && isSupabaseConfigured && (
+                  {!authLoading && isSupabaseConfigured && ( // Added missing !authLoading check here too
                     user ? (
                       <>
                          {isAdmin && (
                            <SheetClose asChild>
                              <Link href="/admin/add-product" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
-                               <LogInIcon className="mr-2 h-5 w-5 rotate-90 scale-y-[-1]" /> Add Product
+                               <PackagePlus className="mr-2 h-5 w-5" /> Add Product
                              </Link>
                            </SheetClose>
                          )}
@@ -198,7 +198,9 @@ const Navbar = () => {
                               <UserPlus className="mr-2 h-5 w-5" /> Sign Up
                             </Link>
                           </SheetClose>
-                      </>))
+                      </>
+                     ) // Closing parenthesis for user ternary
+                  )} {/* Closing parenthesis for !authLoading && isSupabaseConfigured */}
                 </nav>
               </SheetContent>
             </Sheet>
