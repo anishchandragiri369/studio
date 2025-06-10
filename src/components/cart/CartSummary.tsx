@@ -25,16 +25,16 @@ const CartSummary = () => {
       <CardContent className="space-y-4">
         <div className="flex justify-between">
           <p className="text-muted-foreground">Subtotal</p>
-          <p className="font-medium text-accent">₹{total.toFixed(2)}</p>
+          <p className="font-medium text-accent">Rs.{total.toFixed(2)}</p>
         </div>
         <div className="flex justify-between">
           <p className="text-muted-foreground">Estimated Shipping</p>
-          <p className="font-medium text-accent">₹{shippingCost.toFixed(2)}</p>
+          <p className="font-medium text-accent">Rs.{shippingCost.toFixed(2)}</p>
         </div>
         <Separator />
         <div className="flex justify-between text-lg font-semibold">
           <p>Grand Total</p>
-          <p className="text-primary">₹{grandTotal.toFixed(2)}</p>
+          <p className="text-primary">Rs.{grandTotal.toFixed(2)}</p>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">

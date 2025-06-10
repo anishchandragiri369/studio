@@ -27,7 +27,7 @@ const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOption
       </CardHeader>
       <CardContent className="p-6 pt-0 flex-grow">
         <p className="text-3xl font-bold text-accent mb-4">
-          ₹{plan.pricePerDelivery.toFixed(2)}
+          Rs.{plan.pricePerDelivery.toFixed(2)}
           <span className="text-sm font-normal text-muted-foreground">/{plan.frequency === 'weekly' ? 'week' : 'month'}</span>
         </p>
         <p className="text-sm text-foreground/80 mb-4 min-h-[4.5em] line-clamp-3">{plan.description}</p>

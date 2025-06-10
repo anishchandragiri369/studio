@@ -42,7 +42,7 @@ const CartItem = ({ item }: CartItemProps) => {
           <h3 className="font-headline text-lg text-primary hover:text-primary/80 transition-colors">{item.name}</h3>
         </Link>
         <p className="text-sm text-muted-foreground">{item.flavor}</p>
-        <p className="text-sm font-semibold text-accent">₹{item.price.toFixed(2)} each</p>
+        <p className="text-sm font-semibold text-accent">Rs.{item.price.toFixed(2)} each</p>
       </div>
 
       {/* Actions and Item Subtotal Section */}
@@ -85,7 +85,7 @@ const CartItem = ({ item }: CartItemProps) => {
         </div>
 
         <p className="text-md font-semibold text-accent text-right sm:text-center sm:min-w-[70px] md:min-w-[90px]"> {/* Item subtotal */}
-          ₹{(item.price * item.quantity).toFixed(2)}
+          Rs.{(item.price * item.quantity).toFixed(2)}
         </p>
 
         <Button

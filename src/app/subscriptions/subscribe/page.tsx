@@ -90,7 +90,7 @@ function SubscribePageContents() {
               <h2 className="text-2xl font-semibold font-headline mb-2 text-primary">{selectedPlan.name}</h2>
               <p className="text-muted-foreground capitalize mb-1">{selectedPlan.frequency} Delivery</p>
               <p className="text-2xl font-bold text-accent mb-3">
-                ₹{selectedPlan.pricePerDelivery.toFixed(2)}
+                Rs.{selectedPlan.pricePerDelivery.toFixed(2)}
                 <span className="text-sm font-normal text-muted-foreground">
                   /{selectedPlan.frequency === 'weekly' ? 'week' : 'month'}
                 </span>
@@ -128,7 +128,7 @@ function SubscribePageContents() {
                         <Image src={juice.image} alt={juice.name} width={40} height={40} className="rounded-sm object-cover" data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()} />
                         <div>
                           <p className="font-medium text-sm">{juice.name}</p>
-                          <p className="text-xs text-muted-foreground">₹{juice.price.toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground">Rs.{juice.price.toFixed(2)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

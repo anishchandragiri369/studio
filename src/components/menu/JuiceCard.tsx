@@ -32,9 +32,9 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
           <Image
             src={juice.image}
             alt={juice.name}
-            layout="fill"
-            objectFit="cover"
-            className="transition-transform duration-300 group-hover:scale-105"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="transition-transform duration-300 group-hover:scale-105 object-cover"
             data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()}
           />
         </div>
@@ -43,7 +43,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
         <CardTitle className="font-headline text-xl mb-1 text-primary">{juice.name}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground mb-2">{juice.flavor}</CardDescription>
         <p className="text-xs text-foreground/80 mb-3 min-h-[3em] line-clamp-3">{juice.description}</p>
-        <p className="text-lg font-semibold text-accent">₹{juice.price.toFixed(2)}</p>
+        <p className="text-lg font-semibold text-accent">Rs.{juice.price.toFixed(2)}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2">
