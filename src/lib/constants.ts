@@ -75,7 +75,7 @@ export const JUICES: Juice[] = [
     flavor: 'Spinach, Kale, Cucumber, Apple, Lemon',
     price: 49.99, // Price for the whole plan
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'green cleanse',
+    dataAiHint: 'green cleanse detox',
     description: 'A 3-day supply of potent green juices designed to reset your system. Includes a variety of 5 green juices per day.',
     category: 'Detox Plans',
     tags: ['cleanse', 'green juices', '3-day plan', 'healthy reset'],
@@ -86,7 +86,7 @@ export const JUICES: Juice[] = [
     flavor: 'Variety of fruit & vegetable juices',
     price: 99.99, // Price for the whole plan
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'detox variety',
+    dataAiHint: 'rainbow detox juices',
     description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
     category: 'Detox Plans',
     tags: ['full detox', '7-day plan', 'wellness', 'variety pack'],
@@ -97,8 +97,8 @@ export const JUICES: Juice[] = [
     name: 'Morning Berry Bowl',
     flavor: 'Strawberries, Blueberries, Granola, Chia Seeds',
     price: 8.99,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'kiwi carrot', // Updated hint
+    image: '/images/fruit-bowl-custom.jpg', // Updated to use your custom image
+    dataAiHint: 'kiwi carrot',
     description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
     category: 'Fruit Bowls',
     tags: ['breakfast', 'healthy snack', 'berries', 'fresh', 'granola'],
@@ -109,7 +109,7 @@ export const JUICES: Juice[] = [
     flavor: 'Mango, Pineapple, Kiwi, Coconut Flakes',
     price: 9.49,
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'mango pineapple',
+    dataAiHint: 'mango pineapple bowl',
     description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
     category: 'Fruit Bowls',
     tags: ['tropical fruits', 'breakfast bowl', 'refreshing', 'exotic'],
@@ -190,5 +190,3 @@ export const NAV_LINKS = [
 ];
 
 export const TRADITIONAL_JUICE_CATEGORIES = ['Fruit Blast', 'Green Power', 'Exotic Flavors', 'Veggie Fusion'];
-
-
