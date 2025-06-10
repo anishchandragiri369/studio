@@ -86,7 +86,7 @@ export const JUICES: Juice[] = [
     flavor: 'Variety of fruit & vegetable juices',
     price: 99.99, // Price for the whole plan
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'rainbow detox',
+    dataAiHint: 'detox variety',
     description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
     category: 'Detox Plans',
     tags: ['full detox', '7-day plan', 'wellness', 'variety pack'],
@@ -98,7 +98,7 @@ export const JUICES: Juice[] = [
     flavor: 'Strawberries, Blueberries, Granola, Chia Seeds',
     price: 8.99,
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'mixed berries',
+    dataAiHint: 'kiwi carrot', // Updated hint
     description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
     category: 'Fruit Bowls',
     tags: ['breakfast', 'healthy snack', 'berries', 'fresh', 'granola'],
@@ -190,4 +190,5 @@ export const NAV_LINKS = [
 ];
 
 export const TRADITIONAL_JUICE_CATEGORIES = ['Fruit Blast', 'Green Power', 'Exotic Flavors', 'Veggie Fusion'];
+
 
