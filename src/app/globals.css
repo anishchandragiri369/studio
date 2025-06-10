@@ -4,85 +4,85 @@
 
 @layer base {
   :root {
-    --background: 130 40% 95%; /* Soft, light green */
-    --foreground: 28 15% 25%; /* Dark warm gray for text (kept for contrast with orange primary/accent) */
+    --background: 120 60% 97%; /* Very light, vibrant mint green */
+    --foreground: 220 15% 25%; /* Dark cool gray for text */
 
-    --card: 130 40% 98%; /* Slightly lighter green */
-    --card-foreground: 28 15% 25%;
+    --card: 120 60% 99%; /* Almost white with a mint hint */
+    --card-foreground: 220 15% 25%;
 
-    --popover: 130 40% 98%; /* Slightly lighter green */
-    --popover-foreground: 28 15% 25%;
+    --popover: 120 60% 99%; /* Almost white with a mint hint */
+    --popover-foreground: 220 15% 25%;
 
-    --primary: 34 88% 62%; /* #F2994A Saturated orange (Unchanged) */
-    --primary-foreground: 34 70% 98%; /* Light color for text on primary (Unchanged) */
+    --primary: 40 95% 55%; /* Vibrant sunny orange */
+    --primary-foreground: 40 80% 98%; /* Light color for text on primary */
 
-    --secondary: 130 30% 90%; /* Lighter, less saturated green */
-    --secondary-foreground: 28 15% 30%; /* Darker text for secondary */
+    --secondary: 130 60% 88%; /* Lighter, vibrant green */
+    --secondary-foreground: 130 40% 30%; /* Darker green text for secondary */
 
-    --muted: 130 30% 92%; /* Muted green */
-    --muted-foreground: 28 10% 45%; /* Lighter warm gray for muted text (kept) */
+    --muted: 120 50% 94%; /* Muted mint */
+    --muted-foreground: 220 10% 45%; /* Lighter cool gray for muted text */
 
-    --accent: 13 69% 54%; /* #D95E3A Analogous reddish-orange (Unchanged) */
-    --accent-foreground: 13 60% 98%; /* Light color for text on accent (Unchanged) */
+    --accent: 330 80% 60%; /* Vibrant berry pink/magenta */
+    --accent-foreground: 330 70% 98%; /* Light color for text on accent */
 
-    --destructive: 0 72% 51%; /* Standard destructive red (Unchanged) */
-    --destructive-foreground: 0 0% 98%; /* (Unchanged) */
+    --destructive: 0 72% 51%; /* Standard destructive red */
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 130 25% 85%; /* Green-derived border */
-    --input: 130 35% 97%; /* Light green input background */
-    --ring: 34 88% 62%; /* Ring color (primary - Unchanged) */
+    --border: 120 40% 88%; /* Mint-derived border */
+    --input: 120 50% 96%; /* Light mint input background */
+    --ring: 40 95% 55%; /* Ring color (primary - sunny orange) */
 
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 130 40% 92%; 
-    --sidebar-foreground: 28 15% 25%;
-    --sidebar-primary: 34 88% 62%;
-    --sidebar-primary-foreground: 34 70% 98%;
-    --sidebar-accent: 13 69% 54%;
-    --sidebar-accent-foreground: 13 60% 98%;
-    --sidebar-border: 130 25% 80%;
-    --sidebar-ring: 34 88% 62%;
+    --sidebar-background: 120 55% 95%; 
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 40 95% 55%;
+    --sidebar-primary-foreground: 40 80% 98%;
+    --sidebar-accent: 330 80% 60%;
+    --sidebar-accent-foreground: 330 70% 98%;
+    --sidebar-border: 120 40% 85%;
+    --sidebar-ring: 40 95% 55%;
   }
 
   .dark {
-    --background: 130 10% 12%; /* Dark desaturated green */
-    --foreground: 130 25% 92%; /* Light green-tinted text */
+    --background: 120 10% 10%; /* Very dark, slightly desaturated mint/teal */
+    --foreground: 120 30% 92%; /* Light minty text */
 
-    --card: 130 10% 15%;
-    --card-foreground: 130 25% 92%;
+    --card: 120 10% 13%;
+    --card-foreground: 120 30% 92%;
 
-    --popover: 130 10% 15%;
-    --popover-foreground: 130 25% 92%;
+    --popover: 120 10% 13%;
+    --popover-foreground: 120 30% 92%;
 
-    --primary: 34 80% 58%; /* Saturated orange, adjusted for dark (Unchanged) */
-    --primary-foreground: 34 15% 15%; /* Dark text on primary for dark mode (Unchanged) */
+    --primary: 40 90% 50%; /* Vibrant orange, adjusted for dark */
+    --primary-foreground: 40 20% 15%; /* Dark text on primary for dark mode */
 
-    --secondary: 130 15% 22%; /* Darker, less saturated green */
-    --secondary-foreground: 130 25% 92%;
+    --secondary: 130 20% 20%; /* Darker vibrant green */
+    --secondary-foreground: 130 30% 92%;
 
-    --muted: 130 10% 20%; /* Muted dark green */
-    --muted-foreground: 130 15% 70%; /* Lighter green-tinted muted text */
+    --muted: 120 10% 18%; /* Muted dark mint */
+    --muted-foreground: 120 20% 70%; /* Lighter mint-tinted muted text */
 
-    --accent: 13 65% 50%; /* Reddish-orange, adjusted for dark (Unchanged) */
-    --accent-foreground: 13 15% 15%; /* Dark text on accent for dark mode (Unchanged) */
+    --accent: 330 75% 55%; /* Vibrant pink/berry, adjusted for dark */
+    --accent-foreground: 330 15% 15%; /* Dark text on accent for dark mode */
 
-    --destructive: 0 60% 45%; /* (Unchanged) */
-    --destructive-foreground: 0 0% 98%; /* (Unchanged) */
+    --destructive: 0 60% 45%; 
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 130 10% 25%; /* Dark green-derived border */
-    --input: 130 10% 25%; /* Dark green input background */
-    --ring: 34 80% 58%; /* (Unchanged) */
+    --border: 120 10% 22%; /* Dark mint-derived border */
+    --input: 120 10% 22%; /* Dark mint input background */
+    --ring: 40 90% 50%; /* Ring color (primary - sunny orange) */
     
     /* Dark Sidebar */
-    --sidebar-background: 130 10% 10%;
-    --sidebar-foreground: 130 25% 92%;
-    --sidebar-primary: 34 80% 58%;
-    --sidebar-primary-foreground: 34 15% 15%;
-    --sidebar-accent: 13 65% 50%;
-    --sidebar-accent-foreground: 13 15% 15%;
-    --sidebar-border: 130 10% 20%;
-    --sidebar-ring: 34 80% 58%;
+    --sidebar-background: 120 10% 8%;
+    --sidebar-foreground: 120 30% 92%;
+    --sidebar-primary: 40 90% 50%;
+    --sidebar-primary-foreground: 40 20% 15%;
+    --sidebar-accent: 330 75% 55%;
+    --sidebar-accent-foreground: 330 15% 15%;
+    --sidebar-border: 120 10% 18%;
+    --sidebar-ring: 40 90% 50%;
   }
 }
 
