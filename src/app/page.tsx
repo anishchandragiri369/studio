@@ -11,7 +11,8 @@ import CategoryScroller from '@/components/categories/CategoryScroller'; // Impo
 
 export default function HomePage() {
   const featuredJuices = JUICES.slice(0, 4); // Show first 4 juices as featured
-  const featuredSubscription = SUBSCRIPTION_PLANS[0];
+  const weeklyKickstarterPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'sub1');
+  const monthlyWellnessPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'sub2');
 
   return (
     <div className="flex flex-col">
@@ -26,7 +27,7 @@ export default function HomePage() {
           <h1 className="text-5xl md:text-7xl font-headline font-bold text-primary mb-4 animate-fade-in">
             Taste the Freshness.
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 animate-fade-in animation-delay-300">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6 animate-fade-in animation-delay-300">
             Discover vibrant, delicious juices made from the finest ingredients, delivered right to your door.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in animation-delay-600">
@@ -41,9 +42,9 @@ export default function HomePage() {
       </section>
 
       {/* New Categories Section */}
-      <section className="py-10 bg-muted/20">
+      <section className="py-8 bg-muted/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-6">
             Shop by Category
           </h2>
           <CategoryScroller categories={HOME_CATEGORIES} />
@@ -51,9 +52,9 @@ export default function HomePage() {
       </section>
 
       {/* Featured Juices Section */}
-      <section className="py-10 bg-background">
+      <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-6">
             Our Most Popular Blends
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -63,7 +64,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
+          <div className="text-center mt-8">
             <Button asChild variant="link" className="text-primary text-lg hover:underline">
               <Link href="/menu">See All Juices <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
@@ -72,19 +73,28 @@ export default function HomePage() {
       </section>
       
       {/* Featured Subscription Section */}
-      {featuredSubscription && (
+      {(weeklyKickstarterPlan || monthlyWellnessPlan) && (
         <section className="py-10 bg-primary/10">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-headline text-center text-primary mb-3">
               Stay Refreshed, Effortlessly
             </h2>
             <p className="text-center text-muted-foreground mb-8 max-w-xl mx-auto">
-              Our most popular subscription plan designed to keep you energized and healthy.
+              Choose a plan that suits you. Our popular Weekly Kickstarter is perfect for a consistent boost!
             </p>
-            <div className="max-w-md mx-auto animate-slide-in-up">
-              <SubscriptionOptionCard plan={featuredSubscription} isFeatured />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+              {weeklyKickstarterPlan && (
+                <div className="animate-slide-in-up">
+                  <SubscriptionOptionCard plan={weeklyKickstarterPlan} isFeatured />
+                </div>
+              )}
+              {monthlyWellnessPlan && (
+                 <div className="animate-slide-in-up animation-delay-200">
+                  <SubscriptionOptionCard plan={monthlyWellnessPlan} />
+                </div>
+              )}
             </div>
-            <div className="text-center mt-8">
+            <div className="text-center mt-10">
               <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 <Link href="/subscriptions">Explore All Subscription Plans</Link>
               </Button>
@@ -96,7 +106,7 @@ export default function HomePage() {
       {/* How It Works / Features Section */}
       <section className="py-10 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-8">Why Choose Elixr?</h2>
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-6">Why Choose Elixr?</h2>
           <div className="grid md:grid-cols-3 gap-8 text-center">
             <div className="p-6 bg-card rounded-lg shadow-md animate-slide-in-up">
               <Gift className="h-12 w-12 text-primary mx-auto mb-4" />
