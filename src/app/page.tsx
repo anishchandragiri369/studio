@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/20 via-background to-background py-20 md:py-32 text-center overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary/20 via-background to-background py-12 md:py-20 text-center overflow-hidden">
         <div className="absolute inset-0 opacity-30">
             {/* Decorative background elements */}
             <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-accent/30 rounded-full filter blur-2xl animate-pulse"></div>
@@ -40,6 +40,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* New Categories Section */}
+      <section className="py-16 bg-muted/20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">
+            Shop by Category
+          </h2>
+          <CategoryScroller categories={HOME_CATEGORIES} />
+        </div>
+      </section>
+
       {/* Featured Juices Section */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
@@ -58,16 +68,6 @@ export default function HomePage() {
               <Link href="/menu">See All Juices <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* New Categories Section */}
-      <section className="py-16 bg-muted/20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">
-            Shop by Category
-          </h2>
-          <CategoryScroller categories={HOME_CATEGORIES} />
         </div>
       </section>
       
