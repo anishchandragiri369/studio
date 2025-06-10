@@ -3,7 +3,7 @@
 
 import { JUICES, TRADITIONAL_JUICE_CATEGORIES, HOME_CATEGORIES } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
-import type { Metadata } from 'next'; // For static metadata
+// import type { Metadata } from 'next'; // Removed as it cannot be exported from client component
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -11,11 +11,8 @@ import { useSearchParams } from 'next/navigation'; // For client-side search par
 import { useState, useEffect } from 'react';
 import type { Juice } from '@/lib/types';
 
-// Static metadata for the base /menu route
-export const metadata: Metadata = {
-  title: 'Our Juices - Elixr',
-  description: 'Explore our wide selection of fresh and delicious juices. Filter by category to find your perfect blend!',
-};
+// Static metadata export is removed from client component.
+// General metadata is handled by parent layouts or document.title can be set in useEffect.
 
 export default function MenuPage() {
   const searchParams = useSearchParams();
@@ -46,7 +43,8 @@ export default function MenuPage() {
       juicesToDisplay = JUICES.filter(juice =>
         juice.category && TRADITIONAL_JUICE_CATEGORIES.includes(juice.category)
       );
-      document.title = 'Our Juices - Elixr'; // Reset to default title
+      // Set default title for the base /menu route
+      document.title = 'Our Juices - Elixr';
     }
 
     setDisplayedJuices(juicesToDisplay);
