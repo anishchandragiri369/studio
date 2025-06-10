@@ -16,37 +16,30 @@ import { loginSchema } from '@/lib/zod-schemas';
 import type { LoginFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle } from 'lucide-react';
-import type { AuthError } from 'firebase/auth';
-export default function LoginPage() {
-  const [step, setStep] = useState<'input' | 'otp'>('input'); // 'input' for email/phone, 'otp' for verification
-  const [identifier, setIdentifier] = useState(''); // To store email or phone number
-  const [otp, setOtp] = useState(''); // To store the OTP
-  const [confirmationResult, setConfirmationResult] = useState<any>(null); // To store the confirmation result for phone auth
+import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // Corrected import
 
+export default function LoginPage() {
   const router = useRouter();
-  const { logIn, user, loading: authLoading, isFirebaseConfigured, sendMagicLink, verifyOtpCode } = useAuth(); // Use isFirebaseConfigured and Supabase methods
+  const { logIn, user, loading: authLoading, isSupabaseConfigured } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // Adjust form schema to be optional for password when using OTP
-  const formSchema = loginSchema.partial();
-
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<z.infer<typeof formSchema>>({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
   useEffect(() => {
-    if (!authLoading && user && isFirebaseConfigured) { // Only redirect if configured and user exists
+    if (!authLoading && user && isSupabaseConfigured) {
       router.push('/'); 
     }
-  }, [user, authLoading, router, isFirebaseConfigured]);
+  }, [user, authLoading, router, isSupabaseConfigured]);
   
   if (typeof window !== 'undefined') {
     document.title = 'Login - Elixr';
   }
 
-  const handleEmailPasswordLogin = async (data: z.infer<typeof formSchema>) => {
-    if (!isFirebaseConfigured) {
+  const onSubmit = async (data: LoginFormData) => {
+    if (!isSupabaseConfigured) {
       setError("Authentication is currently unavailable. Please check application configuration.");
       return;
     }
@@ -54,68 +47,24 @@ export default function LoginPage() {
     setSubmitLoading(true);
     const result = await logIn(data);
     
-    if (result && 'uid' in result && typeof result.uid === 'string') { 
+    if (result && 'data' in result && result.data?.user) { 
       router.push('/');
-    } else { 
-      const errorResult = result as AuthError | { code: string; message: string };
-      if (errorResult.code === 'auth/invalid-credential' || errorResult.code === 'auth/user-not-found' || errorResult.code === 'auth/wrong-password') {
+    } else if (result && 'error' in result && result.error) {
+      const supabaseError = result.error as SupabaseAuthError;
+      if (supabaseError.message.includes("Invalid login credentials")) {
         setError("Invalid email or password. Please try again.");
-      } else if (errorResult.code === 'auth/not-configured') {
-        setError(errorResult.message); // Show specific "not configured" message from AuthContext
+      } else if (supabaseError.code === 'supabase/not-configured') {
+        setError(supabaseError.message); 
+      } else {
+        setError(supabaseError.message || "An unexpected error occurred. Please try again.");
       }
-      else {
-        setError(errorResult.message || "An unexpected error occurred. Please try again.");
-      }
+    } else if (result && 'code' in result && result.code === 'supabase/not-configured') { // Handle the specific error structure
+        setError(result.message);
+    }
+    else {
+        setError("An unexpected error occurred during login. Please try again.");
     }
     setSubmitLoading(false);
-  };
-
-  const handleSendOtp = async (type: 'email' | 'phone') => {
-    if (!isFirebaseConfigured) {
-      setError("Authentication is currently unavailable. Please check application configuration.");
-      return;
-    }
-    if (!identifier) {
-      setError(`Please enter your ${type === 'email' ? 'email' : 'phone number'}.`);
-      return;
-    }
-    setError(null);
-    setSubmitLoading(true);
-    try {
-      if (type === 'email') {
-        // Supabase email OTP/magic link
-        const { error } = await sendMagicLink(identifier);
-        if (error) throw error;
-      } else {
-        // Supabase phone OTP (requires Twilio or similar setup in Supabase)
-        // You might need a recaptcha verifier for phone sign-in
-        // const { data, error } = await supabase.auth.signInWithOtp({ phone: identifier });
-      }
-      setStep('otp');
-      setSubmitLoading(false);
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP. Please try again.");
-      setSubmitLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    setError(null);
-    if (!identifier || !otp) {
-      setError("Please enter both the identifier and the OTP.");
-      return;
-    }
-    setSubmitLoading(true);
-    try {
-      const { data, error: verifyError } = await verifyOtpCode(identifier, otp);
-      if (verifyError) throw verifyError;
-      router.push('/'); // Redirect on successful verification
-    } catch (err: any) {
-       // Supabase verification errors have specific codes or messages
-      setError(err.message || "Failed to verify OTP. Please try again.");
-    } finally {
-      setSubmitLoading(false);
-    }
   };
 
   if (authLoading) {
@@ -126,14 +75,9 @@ export default function LoginPage() {
     );
   }
   
-  if (user && isFirebaseConfigured) return null; 
-
-  // Determine if authentication is available based on Supabase config
-  // Assuming isFirebaseConfigured now checks for Supabase configuration
-  const isAuthenticationAvailable = isFirebaseConfigured; 
-
-  const onSubmit = handleSubmit(handleEmailPasswordLogin);
-
+  // Check if user exists AND Supabase is configured before redirecting
+  // This prevents redirect loops if Supabase is not configured but a stale user object exists.
+  if (user && isSupabaseConfigured) return null; 
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
@@ -143,7 +87,7 @@ export default function LoginPage() {
           <CardDescription>Log in to your Elixr account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {!isFirebaseConfigured && (
+          {!isSupabaseConfigured && (
             <Alert variant="destructive" className="mb-6">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Authentication Unavailable</AlertTitle>
@@ -161,27 +105,27 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isFirebaseConfigured || submitLoading} />
+              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...register("password")} disabled={!isFirebaseConfigured || submitLoading} />
+              <Input id="password" type="password" placeholder="••••••••" {...register("password")} disabled={!isSupabaseConfigured || submitLoading} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isFirebaseConfigured || submitLoading}>
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
               {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Link href="/forgot-password" className={`text-sm text-primary hover:underline text-center ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+          <Link href="/forgot-password" className={`text-sm text-primary hover:underline text-center ${!isSupabaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
             Forgot your password?
           </Link>
           <p className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className={`font-semibold text-primary hover:underline ${!isFirebaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
+            <Link href="/signup" className={`font-semibold text-primary hover:underline ${!isSupabaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
               Sign up
             </Link>
           </p>
