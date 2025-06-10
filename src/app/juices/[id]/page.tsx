@@ -1,8 +1,20 @@
 
+"use client";
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation'; // Corrected and ensured import
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertTriangle, ArrowLeft, MinusCircle, PlusCircle, ShoppingCart, PackageX } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { JUICES as FALLBACK_JUICES } from '@/lib/constants';
-import JuiceDetailClient from './JuiceDetailClient';
-import type { Juice } from '@/lib/types'; // Import Juice type for generateStaticParams
+import type { Juice } from '@/lib/types';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Required for static export with dynamic routes
 export async function generateStaticParams() {
@@ -60,11 +72,10 @@ export default function JuiceDetailPage() {
 
     const fetchJuice = async () => {
       if (!isSupabaseConfigured || !supabase) {
-        // Attempt to find in fallback if Supabase isn't configured
         const fallbackJuice = FALLBACK_JUICES.find(j => j.id.toString() === juiceId);
         if (fallbackJuice) {
           setJuice(fallbackJuice);
-          document.title = `${fallbackJuice.name} - Elixr`;
+          if (typeof window !== 'undefined') document.title = `${fallbackJuice.name} - Elixr`;
            const currentStock = fallbackJuice.stockQuantity || 0;
             if (currentStock <= 0) setAvailabilityStatus('Out of Stock');
             else if (currentStock <= 10) setAvailabilityStatus('Low Stock');
@@ -88,7 +99,7 @@ export default function JuiceDetailPage() {
 
         if (dbError) {
           console.error("Error fetching juice details:", dbError);
-          if (dbError.code === 'PGRST116') { 
+          if (dbError.code === 'PGRST116') {
             setError("Juice not found in database.");
           } else {
             setError(`Failed to load juice details: ${dbError.message}`);
@@ -103,9 +114,15 @@ export default function JuiceDetailPage() {
              dataAiHint: data.data_ai_hint || data.dataAiHint,
              name: data.name || "Unnamed Juice",
              flavor: data.flavor || "N/A",
+             description: data.description || "No description available.",
+             category: data.category || "Uncategorized",
+             // Retain image_url, data_ai_hint, stock_quantity if they exist for direct use
+             image_url: data.image_url,
+             data_ai_hint: data.data_ai_hint,
+             stock_quantity: data.stock_quantity,
           };
           setJuice(typedData);
-          document.title = `${typedData.name} - Elixr`;
+          if (typeof window !== 'undefined') document.title = `${typedData.name} - Elixr`;
 
            const currentStock = typedData.stockQuantity || 0;
             if (currentStock <= 0) {
@@ -145,7 +162,7 @@ export default function JuiceDetailPage() {
     const dataAiHintToUse = juice.data_ai_hint || juice.dataAiHint;
 
     addToCart({ ...juice, image: imageToUse, dataAiHint: dataAiHintToUse }, quantity);
-    setQuantity(1); 
+    setQuantity(1);
     toast({
       title: "Added to Cart!",
       description: `${quantity} x ${juice.name} added to your cart.`,
@@ -157,7 +174,7 @@ export default function JuiceDetailPage() {
 
    const isEffectivelyOutOfStock = availabilityStatus === 'Out of Stock';
 
-   const getAvailabilityClasses = () => {
+   const getAvailabilityClassesLocal = () => { // Renamed to avoid conflict if imported
     switch (availabilityStatus) {
       case 'In Stock':
         return 'text-green-600 dark:text-green-400';
@@ -183,10 +200,12 @@ export default function JuiceDetailPage() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-destructive mb-4">Error</h2>
-        <p className="text-muted-foreground mb-6">{error}</p>
-        <Button asChild>
+        <Alert variant="destructive" className="max-w-md mx-auto">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle>Error Loading Juice</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button asChild className="mt-6">
            <Link href="/menu">
              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Menu
            </Link>
@@ -198,10 +217,12 @@ export default function JuiceDetailPage() {
   if (!juice) {
      return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-orange-500 mb-4">Juice Not Found</h2>
-        <p className="text-muted-foreground mb-6">The juice you are looking for could not be found.</p>
-         <Button asChild>
+        <Alert variant="default" className="max-w-md mx-auto border-orange-500">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            <AlertTitle className="text-orange-600">Juice Not Found</AlertTitle>
+            <AlertDescription>The juice you are looking for could not be found.</AlertDescription>
+        </Alert>
+         <Button asChild className="mt-6">
            <Link href="/menu">
              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Menu
            </Link>
@@ -225,7 +246,7 @@ export default function JuiceDetailPage() {
       <Card className="flex flex-col md:flex-row overflow-hidden shadow-lg rounded-lg">
         <div className={cn(
             "relative w-full md:w-1/2",
-             (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3] md:aspect-auto md:h-auto" : "h-64 md:h-auto aspect-video md:aspect-auto" 
+             (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3] md:aspect-auto md:h-auto" : "h-64 md:h-auto aspect-video md:aspect-auto"
           )}>
           <Image
             src={displayImage}
@@ -236,13 +257,18 @@ export default function JuiceDetailPage() {
                  "object-cover",
                 isEffectivelyOutOfStock && "grayscale"
             )}
-            priority={true} 
+            priority={true}
             data-ai-hint={displayDataAiHint}
             unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
-            onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
+            onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://placehold.co/600x400.png';
+                target.srcset = '';
+            }}
           />
            {isEffectivelyOutOfStock && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-4 text-center">
+                <PackageX className="h-16 w-16 text-white/80 mb-2" />
                 <p className="text-white text-2xl font-bold">Out of Stock</p>
               </div>
             )}
@@ -255,7 +281,7 @@ export default function JuiceDetailPage() {
 
             <div className="flex items-center justify-between mb-4">
               <p className="text-2xl font-bold text-accent">Rs.{juice.price.toFixed(2)}</p>
-              <p className={cn("text-sm font-medium", getAvailabilityClasses())}>
+              <p className={cn("text-sm font-medium", getAvailabilityClassesLocal())}>
                  {availabilityStatus} ({juice.stockQuantity || 0} left)
               </p>
             </div>
