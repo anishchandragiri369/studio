@@ -18,3 +18,17 @@ export const signUpSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
 });
+
+export const checkoutAddressSchema = z.object({
+  email: z.string().email({ message: "Invalid email address is required." }),
+  mobileNumber: z.string().optional(),
+  firstName: z.string().min(1, { message: "First name is required." }),
+  lastName: z.string().optional(),
+  addressLine1: z.string().min(1, { message: "Street address is required." }),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1, { message: "City is required." }),
+  state: z.string().min(1, { message: "State / Province is required." }),
+  zipCode: z.string().min(1, { message: "ZIP / Postal code is required." }),
+  country: z.string().min(1, { message: "Country is required." }),
+});
+

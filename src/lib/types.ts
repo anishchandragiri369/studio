@@ -1,6 +1,6 @@
 
 import type { z } from 'zod';
-import type { loginSchema, signUpSchema, forgotPasswordSchema } from '@/lib/zod-schemas';
+import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema } from '@/lib/zod-schemas';
 
 
 export interface Juice {
@@ -62,3 +62,5 @@ export type AIJuiceRecommendationOutput = {
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type CheckoutAddressFormData = z.infer<typeof checkoutAddressSchema>;
+
