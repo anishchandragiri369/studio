@@ -62,11 +62,5 @@ export const editProfileSchema = z.object({
 });
 
 export const addProductSchema = z.object({
-  name: z.string().min(1, { message: "Product name is required." }),
-  description: z.string().optional(),
-  price: z.number().positive({ message: "Price must be a positive number." }),
-  category: z.string().min(1, { message: "Category is required." }),
-  stock: z.number().int().nonnegative({ message: "Stock must be a non-negative integer." }),
+  name: z.string().min(1, { message: "Product name is required." }), description: z.string().optional(), price: z.number().positive({ message: "Price must be a positive number." }), category: z.string().min(1, { message: "Category is required." }), stock: z.number().int().nonnegative({ message: "Stock must be a non-negative integer." }),
 });
-
-

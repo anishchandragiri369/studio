@@ -66,7 +66,6 @@ export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type CheckoutAddressFormData = z.infer<typeof checkoutAddressSchema>;
 export type EditProfileFormData = z.infer<typeof editProfileSchema>;
-export type AddProductFormData = z.infer<typeof addProductSchema>;
 
 // Order History Types
 export interface OrderItem {
@@ -85,3 +84,12 @@ export interface Order {
   items: OrderItem[];
   shippingAddress?: CheckoutAddressFormData; // Optional: if you want to show where it was shipped
 }
+
+// New Product Form Data Type
+export type AddProductFormData = {
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  stock: number;
+};

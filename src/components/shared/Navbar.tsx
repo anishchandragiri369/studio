@@ -1,7 +1,7 @@
 
 "use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
 import { NAV_LINKS as DEFAULT_NAV_LINKS } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, redirect } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const Navbar = () => {
+const Navbar = ({ isAdmin }: { isAdmin?: boolean }) => {
   const { getItemCount } = useCart();
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
   const router = useRouter();
@@ -30,6 +30,10 @@ const Navbar = () => {
 
   useEffect(() => {
     setMounted(true);
+    // Redirect non-admins away from admin page if user is loaded
+    if (!authLoading && isSupabaseConfigured && pathname.startsWith('/admin') && !user?.user_metadata?.role?.includes('admin')) {
+      redirect('/');
+    }
   }, []);
   
   const itemCount = mounted ? getItemCount() : 0;
@@ -37,7 +41,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     setIsMenuOpen(false); // Close mobile menu if open
     await logOut();
-    router.push('/'); 
+    router.push('/');
   };
 
   const navLinks = (user || !isSupabaseConfigured)
@@ -53,7 +57,7 @@ const Navbar = () => {
             <Link
               key={link.href}
               href={link.href}
-              className={`transition-colors hover:text-primary ${pathname === link.href ? 'text-primary font-semibold' : 'text-foreground/70'}`}
+              className={`transition-colors hover:text-primary ${pathname === link.href ? "text-primary font-semibold" : "text-foreground/70"}`}
             >
               {link.label}
             </Link>
@@ -66,7 +70,7 @@ const Navbar = () => {
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                    {itemCount}
+                    {itemCount < 100 ? itemCount : '99+'}
                   </span>
                 )}
               </>
@@ -98,17 +102,25 @@ const Navbar = () => {
                         <span>My Account</span>
                       </Link>
                     </DropdownMenuItem>
+                    {user?.user_metadata?.role?.includes('admin') && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/add-product" className="cursor-pointer">
+                          <LogOut className="mr-2 h-4 w-4 rotate-90" /> {/* Using LogOut rotated for a product icon */}
+                          <span>Add Product</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : isSupabaseConfigured ? ( 
+              ) : isSupabaseConfigured ? (
                 <div className="hidden md:flex items-center gap-2">
                   <Button variant="ghost" asChild>
                     <Link href="/login">
-                       <LogInIcon className="mr-2 h-4 w-4" /> Login
+                      <LogInIcon className="mr-2 h-4 w-4" /> Login
                     </Link>
                   </Button>
                   <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -117,7 +129,7 @@ const Navbar = () => {
                     </Link>
                   </Button>
                 </div>
-              ) : ( 
+              ) : (
                 <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-destructive text-xs" title="Supabase is not configured. Authentication features are disabled.">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Auth Disabled</span>
@@ -152,10 +164,16 @@ const Navbar = () => {
                     </SheetClose>
                   ))}
                   <hr className="my-2"/>
-                  {!authLoading && (
-                    <>
-                      {user && isSupabaseConfigured ? ( 
-                        <>
+                  {!authLoading && isSupabaseConfigured && (
+                    user ? (
+                      <>
+                         {user?.user_metadata?.role?.includes('admin') && (
+                           <SheetClose asChild>
+                             <Link href="/admin/add-product" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
+                               <LogOut className="mr-2 h-5 w-5 rotate-90" /> Add Product
+                             </Link>
+                           </SheetClose>
+                         )}
                         <SheetClose asChild>
                             <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
                               <Settings className="mr-2 h-5 w-5" /> My Account
@@ -166,8 +184,8 @@ const Navbar = () => {
                               <LogOut className="mr-2 h-5 w-5" /> Logout
                             </Button>
                           </SheetClose>
-                        </>
-                      ) : isSupabaseConfigured ? ( 
+                      </>
+                    ) : (
                         <>
                           <SheetClose asChild>
                             <Link href="/login" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
@@ -179,16 +197,7 @@ const Navbar = () => {
                               <UserPlus className="mr-2 h-5 w-5" /> Sign Up
                             </Link>
                           </SheetClose>
-                        </>
-                      ) : ( 
-                       <SheetClose asChild>
-                         <div className="flex items-center gap-1.5 justify-center py-2 text-sm text-destructive bg-destructive/10 rounded-md" title="Supabase is not configured. Authentication features are disabled.">
-                           <AlertTriangle className="h-4 w-4" />
-                           <span>Auth Unavailable</span>
-                         </div>
-                       </SheetClose>
-                      )}
-                    </>
+                      </>))
                   )}
                 </nav>
               </SheetContent>
