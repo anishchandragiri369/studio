@@ -159,6 +159,19 @@ function CheckoutPageContents() {
           title: "Cashfree Order Created (Conceptual)",
           description: `Received orderToken: ${result.data?.orderToken}. Next, use Cashfree JS SDK.`,
         });
+
+        // Simulate calling the webhook after a conceptual successful order creation
+        console.log("Simulating webhook call to /api/webhook/payment-confirm");
+        const webhookResponse = await fetch('/api/webhook/payment-confirm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ orderId: result.data?.orderId || 'conceptual-order-123' }), // Use the actual orderId if available
+        });
+        const webhookResult = await webhookResponse.json();
+        console.log("Conceptual webhook response:", webhookResult);
+
         alert(`Conceptual: Received orderToken: ${result.data?.orderToken}. Total: Rs.${currentOrderTotal.toFixed(2)}. Would now invoke Cashfree SDK.`);
       } else {
         toast({
