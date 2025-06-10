@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useCart } from '@/hooks/useCart';
 import { PlusCircle, MinusCircle, ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface JuiceCardProps {
   juice: Juice;
@@ -25,10 +26,17 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
+  const isFruitBowl = juice.category === 'Fruit Bowls';
+
   return (
     <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card">
       <CardHeader className="p-0">
-        <div className="relative w-full aspect-[9/16]"> {/* Changed from h-48 md:h-56 to aspect-[9/16] */}
+        <div 
+          className={cn(
+            "relative w-full",
+            isFruitBowl ? "aspect-[9/16]" : "h-48 md:h-56"
+          )}
+        >
           <Image
             src={juice.image}
             alt={juice.name}
