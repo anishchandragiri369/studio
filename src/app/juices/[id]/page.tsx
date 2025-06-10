@@ -1,16 +1,26 @@
+
+"use client";
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation'; // Added useParams and useRouter import
+import Image from 'next/image';
+import { Card, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Link from 'next/link';
+import { ArrowLeft, ShoppingCart, Loader2, AlertTriangle, PlusCircle, MinusCircle } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
 import type { Juice } from '@/lib/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
-import { JUICES as FALLBACK_JUICES } from '@/lib/constants'; // Import fallback juices
-import JuiceDetailClient from './JuiceDetailClient';
-
-interface JuiceDetailPageProps {
-  params: { id: string };
-}
+import { JUICES as FALLBACK_JUICES } from '@/lib/constants';
+import { cn } from '@/lib/utils'; // For cn utility
 
 // Required for static export with dynamic routes
 export async function generateStaticParams() {
   if (!isSupabaseConfigured || !supabase) {
-    console.warn("generateStaticParams (juices): Supabase not configured. Falling back to local constants for juice IDs.");
+    console.warn("generateStaticParams (juices/[id]): Supabase not configured. Falling back to local constants for juice IDs.");
     return FALLBACK_JUICES.map(juice => ({
       id: juice.id.toString(),
     }));
@@ -19,7 +29,7 @@ export async function generateStaticParams() {
   try {
     const { data, error } = await supabase.from('juices').select('id');
     if (error) {
-      console.error("generateStaticParams (juices): Error fetching juice IDs from Supabase, falling back to constants.", error);
+      console.error("generateStaticParams (juices/[id]): Error fetching juice IDs from Supabase, falling back to constants.", error);
       return FALLBACK_JUICES.map(juice => ({
         id: juice.id.toString(),
       }));
@@ -33,7 +43,7 @@ export async function generateStaticParams() {
       id: juice.id.toString(),
     }));
   } catch (e) {
-    console.error("generateStaticParams (juices): Unexpected error, falling back to constants.", e);
+    console.error("generateStaticParams (juices/[id]): Unexpected error, falling back to constants.", e);
     return FALLBACK_JUICES.map(juice => ({
       id: juice.id.toString(),
     }));
@@ -289,4 +299,3 @@ export default function JuiceDetailPage() {
     </div>
   );
 }
-
