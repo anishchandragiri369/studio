@@ -22,7 +22,7 @@ import {
 
 const Navbar = () => {
   const { getItemCount } = useCart();
-  const { user, logOut, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured from context
+  const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth(); // Updated to use isSupabaseConfigured
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -39,7 +39,7 @@ const Navbar = () => {
     router.push('/'); 
   };
 
-  const navLinks = (user || !isFirebaseConfigured) // Use the flag from context
+  const navLinks = (user || !isSupabaseConfigured) // Use the flag from context
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
 
@@ -74,7 +74,7 @@ const Navbar = () => {
 
           {!authLoading && (
             <>
-              {user && isFirebaseConfigured ? ( 
+              {user && isSupabaseConfigured ? ( 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label="User Menu">
@@ -97,7 +97,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : isFirebaseConfigured ? ( 
+              ) : isSupabaseConfigured ? ( 
                 <div className="hidden md:flex items-center gap-2">
                   <Button variant="ghost" asChild>
                     <Link href="/login">
@@ -111,7 +111,7 @@ const Navbar = () => {
                   </Button>
                 </div>
               ) : ( 
-                <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-destructive text-xs" title="Firebase is not configured. Authentication features are disabled.">
+                <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-destructive text-xs" title="Supabase is not configured. Authentication features are disabled.">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Auth Disabled</span>
                 </div>
@@ -147,13 +147,13 @@ const Navbar = () => {
                   <hr className="my-2"/>
                   {!authLoading && (
                     <>
-                      {user && isFirebaseConfigured ? ( 
+                      {user && isSupabaseConfigured ? ( 
                         <SheetClose asChild>
                           <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
                             <LogOut className="mr-2 h-5 w-5" /> Logout
                           </Button>
                         </SheetClose>
-                      ) : isFirebaseConfigured ? ( 
+                      ) : isSupabaseConfigured ? ( 
                         <>
                           <SheetClose asChild>
                             <Link href="/login" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
@@ -168,7 +168,7 @@ const Navbar = () => {
                         </>
                       ) : ( 
                        <SheetClose asChild>
-                         <div className="flex items-center gap-1.5 justify-center py-2 text-sm text-destructive bg-destructive/10 rounded-md" title="Firebase is not configured. Authentication features are disabled.">
+                         <div className="flex items-center gap-1.5 justify-center py-2 text-sm text-destructive bg-destructive/10 rounded-md" title="Supabase is not configured. Authentication features are disabled.">
                            <AlertTriangle className="h-4 w-4" />
                            <span>Auth Unavailable</span>
                          </div>
