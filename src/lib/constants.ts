@@ -68,6 +68,52 @@ export const JUICES: Juice[] = [
     category: 'Fruit Blast',
     tags: ['tangy', 'refreshing', 'vitamin c'],
   },
+  // New Daily Detox Plans
+  {
+    id: 'dtx1',
+    name: '3-Day Green Cleanse',
+    flavor: 'Spinach, Kale, Cucumber, Apple, Lemon',
+    price: 49.99, // Price for the whole plan
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'detox plan',
+    description: 'A 3-day supply of potent green juices designed to reset your system. Includes a variety of 5 green juices per day.',
+    category: 'Detox Plans',
+    tags: ['cleanse', 'green juices', '3-day plan', 'healthy reset'],
+  },
+  {
+    id: 'dtx2',
+    name: '7-Day Rainbow Detox',
+    flavor: 'Variety of fruit & vegetable juices',
+    price: 99.99, // Price for the whole plan
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'detox program',
+    description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
+    category: 'Detox Plans',
+    tags: ['full detox', '7-day plan', 'wellness', 'variety pack'],
+  },
+  // New Fruit Bowls
+  {
+    id: 'fb1',
+    name: 'Morning Berry Bowl',
+    flavor: 'Strawberries, Blueberries, Granola, Chia Seeds',
+    price: 8.99,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'fruit bowl',
+    description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
+    category: 'Fruit Bowls',
+    tags: ['breakfast', 'healthy snack', 'berries', 'fresh', 'granola'],
+  },
+  {
+    id: 'fb2',
+    name: 'Tropical Sunshine Bowl',
+    flavor: 'Mango, Pineapple, Kiwi, Coconut Flakes',
+    price: 9.49,
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'tropical bowl',
+    description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
+    category: 'Fruit Bowls',
+    tags: ['tropical fruits', 'breakfast bowl', 'refreshing', 'exotic'],
+  },
 ];
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
@@ -107,10 +153,10 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'sub3',
     name: 'Custom Weekly',
     frequency: 'weekly',
-    pricePerDelivery: 32.99, 
+    pricePerDelivery: 32.99,
     description: 'Choose your own favorite juices for weekly delivery. Tailor your subscription to your taste.',
     isCustomizable: true,
-    maxJuices: 5, 
+    maxJuices: 5,
   },
 ];
 
