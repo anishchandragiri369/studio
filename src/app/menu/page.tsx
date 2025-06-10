@@ -1,59 +1,65 @@
 
+"use client"; // Make it a client component
+
 import { JUICES, TRADITIONAL_JUICE_CATEGORIES, HOME_CATEGORIES } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
-import type { Metadata } from 'next';
+import type { Metadata } from 'next'; // For static metadata
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useSearchParams } from 'next/navigation'; // For client-side search params
+import { useState, useEffect } from 'react';
+import type { Juice } from '@/lib/types';
 
-interface MenuPageProps {
-  searchParams?: {
-    category?: string;
-  };
-}
-
-// Replaced dynamic generateMetadata with a static metadata object
+// Static metadata for the base /menu route
 export const metadata: Metadata = {
   title: 'Our Juices - Elixr',
   description: 'Explore our wide selection of fresh and delicious juices. Filter by category to find your perfect blend!',
 };
 
-export default function MenuPage({ searchParams }: MenuPageProps) {
-  const selectedCategory = searchParams?.category ? decodeURIComponent(searchParams.category) : null;
+export default function MenuPage() {
+  const searchParams = useSearchParams();
+  const categoryQuery = searchParams.get('category');
 
-  let displayedJuices;
-  let pageTitle = "Our Fresh Juices"; // This H1 title can still be dynamic
-  let pageDescription = "Discover a world of flavor with our handcrafted juices, made from the freshest ingredients.";
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [displayedJuices, setDisplayedJuices] = useState<Juice[]>([]);
+  const [pageTitle, setPageTitle] = useState("Our Fresh Juices");
+  const [pageDescription, setPageDescription] = useState("Discover a world of flavor with our handcrafted juices, made from the freshest ingredients.");
 
-  if (selectedCategory) {
-    displayedJuices = JUICES.filter(juice => 
-      juice.tags && juice.tags.includes(selectedCategory)
-    );
-    const categoryDetails = HOME_CATEGORIES.find(cat => cat.name === selectedCategory);
-    pageTitle = categoryDetails ? `${categoryDetails.name}` : `${selectedCategory} Juices`;
-    pageDescription = `Fresh and delicious ${categoryDetails ? categoryDetails.name.toLowerCase() : selectedCategory.toLowerCase()} juices.`;
-    
-    // Update document title on client-side if category is selected
-    if (typeof window !== 'undefined') {
-        document.title = `${categoryDetails ? categoryDetails.name : selectedCategory} - Elixr`;
+  useEffect(() => {
+    const currentCategory = categoryQuery ? decodeURIComponent(categoryQuery) : null;
+    setSelectedCategory(currentCategory);
+
+    let title = "Our Fresh Juices";
+    let description = "Discover a world of flavor with our handcrafted juices, made from the freshest ingredients.";
+    let juicesToDisplay;
+
+    if (currentCategory) {
+      juicesToDisplay = JUICES.filter(juice =>
+        juice.tags && juice.tags.includes(currentCategory)
+      );
+      const categoryDetails = HOME_CATEGORIES.find(cat => cat.name === currentCategory);
+      title = categoryDetails ? `${categoryDetails.name}` : `${currentCategory} Juices`;
+      description = `Fresh and delicious ${categoryDetails ? categoryDetails.name.toLowerCase() : currentCategory.toLowerCase()} juices.`;
+      document.title = `${categoryDetails ? categoryDetails.name : currentCategory} - Elixr`;
+    } else {
+      juicesToDisplay = JUICES.filter(juice =>
+        juice.category && TRADITIONAL_JUICE_CATEGORIES.includes(juice.category)
+      );
+      document.title = 'Our Juices - Elixr'; // Reset to default title
     }
 
-  } else {
-    displayedJuices = JUICES.filter(juice => 
-      juice.category && TRADITIONAL_JUICE_CATEGORIES.includes(juice.category)
-    );
-    // Reset document title for the main menu page
-     if (typeof window !== 'undefined') {
-        document.title = 'Our Juices - Elixr';
-    }
-  }
+    setDisplayedJuices(juicesToDisplay);
+    setPageTitle(title);
+    setPageDescription(description);
 
+  }, [categoryQuery]);
 
   return (
     <div className="container mx-auto px-4 py-8">
       {selectedCategory && (
         <Button variant="outline" asChild className="mb-8">
-          <Link href="/#categories"> 
+          <Link href="/#categories">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Categories
           </Link>
@@ -67,7 +73,7 @@ export default function MenuPage({ searchParams }: MenuPageProps) {
           {pageDescription}
         </p>
       </section>
-      
+
       {displayedJuices.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {displayedJuices.map((juice, index) => (
