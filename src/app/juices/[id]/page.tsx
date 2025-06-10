@@ -1,18 +1,45 @@
-
-"use client";
-
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import type { Juice } from '@/lib/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
-import { Button } from '@/components/ui/button';
-import { useCart } from '@/hooks/useCart';
-import { useToast } from "@/hooks/use-toast";
-import Image from 'next/image';
-import { Loader2, AlertTriangle, ShoppingCart, PlusCircle, MinusCircle, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { JUICES as FALLBACK_JUICES } from '@/lib/constants'; // Import fallback juices
+import JuiceDetailClient from './JuiceDetailClient';
+
+interface JuiceDetailPageProps {
+  params: { id: string };
+}
+
+// Required for static export with dynamic routes
+export async function generateStaticParams() {
+  if (!isSupabaseConfigured || !supabase) {
+    console.warn("generateStaticParams (juices): Supabase not configured. Falling back to local constants for juice IDs.");
+    return FALLBACK_JUICES.map(juice => ({
+      id: juice.id.toString(),
+    }));
+  }
+
+  try {
+    const { data, error } = await supabase.from('juices').select('id');
+    if (error) {
+      console.error("generateStaticParams (juices): Error fetching juice IDs from Supabase, falling back to constants.", error);
+      return FALLBACK_JUICES.map(juice => ({
+        id: juice.id.toString(),
+      }));
+    }
+    if (data) {
+      return data.map(juice => ({
+        id: juice.id.toString(),
+      }));
+    }
+    return FALLBACK_JUICES.map(juice => ({ // Fallback if data is null but no error
+      id: juice.id.toString(),
+    }));
+  } catch (e) {
+    console.error("generateStaticParams (juices): Unexpected error, falling back to constants.", e);
+    return FALLBACK_JUICES.map(juice => ({
+      id: juice.id.toString(),
+    }));
+  }
+}
+
 
 export default function JuiceDetailPage() {
   const params = useParams();
@@ -36,7 +63,18 @@ export default function JuiceDetailPage() {
 
     const fetchJuice = async () => {
       if (!isSupabaseConfigured || !supabase) {
-        setError("Database connection is not configured.");
+        // Attempt to find in fallback if Supabase isn't configured
+        const fallbackJuice = FALLBACK_JUICES.find(j => j.id.toString() === juiceId);
+        if (fallbackJuice) {
+          setJuice(fallbackJuice);
+          document.title = `${fallbackJuice.name} - Elixr`;
+           const currentStock = fallbackJuice.stockQuantity || 0;
+            if (currentStock <= 0) setAvailabilityStatus('Out of Stock');
+            else if (currentStock <= 10) setAvailabilityStatus('Low Stock');
+            else setAvailabilityStatus('In Stock');
+        } else {
+          setError("Database connection is not configured and juice not found in fallback data.");
+        }
         setIsLoading(false);
         return;
       }
@@ -54,7 +92,7 @@ export default function JuiceDetailPage() {
         if (dbError) {
           console.error("Error fetching juice details:", dbError);
           if (dbError.code === 'PGRST116') { 
-            setError("Juice not found.");
+            setError("Juice not found in database.");
           } else {
             setError(`Failed to load juice details: ${dbError.message}`);
           }
@@ -64,9 +102,8 @@ export default function JuiceDetailPage() {
              price: Number(data.price) || 0,
              stockQuantity: Number(data.stock_quantity) ?? Number(data.stockQuantity) ?? 0,
              tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(',') : []),
-             image: data.image_url || data.image,
+             image: data.image_url || data.image || 'https://placehold.co/600x400.png',
              dataAiHint: data.data_ai_hint || data.dataAiHint,
-             // Ensure these fields are explicitly part of the type if they might be missing from `data`
              name: data.name || "Unnamed Juice",
              flavor: data.flavor || "N/A",
           };
@@ -83,7 +120,7 @@ export default function JuiceDetailPage() {
             }
 
         } else {
-          setError("Juice not found.");
+          setError("Juice not found in database.");
         }
       } catch (e: any) {
         console.error("Unexpected error fetching juice:", e);
