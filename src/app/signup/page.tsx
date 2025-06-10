@@ -15,21 +15,22 @@ import { useAuth } from '@/context/AuthContext';
 import { signUpSchema } from '@/lib/zod-schemas';
 import type { SignUpFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle } from 'lucide-react';
-import type { AuthError } from 'firebase/auth';
+import { Loader2, AlertTriangle, MailCheck } from 'lucide-react';
+import type { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp, user, loading: authLoading, isSupabaseConfigured } = useAuth(); // Use isSupabaseConfigured
+  const { signUp, user, loading: authLoading, isSupabaseConfigured } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
   });
 
- useEffect(() => {
-    if (!authLoading && user && isSupabaseConfigured) { // Only redirect if configured and user exists
+  useEffect(() => {
+    if (!authLoading && user && isSupabaseConfigured) {
       router.push('/'); 
     }
   }, [user, authLoading, router, isSupabaseConfigured]);
@@ -39,25 +40,35 @@ export default function SignUpPage() {
   }
 
   const onSubmit = async (data: SignUpFormData) => {
-     if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured) {
       setError("Account creation is currently unavailable. Please check application configuration.");
       return;
     }
     setError(null);
+    setSuccessMessage(null);
     setSubmitLoading(true);
+
+    // Call the signUp function from AuthContext
     const result = await signUp(data);
-    if (result && 'uid' in result && typeof result.uid === 'string') { 
-      router.push('/'); 
-    } else { 
-      const errorResult = result as AuthError | { code: string; message: string };
-      if (errorResult.code === 'auth/email-already-in-use') {
+
+    if (result.error) {
+      const supabaseError = result.error as SupabaseAuthError;
+      if (supabaseError.message.includes("User already registered")) { // Supabase often returns this specific message
         setError("This email is already registered. Try logging in.");
-      } else if (errorResult.code === 'auth/not-configured') {
-         setError(errorResult.message); // Show specific "not configured" message from AuthContext
+      } else if (result.error.code === 'supabase/not-configured') {
+        setError(result.error.message);
+      } else {
+        setError(supabaseError.message || "An unexpected error occurred during sign up. Please try again.");
       }
-      else {
-        setError(errorResult.message || "An unexpected error occurred. Please try again.");
-      }
+    } else if (result.data?.user) {
+      // User object exists, check if session is null (which might indicate email confirmation needed)
+      // Supabase's signUp returns user data even if confirmation is pending.
+      // The key is that result.error is null.
+      setSuccessMessage("Sign up successful! Please check your email to confirm your account. You will be able to log in after confirming.");
+      // Don't redirect here, user needs to confirm email first.
+    } else {
+      // This case should ideally not be hit if Supabase returns user or error
+      setError("An unexpected issue occurred. User data not received. Please try again.");
     }
     setSubmitLoading(false);
   };
@@ -71,7 +82,6 @@ export default function SignUpPage() {
   }
   if (user && isSupabaseConfigured) return null;
 
-
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md shadow-xl">
@@ -80,7 +90,7 @@ export default function SignUpPage() {
           <CardDescription>Join Elixr and start your fresh juice journey!</CardDescription>
         </CardHeader>
         <CardContent>
-           {!isSupabaseConfigured && (
+          {!isSupabaseConfigured && !successMessage && (
             <Alert variant="destructive" className="mb-6">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Sign Up Unavailable</AlertTitle>
@@ -89,33 +99,45 @@ export default function SignUpPage() {
               </AlertDescription>
             </Alert>
           )}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTitle>Sign Up Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
-              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
-            </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
-              {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign Up
-            </Button>
-          </form>
+
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Sign Up Failed</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert variant="default" className="mb-6 bg-green-50 border-green-300">
+              <MailCheck className="h-5 w-5 text-green-600" />
+              <AlertTitle className="text-green-700">Check Your Email!</AlertTitle>
+              <AlertDescription className="text-green-600">{successMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {!successMessage && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
+                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
+                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+              </div>
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
+                {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign Up
+              </Button>
+            </form>
+          )}
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">
