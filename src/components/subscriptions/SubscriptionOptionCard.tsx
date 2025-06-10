@@ -17,7 +17,7 @@ const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOption
   return (
     <Card className={`flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg ${isFeatured ? 'border-2 border-primary relative ring-2 ring-primary/30' : 'bg-card'}`}>
       {isFeatured && (
-        <div className="absolute -top-3 -right-3 bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold rounded-full shadow-md transform rotate-12 flex items-center gap-1">
+        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold rounded-full shadow-md transform rotate-12 flex items-center gap-1">
           <Zap size={14} /> Popular
         </div>
       )}
@@ -66,3 +66,4 @@ const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOption
 };
 
 export default SubscriptionOptionCard;
+
