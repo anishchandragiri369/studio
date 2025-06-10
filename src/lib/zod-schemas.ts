@@ -32,3 +32,9 @@ export const checkoutAddressSchema = z.object({
   country: z.string().min(1, { message: "Country is required." }),
 });
 
+export const editProfileSchema = z.object({
+  fullName: z.string().min(1, { message: "Full name is required." }).optional(),
+  // Supabase user_metadata usually stores avatar_url, not the file itself directly from a form like this.
+  // For simplicity, we'll omit avatar direct upload here. It's a more complex feature.
+  // avatarUrl: z.string().url({ message: "Invalid URL format." }).optional(), 
+});

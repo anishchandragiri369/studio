@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package } from 'lucide-react';
+import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { MOCK_USER_ORDERS } from '@/lib/constants'; // Using mock data
 import type { Order } from '@/lib/types';
@@ -77,6 +77,14 @@ export default function AccountPage() {
 
   const getInitials = (email: string) => {
     const parts = email.split('@')[0];
+    const namePart = user.user_metadata?.full_name || parts;
+    if (namePart) {
+        const nameParts = namePart.split(' ');
+        if (nameParts.length > 1) {
+            return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+        }
+        return namePart.substring(0, 2).toUpperCase();
+    }
     return parts.substring(0, 2).toUpperCase();
   };
 
@@ -86,7 +94,7 @@ export default function AccountPage() {
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-3">
           My Account
         </h1>
-        <p className="text-lg text-muted-foreground">Welcome back, {user.email?.split('@')[0] || 'User'}!</p>
+        <p className="text-lg text-muted-foreground">Welcome back, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}!</p>
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
@@ -110,7 +118,11 @@ export default function AccountPage() {
               <p className="text-xs text-muted-foreground text-center">Member since: {new Date(user.created_at).toLocaleDateString()}</p>
             </CardContent>
             <CardFooter className="flex-col gap-3">
-              <Button variant="outline" className="w-full" disabled>Edit Profile (Coming Soon)</Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/account/edit-profile">
+                    <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                </Link>
+              </Button>
               <Button onClick={handleLogout} variant="destructive" className="w-full">
                 <LogOut className="mr-2 h-4 w-4" /> Log Out
               </Button>
