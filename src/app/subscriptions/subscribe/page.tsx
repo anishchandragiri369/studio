@@ -121,21 +121,24 @@ function SubscribePageContents() {
                     </CardDescription>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+                <CardContent className="space-y-4 max-h-[500px] overflow-y-auto p-4">
                   {JUICES.map(juice => (
-                    <div key={juice.id} className="flex items-center justify-between gap-4 p-3 border rounded-md hover:bg-muted/20">
-                      <div className="flex items-center gap-3">
-                        <Image src={juice.image} alt={juice.name} width={80} height={80} className="rounded-md object-cover" data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()} />
-                        <div>
-                          <p className="font-medium text-sm">{juice.name}</p>
-                          <p className="text-xs text-muted-foreground">Rs.{juice.price.toFixed(2)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                    <div key={juice.id} className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-muted/20 transition-colors text-center">
+                      <Image 
+                        src={juice.image} 
+                        alt={juice.name} 
+                        width={80} 
+                        height={80} 
+                        className="rounded-lg object-cover shadow-md" 
+                        data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()}
+                      />
+                      <p className="font-medium text-sm mt-1">{juice.name}</p>
+                      {/* Quantity controls */}
+                      <div className="flex items-center gap-2 mt-1">
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-7 w-7"
+                          className="h-8 w-8" // Slightly smaller buttons for vertical layout
                           onClick={() => handleQuantityChange(juice.id, (customSelections[juice.id] || 0) - 1)}
                           disabled={(customSelections[juice.id] || 0) === 0}
                         >
@@ -148,14 +151,14 @@ function SubscribePageContents() {
                             const val = parseInt(e.target.value, 10);
                             if (!isNaN(val)) handleQuantityChange(juice.id, val < 0 ? 0 : val );
                           }}
-                          className="w-12 h-7 text-center text-sm px-1"
+                          className="w-12 h-8 text-center text-sm px-1" // Slightly smaller input
                           min="0"
                           disabled={!canAddMore && (customSelections[juice.id] || 0) === 0}
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-7 w-7"
+                          className="h-8 w-8" // Slightly smaller buttons
                           onClick={() => handleQuantityChange(juice.id, (customSelections[juice.id] || 0) + 1)}
                           disabled={!canAddMore}
                         >
