@@ -75,7 +75,7 @@ export const JUICES: Juice[] = [
     flavor: 'Spinach, Kale, Cucumber, Apple, Lemon',
     price: 49.99, // Price for the whole plan
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'green cleanse detox',
+    dataAiHint: 'green detox',
     description: 'A 3-day supply of potent green juices designed to reset your system. Includes a variety of 5 green juices per day.',
     category: 'Detox Plans',
     tags: ['cleanse', 'green juices', '3-day plan', 'healthy reset'],
@@ -86,7 +86,7 @@ export const JUICES: Juice[] = [
     flavor: 'Variety of fruit & vegetable juices',
     price: 99.99, // Price for the whole plan
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'rainbow detox juices',
+    dataAiHint: 'colorful juices',
     description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
     category: 'Detox Plans',
     tags: ['full detox', '7-day plan', 'wellness', 'variety pack'],
@@ -108,8 +108,8 @@ export const JUICES: Juice[] = [
     name: 'Tropical Sunshine Bowl',
     flavor: 'Mango, Pineapple, Kiwi, Coconut Flakes',
     price: 9.49,
-    image: 'https://placehold.co/720x1280.png', // Updated placeholder size
-    dataAiHint: 'mango pineapple bowl',
+    image: 'https://placehold.co/720x1280.png', 
+    dataAiHint: 'mango pineapple',
     description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
     category: 'Fruit Bowls',
     tags: ['tropical fruits', 'breakfast bowl', 'refreshing', 'exotic'],
@@ -190,3 +190,77 @@ export const NAV_LINKS = [
 ];
 
 export const TRADITIONAL_JUICE_CATEGORIES = ['Fruit Blast', 'Green Power', 'Exotic Flavors', 'Veggie Fusion'];
+
+export interface HomeCategory {
+  id: string;
+  name: string;
+  image: string;
+  dataAiHint: string;
+  href: string;
+}
+
+export const HOME_CATEGORIES: HomeCategory[] = [
+  {
+    id: 'immunity-booster',
+    name: 'Immunity Booster',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'citrus fruits',
+    href: '/menu?category=Immunity%20Booster',
+  },
+  {
+    id: 'skin-glow',
+    name: 'Skin Glow',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'berries avocado',
+    href: '/menu?category=Skin%20Glow',
+  },
+  {
+    id: 'radiant-health',
+    name: 'Radiant Health',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'green vegetables',
+    href: '/menu?category=Radiant%20Health',
+  },
+  {
+    id: 'energy-kick',
+    name: 'Energy Kick',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'tropical fruits',
+    href: '/menu?category=Energy%20Kick',
+  },
+  {
+    id: 'detoxify',
+    name: 'Detoxify',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'lemon cucumber',
+    href: '/menu?category=Detoxify',
+  },
+  {
+    id: 'workout-fuel',
+    name: 'Workout Fuel',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'banana oats',
+    href: '/menu?category=Workout%20Fuel',
+  },
+  {
+    id: 'daily-wellness',
+    name: 'Daily Wellness',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'apple carrot',
+    href: '/menu?category=Daily%20Wellness',
+  },
+  {
+    id: 'kids-friendly',
+    name: 'Kids Friendly',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'strawberry banana',
+    href: '/menu?category=Kids%20Friendly',
+  },
+  {
+    id: 'seasonal-specials',
+    name: 'Seasonal Specials',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'watermelon mint',
+    href: '/menu?category=Seasonal%20Specials',
+  },
+];

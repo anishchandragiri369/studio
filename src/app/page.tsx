@@ -1,12 +1,13 @@
 
 import { Button } from '@/components/ui/button';
-import { JUICES, SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { JUICES, SUBSCRIPTION_PLANS, HOME_CATEGORIES } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Gift, Sparkles, Users } from 'lucide-react';
 import JuiceRecommenderClient from '@/components/recommendations/JuiceRecommenderClient';
 import SubscriptionOptionCard from '@/components/subscriptions/SubscriptionOptionCard';
+import CategoryScroller from '@/components/categories/CategoryScroller'; // Import the new component
 
 export default function HomePage() {
   const featuredJuices = JUICES.slice(0, 4); // Show first 4 juices as featured
@@ -57,6 +58,16 @@ export default function HomePage() {
               <Link href="/menu">See All Juices <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* New Categories Section */}
+      <section className="py-16 bg-muted/20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-headline text-center text-gray-800 dark:text-gray-200 mb-12">
+            Shop by Category
+          </h2>
+          <CategoryScroller categories={HOME_CATEGORIES} />
         </div>
       </section>
       
