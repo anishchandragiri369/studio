@@ -13,7 +13,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
 
 // Define a constant for the admin email for easy modification
-const ADMIN_EMAIL = 'admin@elixr.com';
+const ADMIN_EMAILS = ['admin@elixr.com', 'anishchandragiri@gmail.com'];
 
 interface AuthContextType {
   user: User | null;
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
-      if (currentUser && currentUser.email === ADMIN_EMAIL) {
+      if (currentUser && currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
@@ -73,10 +73,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: credentials.email,
         password: credentials.password,
       });
+      // Even if data.user exists, an error might be present if email confirmation is required but something else went wrong.
+      // Or if data.user is null but error is also null (edge case, but good to be defensive).
       if (error) return { data: null, error };
+      if (!data.user && !error) return {data: null, error: {name: "SignUpNoUserError", message: "Sign up did not return a user and no error."} as SupabaseAuthError}
       return { data: { user: data.user, session: data.session }, error: null };
     } catch (e: any) {
-      return { data: null, error: { name: 'SignUpError', message: e.message || "An unexpected error occurred during sign up." } as SupabaseAuthError };
+      return { data: null, error: { name: 'SignUpUnexpectedError', message: e.message || "An unexpected error occurred during sign up." } as SupabaseAuthError };
     }
   };
 
@@ -89,9 +92,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password: credentials.password,
       });
       if (error) return { data: null, error };
+      if (!data.user && !error) return {data: null, error: {name: "LoginNoUserError", message: "Login did not return a user and no error."} as SupabaseAuthError}
       return { data: { user: data.user, session: data.session }, error: null };
     } catch (e: any) {
-      return { data: null, error: { name: 'LoginError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
+      return { data: null, error: { name: 'LoginUnexpectedError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
     }
   };
 
@@ -114,7 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const sendPasswordReset = async (data: ForgotPasswordFormData): Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
-    // Default to current origin if window is defined, otherwise you might need a specific env var for server-side scenarios
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
 
     const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
