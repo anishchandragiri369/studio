@@ -22,7 +22,7 @@ import {
 
 const Navbar = () => {
   const { getItemCount } = useCart();
-  const { user, logOut, loading: authLoading, isFirebaseConfigured } = useAuth();
+  const { user, logOut, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured from context
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -36,11 +36,10 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logOut();
-    router.push('/'); // Redirect to home after logout
+    router.push('/'); 
   };
 
-  // Filter out login/signup if user is logged in OR if Firebase isn't configured (for the main nav links)
-  const navLinks = (user || !isFirebaseConfigured)
+  const navLinks = (user || !isFirebaseConfigured) // Use the flag from context
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
 
@@ -73,7 +72,7 @@ const Navbar = () => {
 
           {!authLoading && (
             <>
-              {user ? ( // User is logged in (Firebase must be configured for this to be true)
+              {user && isFirebaseConfigured ? ( 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label="User Menu">
@@ -96,7 +95,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : isFirebaseConfigured ? ( // No user, but Firebase is configured
+              ) : isFirebaseConfigured ? ( 
                 <div className="hidden md:flex items-center gap-2">
                   <Button variant="ghost" asChild>
                     <Link href="/login">
@@ -109,7 +108,7 @@ const Navbar = () => {
                     </Link>
                   </Button>
                 </div>
-              ) : ( // Firebase not configured
+              ) : ( 
                 <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-destructive text-xs" title="Firebase is not configured. Authentication features are disabled.">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Auth Disabled</span>
@@ -146,13 +145,13 @@ const Navbar = () => {
                   <hr className="my-2"/>
                   {!authLoading && (
                     <>
-                      {user ? ( // User is logged in
+                      {user && isFirebaseConfigured ? ( 
                         <SheetClose asChild>
                           <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
                             <LogOut className="mr-2 h-5 w-5" /> Logout
                           </Button>
                         </SheetClose>
-                      ) : isFirebaseConfigured ? ( // No user, Firebase configured
+                      ) : isFirebaseConfigured ? ( 
                         <>
                           <SheetClose asChild>
                             <Link href="/login" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
@@ -165,7 +164,7 @@ const Navbar = () => {
                             </Link>
                           </SheetClose>
                         </>
-                      ) : ( // Firebase not configured
+                      ) : ( 
                        <SheetClose asChild>
                          <div className="flex items-center gap-1.5 justify-center py-2 text-sm text-destructive bg-destructive/10 rounded-md" title="Firebase is not configured. Authentication features are disabled.">
                            <AlertTriangle className="h-4 w-4" />

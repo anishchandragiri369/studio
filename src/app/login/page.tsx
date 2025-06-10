@@ -20,7 +20,7 @@ import type { AuthError } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { logIn, user, loading: authLoading, isFirebaseConfigured } = useAuth();
+  const { logIn, user, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -29,10 +29,10 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/'); // Redirect if already logged in
+    if (!authLoading && user && isFirebaseConfigured) { // Only redirect if configured and user exists
+      router.push('/'); 
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, isFirebaseConfigured]);
   
   if (typeof window !== 'undefined') {
     document.title = 'Login - Elixr';
@@ -40,21 +40,21 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     if (!isFirebaseConfigured) {
-      setError("Authentication is currently unavailable. Please try again later.");
+      setError("Authentication is currently unavailable. Please check application configuration.");
       return;
     }
     setError(null);
     setSubmitLoading(true);
     const result = await logIn(data);
-    // Check if result is User (success) or AuthError/CustomError (failure)
-    if (result && 'uid' in result && typeof result.uid === 'string') { // It's a User
+    
+    if (result && 'uid' in result && typeof result.uid === 'string') { 
       router.push('/');
-    } else { // It's an AuthError or our custom NOT_CONFIGURED_ERROR
+    } else { 
       const errorResult = result as AuthError | { code: string; message: string };
       if (errorResult.code === 'auth/invalid-credential' || errorResult.code === 'auth/user-not-found' || errorResult.code === 'auth/wrong-password') {
         setError("Invalid email or password. Please try again.");
       } else if (errorResult.code === 'auth/not-configured') {
-        setError(errorResult.message);
+        setError(errorResult.message); // Show specific "not configured" message from AuthContext
       }
       else {
         setError(errorResult.message || "An unexpected error occurred. Please try again.");
@@ -71,7 +71,7 @@ export default function LoginPage() {
     );
   }
   
-  if (user) return null; // Already redirecting via useEffect
+  if (user && isFirebaseConfigured) return null; 
 
 
   return (
@@ -87,7 +87,7 @@ export default function LoginPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Authentication Unavailable</AlertTitle>
               <AlertDescription>
-                Login features are currently disabled due to a configuration issue. Please try again later.
+                Login features are currently disabled due to a configuration issue. The site administrator has been notified. Please try again later or continue browsing other parts of the site.
               </AlertDescription>
             </Alert>
           )}

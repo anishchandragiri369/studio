@@ -20,7 +20,7 @@ import type { AuthError } from 'firebase/auth';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp, user, loading: authLoading, isFirebaseConfigured } = useAuth();
+  const { signUp, user, loading: authLoading, isFirebaseConfigured } = useAuth(); // Use isFirebaseConfigured
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -29,10 +29,10 @@ export default function SignUpPage() {
   });
 
  useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/'); // Redirect if already logged in
+    if (!authLoading && user && isFirebaseConfigured) { // Only redirect if configured and user exists
+      router.push('/'); 
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, isFirebaseConfigured]);
 
   if (typeof window !== 'undefined') {
     document.title = 'Sign Up - Elixr';
@@ -40,20 +40,20 @@ export default function SignUpPage() {
 
   const onSubmit = async (data: SignUpFormData) => {
      if (!isFirebaseConfigured) {
-      setError("Sign up is currently unavailable. Please try again later.");
+      setError("Account creation is currently unavailable. Please check application configuration.");
       return;
     }
     setError(null);
     setSubmitLoading(true);
     const result = await signUp(data);
-    if (result && 'uid' in result && typeof result.uid === 'string') { // User
+    if (result && 'uid' in result && typeof result.uid === 'string') { 
       router.push('/'); 
-    } else { // AuthError or custom error
+    } else { 
       const errorResult = result as AuthError | { code: string; message: string };
       if (errorResult.code === 'auth/email-already-in-use') {
         setError("This email is already registered. Try logging in.");
       } else if (errorResult.code === 'auth/not-configured') {
-        setError(errorResult.message);
+         setError(errorResult.message); // Show specific "not configured" message from AuthContext
       }
       else {
         setError(errorResult.message || "An unexpected error occurred. Please try again.");
@@ -69,7 +69,7 @@ export default function SignUpPage() {
       </div>
     );
   }
-  if (user) return null;
+  if (user && isFirebaseConfigured) return null;
 
 
   return (
@@ -85,7 +85,7 @@ export default function SignUpPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Sign Up Unavailable</AlertTitle>
               <AlertDescription>
-                Account creation is currently disabled due to a configuration issue. Please try again later.
+                Account creation features are currently disabled due to a configuration issue. The site administrator has been notified. Please try again later or continue browsing other parts of the site.
               </AlertDescription>
             </Alert>
           )}
