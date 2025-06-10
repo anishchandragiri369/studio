@@ -4,85 +4,85 @@
 
 @layer base {
   :root {
-    --background: 120 60% 97%; /* Very light, vibrant mint green */
-    --foreground: 220 15% 25%; /* Dark cool gray for text */
+    --background: 40 100% 98%; /* Very pale, warm off-white (like fruit flesh) */
+    --foreground: 0 0% 10%; /* Near black for text */
 
-    --card: 120 60% 99%; /* Almost white with a mint hint */
-    --card-foreground: 220 15% 25%;
+    --card: 40 100% 99%; /* Slightly warmer off-white for cards */
+    --card-foreground: 0 0% 10%;
 
-    --popover: 120 60% 99%; /* Almost white with a mint hint */
-    --popover-foreground: 220 15% 25%;
+    --popover: 40 100% 99%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 40 95% 55%; /* Vibrant sunny orange */
-    --primary-foreground: 40 80% 98%; /* Light color for text on primary */
+    --primary: 30 95% 55%; /* Vibrant fruity orange */
+    --primary-foreground: 30 80% 98%; /* Light color for text on orange */
 
-    --secondary: 130 60% 88%; /* Lighter, vibrant green */
-    --secondary-foreground: 130 40% 30%; /* Darker green text for secondary */
+    --secondary: 140 30% 30%; /* Muted, darker green for secondary elements/buttons */
+    --secondary-foreground: 140 30% 90%; /* Light, slightly greenish gray for text on secondary */
 
-    --muted: 120 50% 94%; /* Muted mint */
-    --muted-foreground: 220 10% 45%; /* Lighter cool gray for muted text */
+    --muted: 40 20% 94%; /* Light, warm gray for muted backgrounds */
+    --muted-foreground: 40 10% 40%; /* Medium dark gray for muted text */
 
-    --accent: 330 80% 60%; /* Vibrant berry pink/magenta */
-    --accent-foreground: 330 70% 98%; /* Light color for text on accent */
+    --accent: 130 70% 45%; /* Vibrant, natural green (replaces pink) */
+    --accent-foreground: 130 60% 98%; /* Light color for text on green accent */
 
     --destructive: 0 72% 51%; /* Standard destructive red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 120 40% 88%; /* Mint-derived border */
-    --input: 120 50% 96%; /* Light mint input background */
-    --ring: 40 95% 55%; /* Ring color (primary - sunny orange) */
+    --border: 40 20% 88%; /* Light warm gray border */
+    --input: 40 50% 96%; /* Light warm gray input background, distinct from main background */
+    --ring: 30 95% 55%; /* Ring color (primary orange) */
 
     --radius: 0.5rem;
 
-    /* Sidebar specific colors */
-    --sidebar-background: 120 55% 95%; 
-    --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 40 95% 55%;
-    --sidebar-primary-foreground: 40 80% 98%;
-    --sidebar-accent: 330 80% 60%;
-    --sidebar-accent-foreground: 330 70% 98%;
-    --sidebar-border: 120 40% 85%;
-    --sidebar-ring: 40 95% 55%;
+    /* Sidebar specific colors - will follow the main theme principles */
+    --sidebar-background: 40 60% 96%; /* Lighter version of main background for sidebar */
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 30 95% 55%;
+    --sidebar-primary-foreground: 30 80% 98%;
+    --sidebar-accent: 130 70% 45%;
+    --sidebar-accent-foreground: 130 60% 98%;
+    --sidebar-border: 40 20% 85%;
+    --sidebar-ring: 30 95% 55%;
   }
 
   .dark {
-    --background: 120 10% 10%; /* Very dark, slightly desaturated mint/teal */
-    --foreground: 120 30% 92%; /* Light minty text */
+    --background: 40 5% 8%; /* Very dark, slightly warm gray */
+    --foreground: 40 100% 95%; /* Very light, slightly warm off-white text */
 
-    --card: 120 10% 13%;
-    --card-foreground: 120 30% 92%;
+    --card: 40 5% 12%;
+    --card-foreground: 40 100% 95%;
 
-    --popover: 120 10% 13%;
-    --popover-foreground: 120 30% 92%;
+    --popover: 40 5% 12%;
+    --popover-foreground: 40 100% 95%;
 
-    --primary: 40 90% 50%; /* Vibrant orange, adjusted for dark */
-    --primary-foreground: 40 20% 15%; /* Dark text on primary for dark mode */
+    --primary: 30 90% 50%; /* Vibrant orange, adjusted for dark */
+    --primary-foreground: 30 15% 10%; /* Dark text on primary for dark mode */
 
-    --secondary: 130 20% 20%; /* Darker vibrant green */
-    --secondary-foreground: 130 30% 92%;
+    --secondary: 140 25% 20%; /* Darker muted green for dark mode */
+    --secondary-foreground: 140 25% 85%; /* Light text for dark secondary */
 
-    --muted: 120 10% 18%; /* Muted dark mint */
-    --muted-foreground: 120 20% 70%; /* Lighter mint-tinted muted text */
+    --muted: 40 5% 15%; /* Dark gray for muted backgrounds */
+    --muted-foreground: 40 10% 65%; /* Lighter gray for muted text */
 
-    --accent: 330 75% 55%; /* Vibrant pink/berry, adjusted for dark */
-    --accent-foreground: 330 15% 15%; /* Dark text on accent for dark mode */
+    --accent: 130 65% 50%; /* Vibrant green, adjusted for dark mode */
+    --accent-foreground: 130 20% 10%; /* Dark text on accent for dark mode */
 
     --destructive: 0 60% 45%; 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 120 10% 22%; /* Dark mint-derived border */
-    --input: 120 10% 22%; /* Dark mint input background */
-    --ring: 40 90% 50%; /* Ring color (primary - sunny orange) */
+    --border: 40 5% 20%; /* Dark warm gray border */
+    --input: 40 5% 20%; /* Dark warm gray input background */
+    --ring: 30 90% 50%; /* Ring color (primary orange) */
     
     /* Dark Sidebar */
-    --sidebar-background: 120 10% 8%;
-    --sidebar-foreground: 120 30% 92%;
-    --sidebar-primary: 40 90% 50%;
-    --sidebar-primary-foreground: 40 20% 15%;
-    --sidebar-accent: 330 75% 55%;
-    --sidebar-accent-foreground: 330 15% 15%;
-    --sidebar-border: 120 10% 18%;
-    --sidebar-ring: 40 90% 50%;
+    --sidebar-background: 40 5% 6%; /* Even darker for sidebar */
+    --sidebar-foreground: 40 100% 95%;
+    --sidebar-primary: 30 90% 50%;
+    --sidebar-primary-foreground: 30 15% 10%;
+    --sidebar-accent: 130 65% 50%;
+    --sidebar-accent-foreground: 130 20% 10%;
+    --sidebar-border: 40 5% 15%;
+    --sidebar-ring: 30 90% 50%;
   }
 }
 
