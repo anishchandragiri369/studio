@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet } from 'lucide-react'; // Added Wallet
+import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet, Loader2 } from 'lucide-react'; // Added Wallet & Loader2
 import { useToast } from "@/hooks/use-toast";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AddressAutocomplete from '@/components/checkout/AddressAutocomplete';
+import { useState } from 'react'; // Added useState
 
 export default function CheckoutPage() {
   const { toast } = useToast();
@@ -23,6 +24,7 @@ export default function CheckoutPage() {
       country: 'India', // Default country
     }
   });
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false); // State for payment processing
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -32,8 +34,6 @@ export default function CheckoutPage() {
       title: "Order Placed (Conceptual)",
       description: "Thank you for your order! Address details logged. This is a conceptual confirmation for standard checkout.",
     });
-    // In a real scenario, after address submission, you might proceed to a payment step
-    // or integrate payment directly after address validation if using a single-step checkout.
   };
 
   const handlePlaceSelected = (placeDetails: {
@@ -50,16 +50,54 @@ export default function CheckoutPage() {
     setValue('country', placeDetails.country || 'India', { shouldValidate: true });
   };
   
-  const handleCashfreePayment = () => {
-    // 1. In a real app, collect order details (amount, items) from cart/state.
-    // 2. Call your backend API (e.g., /api/cashfree/create-order) with order details.
-    // 3. Backend creates order with Cashfree and returns order_token.
-    // 4. Use Cashfree's JS SDK with the order_token to initiate payment.
+  const handleCashfreePayment = async () => {
+    setIsProcessingPayment(true);
     toast({
-      title: "Cashfree Payment (Conceptual)",
-      description: "In a real integration: 1. Call backend to create Cashfree order. 2. Use Cashfree SDK to open payment page.",
+      title: "Processing Cashfree Payment...",
+      description: "Attempting to create a conceptual order with our backend.",
     });
-    console.log("Conceptual Cashfree payment initiated. Order details would be sent to backend here.");
+
+    try {
+      // 1. Call your backend API to create a Cashfree order
+      const response = await fetch('/api/cashfree/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // body: JSON.stringify({ /* order details like amount, items from cart/state */ }), // Send actual order details
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log("Conceptual Cashfree backend response:", result);
+        toast({
+          title: "Cashfree Order Created (Conceptual)",
+          description: `Received orderToken: ${result.data?.orderToken}. Next, use Cashfree JS SDK.`,
+        });
+        // 2. In a real app, use result.data.orderToken with Cashfree's JS SDK
+        //    to initiate the payment on the frontend.
+        //    Example (conceptual):
+        //    const cfCheckout = new CashfreeCheckout(result.data.orderToken);
+        //    cfCheckout.doPayment(); // This would open Cashfree's payment page/modal
+        alert(`Conceptual: Received orderToken: ${result.data?.orderToken}. Would now invoke Cashfree SDK.`);
+      } else {
+        toast({
+          title: "Cashfree Order Failed (Conceptual)",
+          description: result.message || "Could not create order with backend.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error calling /api/cashfree/create-order:", error);
+      toast({
+        title: "Cashfree Payment Error (Conceptual)",
+        description: "Failed to connect to backend for Cashfree order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   if (typeof window !== 'undefined') {
@@ -200,8 +238,14 @@ export default function CheckoutPage() {
                         variant="outline" 
                         className="mt-2 w-full border-primary text-primary hover:bg-primary/10"
                         onClick={handleCashfreePayment}
+                        disabled={isProcessingPayment}
                       >
-                        <Wallet className="mr-2 h-4 w-4" /> Pay with Cashfree (Conceptual)
+                        {isProcessingPayment ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wallet className="mr-2 h-4 w-4" />
+                        )}
+                         Pay with Cashfree (Conceptual)
                       </Button>
                     </div>
                   </CardContent>
@@ -218,6 +262,7 @@ export default function CheckoutPage() {
                     <Info className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
                     <AlertDescription>
                     This is a conceptual checkout. Clicking 'Confirm Details' will log your address. Payment method selection is for demonstration.
+                    Cashfree payment is a conceptual frontend to backend call.
                     </AlertDescription>
                 </Alert>
               </form>
@@ -259,5 +304,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
