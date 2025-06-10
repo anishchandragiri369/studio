@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
-import { PlusCircle, MinusCircle, ShoppingCart, PackageX, Save, Minus, Plus, Loader2 } from 'lucide-react'; // Removed Edit
+import { PlusCircle, MinusCircle, ShoppingCart, PackageX, Save, Minus, Plus, Loader2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
@@ -25,7 +25,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
-  const [currentStock, setCurrentStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0); // Prioritize snake_case from DB
+  const [currentStock, setCurrentStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [editedStock, setEditedStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [availabilityStatus, setAvailabilityStatus] = useState<'In Stock' | 'Low Stock' | 'Out of Stock'>('In Stock');
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
@@ -55,10 +55,13 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
       });
       return;
     }
-    // Use juice.image_url if available (from DB), fallback to juice.image (from constants)
     const imageToUse = juice.image_url || juice.image;
     addToCart({ ...juice, image: imageToUse }, quantity);
     setQuantity(1);
+     toast({ // Added toast on successful add to cart
+        title: "Added to Cart!",
+        description: `${quantity} x ${juice.name} added.`,
+      });
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -94,7 +97,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
     try {
       const { error } = await supabase
         .from('juices')
-        .update({ stock_quantity: editedStock }) // Assuming 'stock_quantity' is your DB column
+        .update({ stock_quantity: editedStock })
         .eq('id', juice.id);
 
       if (error) {
@@ -133,45 +136,47 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
     }
   };
   
-  // Prefer image_url from Supabase, fallback to image from constants/local
   const displayImage = juice.image_url || juice.image;
-  // Ensure dataAiHint uses the correct source, preferring the direct DB field if available
-  const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase();
+  const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
   return (
     <Card className={cn(
-        "flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card",
+        "flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card group", // Added group for hover effects on link
         isEffectivelyOutOfStock && !isAdmin && "opacity-70"
       )}>
       <CardHeader className="p-0">
-        <div
-          className={cn(
-            "relative w-full",
-            (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3]" : "h-48 md:h-56" // Standard aspect ratio for most, adjusted for bowls/plans
-          )}
-        >
-          <Image
-            src={displayImage}
-            alt={juice.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
+          <div
             className={cn(
-                "transition-transform duration-300 group-hover:scale-105 object-cover",
-                isEffectivelyOutOfStock && "grayscale"
+              "relative w-full",
+              (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3]" : "h-48 md:h-56"
             )}
-            data-ai-hint={displayDataAiHint}
-            unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
-            onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
-          />
-           {isEffectivelyOutOfStock && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <PackageX className="h-16 w-16 text-white/70" />
-            </div>
-          )}
-        </div>
+          >
+            <Image
+              src={displayImage}
+              alt={juice.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className={cn(
+                  "transition-transform duration-300 group-hover:scale-105 object-cover",
+                  isEffectivelyOutOfStock && "grayscale"
+              )}
+              data-ai-hint={displayDataAiHint}
+              unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
+              onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
+            />
+            {isEffectivelyOutOfStock && (
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <PackageX className="h-16 w-16 text-white/70" />
+              </div>
+            )}
+          </div>
+        </Link>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
-        <CardTitle className="font-headline text-xl mb-1 text-primary">{juice.name}</CardTitle>
+        <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
+          <CardTitle className="font-headline text-xl mb-1 text-primary group-hover:text-accent transition-colors">{juice.name}</CardTitle>
+        </Link>
         <CardDescription className="text-sm text-muted-foreground mb-2">{juice.flavor}</CardDescription>
         <p className="text-xs text-foreground/80 mb-3 min-h-[3em] line-clamp-3">{juice.description}</p>
 
@@ -235,5 +240,3 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
 };
 
 export default JuiceCard;
-
-    
