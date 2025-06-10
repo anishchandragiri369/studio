@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, MapPin, Info } from 'lucide-react';
+import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,24 +13,39 @@ import type { CheckoutAddressFormData } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import AddressAutocomplete from '@/components/checkout/AddressAutocomplete'; // Import the new component
 
 export default function CheckoutPage() {
   const { toast } = useToast();
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutAddressFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
     defaultValues: {
       country: 'India', // Default country
     }
   });
 
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
   const handleFormSubmit: SubmitHandler<CheckoutAddressFormData> = (data) => {
     console.log("Checkout Form Data:", data);
-    // In a real application, this would trigger payment processing and order submission.
     toast({
       title: "Order Placed (Conceptual)",
       description: "Thank you for your order! Address details logged. This is a conceptual confirmation.",
     });
-    // Potentially redirect to an order confirmation page or clear cart after a delay.
+  };
+
+  const handlePlaceSelected = (placeDetails: {
+    addressLine1: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  }) => {
+    setValue('addressLine1', placeDetails.addressLine1, { shouldValidate: true });
+    setValue('city', placeDetails.city, { shouldValidate: true });
+    setValue('state', placeDetails.state, { shouldValidate: true });
+    setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
+    setValue('country', placeDetails.country || 'India', { shouldValidate: true }); // Default to India if not provided
   };
   
   if (typeof window !== 'undefined') {
@@ -64,12 +79,28 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-                {/* Shipping Information Section */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="font-headline text-xl">Shipping Address</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    
+                    <AddressAutocomplete 
+                      apiKey={googleMapsApiKey} 
+                      onPlaceSelected={handlePlaceSelected} 
+                    />
+                     {!googleMapsApiKey && (
+                        <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
+                          <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+                           <AlertTitle className="text-sm font-semibold">Address Autocomplete Not Configured</AlertTitle>
+                          <AlertDescription>
+                           To enable Google Maps address search, set the `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in your .env file and restart the server.
+                           You can still enter your address manually below.
+                          </AlertDescription>
+                       </Alert>
+                     )}
+
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name *</Label>
@@ -93,19 +124,6 @@ export default function CheckoutPage() {
                       <Input id="mobileNumber" type="tel" {...register("mobileNumber")} placeholder="+91 98765 43210" />
                     </div>
                     
-                    {/* Placeholder for Google Maps Search - Actual implementation is complex */}
-                    <div className="space-y-1">
-                       <Label htmlFor="googleMapsSearch">Search Address (e.g., Google Maps)</Label>
-                       <Input id="googleMapsSearch" placeholder="Start typing your address..." />
-                       <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
-                          <MapPin className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                          <AlertDescription>
-                           Live address search (like Google Maps Autocomplete) would populate fields below. This requires API setup. For now, please fill manually.
-                          </AlertDescription>
-                       </Alert>
-                    </div>
-
-
                     <div>
                       <Label htmlFor="addressLine1">Address Line 1 *</Label>
                       <Input id="addressLine1" {...register("addressLine1")} placeholder="123 Juice Street" />
@@ -145,7 +163,6 @@ export default function CheckoutPage() {
                   </CardContent>
                 </Card>
 
-                {/* Payment Method Section (Placeholder) */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
@@ -183,7 +200,6 @@ export default function CheckoutPage() {
               <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* This would dynamically list items from the cart */}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Juice A x 2</span>
                 <span className="font-semibold text-accent">Rs.11.98</span>
