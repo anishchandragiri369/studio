@@ -45,30 +45,26 @@ export async function POST(request: Request) {
   try {
     const body = await request.json(); // Get order details from request body
     const { 
-      orderAmount = 23.47, // Default example, should come from body.orderAmount
-      orderCurrency = "INR", // Default example
-      customerName = "Test Customer", // Example
-      customerEmail = "test@example.com", // Example
-      customerPhone = "9876543210", // Example
-      internalOrderId = `elixr_order_${Date.now()}` // Unique order ID for your system
+      orderAmount,
+      orderCurrency,
+      internalOrderId, // Unique order ID for your system
+      customerInfo, // Assuming customer details are nested
+      orderItems // Assuming order items are included
     } = body;
 
-    console.log(`[Cashfree API Conceptual] Received request to create order:`);
-    console.log(`  Amount: ${orderAmount} ${orderCurrency}`);
-    console.log(`  Internal Order ID: ${internalOrderId}`);
-    console.log(`  Customer: ${customerName}, ${customerEmail}, ${customerPhone}`);
-    console.log(`  Using App ID (conceptual): ${CASHFREE_APP_ID.substring(0, 5)}...`);
-
     // Step 3: Simulate Cashfree SDK API Call to create order
+    // Log received orderItems for debugging
+    console.log("[Cashfree API] Received orderItems:", orderItems);
+
     const orderRequest = {
       order_id: internalOrderId,
       order_amount: orderAmount,
       order_currency: orderCurrency,
       customer_details: {
         customer_id: `cust_${Date.now()}`, // Generate or retrieve your unique customer ID
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        customer_name: customerName,
+        customer_email: customerInfo.customerEmail,
+        customer_phone: customerInfo.customerPhone,
+        customer_name: customerInfo.customerName,
       },
       order_meta: {
         return_url: `http://localhost:3000/checkout/success?order_id=${internalOrderId}`, // Replace with your actual return URL

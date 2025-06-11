@@ -171,12 +171,14 @@ function CheckoutPageContents() {
       script.async = true;
       script.onload = () => {
         // Wait a bit to ensure SDK is fully initialized
-        setTimeout(() => {
+        console.log('Cashfree SDK script loaded. Waiting for initialization...');
+        setTimeout(() => { // Increased timeout for initialization check
           if (window.cashfree) {
+            console.log('Cashfree SDK initialized.');
             setIsSdkLoaded(true);
             resolve();
           } else {
-            reject(new Error('Cashfree SDK failed to initialize'));
+            reject(new Error('Cashfree SDK script loaded but window.cashfree object not found.'));
           }
         }, 1000);
       };
@@ -230,7 +232,7 @@ function CheckoutPageContents() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           orderAmount: currentOrderTotal,
           orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
           customerInfo: {
