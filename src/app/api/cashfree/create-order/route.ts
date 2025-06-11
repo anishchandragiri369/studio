@@ -10,6 +10,11 @@ const CASHFREE_API_VERSION = "2023-08-01"; // Use a recent, valid API version fo
 
 let sdkInitialized = false;
 
+console.log("[Cashfree API Init] Attempting to read CASHFREE_APP_ID:", CASHFREE_APP_ID ? "Present" : "MISSING or EMPTY");
+console.log("[Cashfree API Init] Attempting to read CASHFREE_SECRET_KEY:", CASHFREE_SECRET_KEY ? "Present (not logged)" : "MISSING or EMPTY");
+console.log("[Cashfree API Init] CASHFREE_API_MODE:", CASHFREE_API_MODE);
+
+
 if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
   try {
     Cashfree.XClientId = CASHFREE_APP_ID;
@@ -18,10 +23,6 @@ if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
       ? Cashfree.Environment.PRODUCTION 
       : Cashfree.Environment.SANDBOX;
     
-    // Optional: You can still use these for partner or error analytics if needed and supported by v5.
-    // Check v5 docs for XPartnerMerchantID and XEnableErrorAnalytics equivalents if required.
-    // Cashfree.XVerifySignature = true; // This is often handled by webhook verification logic.
-
     console.log(`[Cashfree SDK v5] SDK configured in ${Cashfree.XEnvironment} mode.`);
     sdkInitialized = true;
   } catch (sdkError: any) {
@@ -29,13 +30,13 @@ if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
     sdkInitialized = false;
   }
 } else {
-  console.warn("[Cashfree SDK v5] App ID or Secret Key missing. SDK cannot be initialized.");
+  console.warn("[Cashfree SDK v5] App ID or Secret Key missing or empty in environment variables. SDK cannot be initialized.");
   sdkInitialized = false;
 }
 
 export async function POST(request: Request) {
   if (!sdkInitialized) {
-    console.error("Cashfree API Error: SDK is not initialized. Cannot proceed.");
+    console.error("Cashfree API Error: SDK is not initialized. Cannot proceed. Check server logs for environment variable issues.");
     return NextResponse.json(
       { success: false, message: 'Payment gateway SDK not initialized on server.' },
       { status: 503 } // Service Unavailable
@@ -46,13 +47,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { 
       orderAmount,
-      // orderCurrency, // Will default to INR if not provided by client, or set explicitly below
-      internalOrderId, // Unique order ID for your system
+      internalOrderId, 
       customerInfo,
-      orderItems // For logging or internal use, not directly part of minimal Cashfree order creation payload
+      orderItems 
     } = body;
 
-    if (!orderAmount || !internalOrderId || !customerInfo || !customerInfo.customerEmail || !customerInfo.customerPhone) {
+    if (!orderAmount || !internalOrderId || !customerInfo || !customerInfo.email || !customerInfo.phone) {
         return NextResponse.json(
             { success: false, message: 'Missing required fields: orderAmount, internalOrderId, customerEmail, or customerPhone.' },
             { status: 400 }
@@ -64,19 +64,18 @@ export async function POST(request: Request) {
     const orderRequestPayload = {
       order_id: internalOrderId,
       order_amount: parseFloat(orderAmount.toFixed(2)),
-      order_currency: "INR", // Defaulting to INR, can be made dynamic
+      order_currency: "INR", 
       customer_details: {
         customer_id: customerInfo.customerId || `cust_${Date.now()}`,
-        customer_email: customerInfo.email, // Assuming customerInfo structure matches from frontend
-        customer_phone: customerInfo.phone, // Assuming customerInfo structure matches
-        customer_name: customerInfo.name, // Optional, but good to have
+        customer_email: customerInfo.email, 
+        customer_phone: customerInfo.phone, 
+        customer_name: customerInfo.name, 
       },
       order_meta: {
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?order_id=${internalOrderId}`,
-        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/payment-confirm`, // Your webhook URL
+        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/payment-confirm`, 
       },
       order_note: "Elixr Juice Order",
-      // Add other necessary parameters like order_tags, etc. as per Cashfree v5 docs
     };
 
     console.log("[Cashfree API v5] Preparing to call Cashfree.PGCreateOrder with:", orderRequestPayload);
@@ -84,8 +83,6 @@ export async function POST(request: Request) {
 
     console.log("[Cashfree API v5] Cashfree SDK order creation successful, raw response:", cashfreeResponse);
 
-    // According to Cashfree docs, response.data will contain the order details
-    // and payment_session_id is the token needed for checkout SDK.
     if (!cashfreeResponse.data || !cashfreeResponse.data.payment_session_id) {
         console.error("[Cashfree API v5] Cashfree response missing payment_session_id in data:", cashfreeResponse);
         const errorMessage = cashfreeResponse.data?.message || 'Cashfree API response missing payment_session_id or other critical data.';
@@ -99,17 +96,15 @@ export async function POST(request: Request) {
       success: true,
       message: "Cashfree order created successfully.",
       data: {
-        orderToken: cashfreeResponse.data.payment_session_id, // This is the payment_session_id
+        orderToken: cashfreeResponse.data.payment_session_id, 
         orderId: cashfreeResponse.data.order_id,
-        cfOrderId: cashfreeResponse.data.cf_order_id, // Cashfree's internal order ID
-        // paymentUrl is typically not needed if using JS SDK drop-in, but can be part of `payments` object in response
+        cfOrderId: cashfreeResponse.data.cf_order_id, 
       },
     });
 
   } catch (error: any) {
     console.error("[Cashfree API v5] Error creating Cashfree order:", error);
     let errorMessage = 'Failed to create Cashfree order.';
-    // Cashfree SDK v5 errors might be structured in error.response.data
     if (error.response && error.response.data && error.response.data.message) {
         errorMessage = `Cashfree API Error: ${error.response.data.message}`;
         console.error("[Cashfree API v5] Detailed error from SDK:", error.response.data);
@@ -121,4 +116,16 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Optional: Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204, // No Content
+    headers: {
+      'Access-Control-Allow-Origin': '*', // Be more specific in production
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
