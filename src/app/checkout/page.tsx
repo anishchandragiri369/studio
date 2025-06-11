@@ -194,8 +194,15 @@ function CheckoutPageContents() {
         await loadCashfreeSDK();
       }
 
-      // Get form data
-      const formData = await handleSubmit((data) => data)();
+      // Get form data using a promise-based approach
+      const formData = await new Promise<CheckoutAddressFormData | null>((resolve) => {
+        handleSubmit((data) => {
+          resolve(data);
+        }, () => {
+          resolve(null);
+        })();
+      });
+
       if (!formData) {
         throw new Error("Please fill in all required shipping details");
       }
@@ -269,7 +276,6 @@ function CheckoutPageContents() {
               if (webhookResponse.ok) {
                 // Clear cart if not subscription checkout
                 if (!isSubscriptionCheckout) {
-                  // Clear cart using the useCart hook
                   clearCart();
                 }
                 // Redirect to success page
