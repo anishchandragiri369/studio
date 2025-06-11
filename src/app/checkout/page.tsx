@@ -170,8 +170,15 @@ function CheckoutPageContents() {
       script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
       script.async = true;
       script.onload = () => {
-        setIsSdkLoaded(true);
-        resolve();
+        // Wait a bit to ensure SDK is fully initialized
+        setTimeout(() => {
+          if (window.cashfree) {
+            setIsSdkLoaded(true);
+            resolve();
+          } else {
+            reject(new Error('Cashfree SDK failed to initialize'));
+          }
+        }, 1000);
       };
       script.onerror = () => {
         reject(new Error('Failed to load Cashfree SDK'));
@@ -183,22 +190,34 @@ function CheckoutPageContents() {
   // Modify handleCashfreePayment function
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
-      toast({
+    toast({
       title: "Processing Payment...",
       description: "Initializing payment gateway...",
-      });
+    });
+
+    try {
       // Load SDK if not already loaded
-      if (!isSdkLoaded) {
+      if (!isSdkLoaded || !window.cashfree) {
         await loadCashfreeSDK();
       }
 
+      // Verify SDK is loaded
+      if (!window.cashfree) {
+        throw new Error('Cashfree SDK failed to initialize');
+      }
+
       // Get form data using a promise-based approach
-      const formData = await new Promise<CheckoutAddressFormData | null>((resolve) => {
-        handleSubmit((data) => {
-          resolve(data);
-        }, () => {
-          resolve(null);
-        })();
+      let formData: CheckoutAddressFormData | null = null;
+      await new Promise<void>((resolve) => {
+        handleSubmit(
+          (data) => {
+            formData = data;
+            resolve();
+          },
+          () => {
+            resolve();
+          }
+        )();
       });
 
       if (!formData) {
@@ -233,6 +252,10 @@ function CheckoutPageContents() {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        // Double check SDK is available before proceeding
+        if (!window.cashfree) {
+          throw new Error('Cashfree SDK not available');
+        }
 
         // Initialize Cashfree checkout
         window.cashfree.checkout({
@@ -304,9 +327,10 @@ function CheckoutPageContents() {
             });
           },
         });
-
-    } else {
+      } else {
         throw new Error(result.message || "Failed to create order");
+      }
+    } catch (error) {
       console.error("Payment error:", error);
       toast({
         title: "Payment Error",
