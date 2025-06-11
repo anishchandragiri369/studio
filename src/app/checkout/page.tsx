@@ -178,6 +178,7 @@ function CheckoutPageContents() {
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
+      duration: 6000, // Extend duration for async process
       title: "Processing Payment...",
       description: "Initializing payment gateway...",
     });
@@ -214,16 +215,24 @@ function CheckoutPageContents() {
           orderAmount: currentOrderTotal,
           orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
           customerInfo: {
-            name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
-            email: formData.email,
-            phone: formData.mobileNumber,
+            // The 'formData' variable is typed as 'CheckoutAddressFormData | null'.
+            // After the 'if (!formData)' check, TypeScript should ideally narrow it to 'CheckoutAddressFormData'.
+            // However, the lint error indicates that 'formData' is inferred as 'never' at this point,
+            // suggesting an issue with the definition or import of 'CheckoutAddressFormData' itself,
+            // or how it's being inferred from 'handleSubmit'.
+            // To resolve the 'Property 'X' does not exist on type 'never'.' error within this selection,
+            // we explicitly assert 'formData' to 'CheckoutAddressFormData'.
+            // This assumes 'CheckoutAddressFormData' is correctly defined elsewhere and contains these properties.
+            name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
+            email: (formData as CheckoutAddressFormData).email,
+            phone: (formData as CheckoutAddressFormData).mobileNumber,
             address: {
-              line1: formData.addressLine1,
-              line2: formData.addressLine2,
-              city: formData.city,
-              state: formData.state,
-              zipCode: formData.zipCode,
-              country: formData.country,
+              line1: (formData as CheckoutAddressFormData).addressLine1,
+              line2: (formData as CheckoutAddressFormData).addressLine2,
+              city: (formData as CheckoutAddressFormData).city, // City removed as per Cashfree docs example structure
+              state: (formData as CheckoutAddressFormData).state,
+              zipCode: (formData as CheckoutAddressFormData).zipCode,
+              country: (formData as CheckoutAddressFormData).country,
             }
           }
         }),

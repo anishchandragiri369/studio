@@ -1,8 +1,8 @@
 
 // src/app/api/cashfree/create-order/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { Cashfree } from "cashfree-pg";
-import type { CreateOrderRequest } from 'cashfree-pg/dist/types/orders'; // Import specific types
+import { Cashfree , CFEnvironment } from "cashfree-pg";
+import type { CreateOrderRequest } from "cashfree-pg"; // Import specific types
 
 // Load environment variables
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
@@ -18,16 +18,20 @@ console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_SECRET_KEY: 
 console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_API_MODE: ${CASHFREE_API_MODE}`);
 console.log("------------------------------------------------------");
 
+const cashfree = new Cashfree(
+  CFEnvironment.SANDBOX,
+  process.env.CASHFREE_APP_ID,
+  process.env.CASHFREE_SECRET_KEY
+);
 
 let sdkInitialized = false;
 
 if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
   try {
-    Cashfree.XClientId = CASHFREE_APP_ID;
-    Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
-    Cashfree.XEnvironment = CASHFREE_API_MODE === "production" ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
+    cashfree.XClientId = CASHFREE_APP_ID;
+    cashfree.XClientSecret = CASHFREE_SECRET_KEY;
     sdkInitialized = true;
-    console.log("[Cashfree API Init] Cashfree SDK configured successfully with Environment:", Cashfree.XEnvironment);
+    console.log("[Cashfree API Init] Cashfree SDK configured successfully with Environment:", cashfree.XEnvironment);
   } catch (error) {
     console.error("[Cashfree API Init] Error configuring Cashfree SDK:", error);
     sdkInitialized = false;
@@ -85,7 +89,7 @@ export async function POST(request: NextRequest) {
     console.log("[Cashfree Create Order API] Creating order with request:", JSON.stringify(orderRequest, null, 2));
 
     try {
-      const cfOrder = await Cashfree.PGCreateOrder(API_VERSION, orderRequest);
+      const cfOrder = await cashfree.PGCreateOrder(orderRequest);
       console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
       // console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2)); // Log full data for debug
 
