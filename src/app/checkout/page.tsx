@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Suspense, useState, useEffect } from 'react';
@@ -29,16 +28,25 @@ interface SubscriptionOrderItem {
   dataAiHint?: string;
 }
 
-// Declare Cashfree as a global variable
-// This is necessary because the Cashfree SDK is loaded externally
-// and might attach itself to the window object.
-declare const Cashfree: any;
+// Add Cashfree SDK types
+declare global {
+  interface Window {
+    cashfree: {
+      checkout: (options: {
+        paymentSessionId: string;
+        onSuccess?: (data: any) => void;
+        onFailure?: (data: any) => void;
+        onClose?: () => void;
+      }) => void;
+    };
+  }
+}
 
 function CheckoutPageContents() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { cartItems, getCartTotal } = useCart();
+  const { cartItems, getCartTotal, clearCart } = useCart();
 
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
@@ -51,7 +59,7 @@ function CheckoutPageContents() {
   const [currentOrderTotal, setCurrentOrderTotal] = useState(0);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [isCashfreeSDKLoaded, setIsCashfreeSDKLoaded] = useState(false);
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -135,29 +143,6 @@ function CheckoutPageContents() {
     }
   }, [cartItems, isSubscriptionCheckout, isLoadingSummary, toast]);
   
-  const loadCashfreeSDK = () => {
-    if (isCashfreeSDKLoaded) {
-      return Promise.resolve();
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js"; // Sandbox SDK URL
-      script.async = true;
-      script.onload = () => {
-        setIsCashfreeSDKLoaded(true);
-        console.log("Cashfree SDK loaded successfully.");
-        resolve();
-      };
-      script.onerror = (error) => {
-        console.error("Failed to load Cashfree SDK:", error);
-        setIsCashfreeSDKLoaded(false);
-        reject(new Error("Failed to load Cashfree SDK"));
-      };
-      document.body.appendChild(script);
-    });
-  };
-
   const handlePlaceSelected = (placeDetails: {
     addressLine1: string;
     city: string;
@@ -172,76 +157,156 @@ function CheckoutPageContents() {
     setValue('country', placeDetails.country || 'India', { shouldValidate: true });
   };
 
+  // Add function to load Cashfree SDK
+  const loadCashfreeSDK = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (window.cashfree) {
+        setIsSdkLoaded(true);
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+      script.async = true;
+      script.onload = () => {
+        setIsSdkLoaded(true);
+        resolve();
+      };
+      script.onerror = () => {
+        reject(new Error('Failed to load Cashfree SDK'));
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  // Modify handleCashfreePayment function
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
-
-      title: "Processing Cashfree Payment...",
-      description: "Attempting to create a conceptual order with our backend.",
+      title: "Processing Payment...",
+      description: "Initializing payment gateway...",
     });
 
     try {
+      // Load SDK if not already loaded
+      if (!isSdkLoaded) {
+        await loadCashfreeSDK();
+      }
+
+      // Get form data
+      const formData = await handleSubmit((data) => data)();
+      if (!formData) {
+        throw new Error("Please fill in all required shipping details");
+      }
+
+      // Create order
       const response = await fetch('/api/cashfree/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          orderAmount: currentOrderTotal, 
-          // In a real app, send more details: orderId, customerInfo, items etc.
+          orderAmount: currentOrderTotal,
+          orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
+          customerInfo: {
+            name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+            email: formData.email,
+            phone: formData.mobileNumber,
+            address: {
+              line1: formData.addressLine1,
+              line2: formData.addressLine2,
+              city: formData.city,
+              state: formData.state,
+              zipCode: formData.zipCode,
+              country: formData.country,
+            }
+          }
         }),
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log("Cashfree backend response:", result);
-        toast({
-          title: "Cashfree Order Created",
-          description: `Received orderToken. Launching Cashfree payment modal.`,
- });
+        // Initialize Cashfree checkout
+        window.cashfree.checkout({
+          paymentSessionId: result.data.orderToken,
+          onSuccess: async (data) => {
+            console.log("Payment successful:", data);
+            toast({
+              title: "Payment Successful!",
+              description: "Your order has been placed successfully.",
+            });
 
-        // Load the Cashfree SDK dynamically
-        await loadCashfreeSDK();
+            // Call webhook to confirm payment and update stock
+            try {
+              const webhookResponse = await fetch('/api/webhook/payment-confirm', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  orderId: result.data.orderId,
+                  paymentId: data.paymentId,
+                  status: 'success',
+                  items: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
+                  customerInfo: {
+                    name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
+                    email: formData.email,
+                    phone: formData.mobileNumber,
+                    address: {
+                      line1: formData.addressLine1,
+                      line2: formData.addressLine2,
+                      city: formData.city,
+                      state: formData.state,
+                      zipCode: formData.zipCode,
+                      country: formData.country,
+                    }
+                  }
+                }),
+              });
 
-        if (isCashfreeSDKLoaded && result.data?.orderToken) {
-          // Initialize and launch Cashfree checkout
-          const cashfree = new Cashfree.init({
-            paymentSessionId: result.data.orderToken,
-            redirectEnable: true, // Set to true for redirect payments if needed
-          });
-
-          cashfree.checkout();
-
-          // TODO: Handle payment success and failure events
-          // You would typically listen for Cashfree SDK events or rely on the webhook
-          // for final payment confirmation.
-
-          // On conceptual success (after webhook confirmation):
-          // - Clear the cart (if not subscription)
-          // - Redirect to an order confirmation page
-
-        } else {
-           console.error("Cashfree SDK not loaded or orderToken missing.");
-           throw new Error("Could not load Cashfree SDK or get order token.");
-        }
-
-        // Example (conceptual):
-        // Cashfree.init({ paymentSessionId: result.data.orderToken });
-        // Cashfree.checkout();
-
-      } else {
-        toast({
-          title: "Cashfree Order Failed (Conceptual)",
-          description: result.message || "Could not create Cashfree order with backend.",
-          variant: "destructive",
+              if (webhookResponse.ok) {
+                // Clear cart if not subscription checkout
+                if (!isSubscriptionCheckout) {
+                  // Clear cart using the useCart hook
+                  clearCart();
+                }
+                // Redirect to success page
+                router.push('/order-success');
+              }
+            } catch (error) {
+              console.error("Error confirming payment:", error);
+              toast({
+                title: "Order Placed",
+                description: "Your payment was successful, but there was an error updating the order status. Please contact support.",
+                variant: "destructive",
+              });
+            }
+          },
+          onFailure: (data) => {
+            console.error("Payment failed:", data);
+            toast({
+              title: "Payment Failed",
+              description: "There was an error processing your payment. Please try again.",
+              variant: "destructive",
+            });
+          },
+          onClose: () => {
+            toast({
+              title: "Payment Cancelled",
+              description: "You closed the payment window. You can try again when you're ready.",
+            });
+          },
         });
+      } else {
+        throw new Error(result.message || "Failed to create order");
       }
     } catch (error) {
-      console.error("Error calling /api/cashfree/create-order:", error);
+      console.error("Payment error:", error);
       toast({
-        title: "Cashfree Payment Error",
-        description: "Failed to connect to backend for Cashfree order.",
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Failed to process payment",
         variant: "destructive",
       });
     } finally {
