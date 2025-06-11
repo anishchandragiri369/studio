@@ -180,7 +180,7 @@ function CheckoutPageContents() {
           } else {
             reject(new Error('Cashfree SDK script loaded but window.cashfree object not found.'));
           }
-        }, 1000);
+        }, 5000);
       };
       script.onerror = () => {
         reject(new Error('Failed to load Cashfree SDK'));
