@@ -30,14 +30,15 @@ interface SubscriptionOrderItem {
 
 // Add Cashfree SDK types
 declare global {
-  interface Window {
-    cashfree: {
-      checkout: (options: {
-        paymentSessionId: string;
-        onSuccess?: (data: any) => void;
-        onFailure?: (data: any) => void;
-        onClose?: () => void;
+  interface Window { // Added the load function to the window type
+ cashfree: any; // Use 'any' for flexibility, or define a more specific type if available
+    Cashfree: {
+      init: (options: {
+        onLoad: () => void;
+        onScriptError?: (e: Error) => void;
       }) => void;
+      checkout: any; // Use 'any' for flexibility, or define a more specific type if available
+      load: (options: { mode: "sandbox" | "production" }) => Promise<any>; // Assuming a load function
     };
   }
 }
@@ -143,51 +144,24 @@ function CheckoutPageContents() {
     }
   }, [cartItems, isSubscriptionCheckout, isLoadingSummary, toast]);
   
-  const handlePlaceSelected = (placeDetails: {
-    addressLine1: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  }) => {
-    setValue('addressLine1', placeDetails.addressLine1, { shouldValidate: true });
-    setValue('city', placeDetails.city, { shouldValidate: true });
-    setValue('state', placeDetails.state, { shouldValidate: true });
-    setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
-    setValue('country', placeDetails.country || 'India', { shouldValidate: true });
-  };
-
-  // Add function to load Cashfree SDK
-  const loadCashfreeSDK = () => {
-    return new Promise<void>((resolve, reject) => {
-      if (window.cashfree) {
-        setIsSdkLoaded(true);
-        resolve();
-        return;
-      }
-
+  // Use the asynchronous load function pattern
+  async function loadCashfreeSDK() {
+    if (window.Cashfree) return window.Cashfree;
+    return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
       script.async = true;
       script.onload = () => {
-        // Wait a bit to ensure SDK is fully initialized
-        console.log('Cashfree SDK script loaded.');
-        // Check for the SDK object with a timeout
-        const checkSdk = () => {
-          if (window.cashfree) {
-            console.log('Cashfree SDK initialized.');
-            setIsSdkLoaded(true);
-          } else {
-            reject(new Error('Cashfree SDK script loaded but window.cashfree object not found.'));
-          }
-        }, 5000);
+        if (window.Cashfree) {
+          resolve(window.Cashfree);
+        } else {
+          reject(new Error('Cashfree SDK did not attach to window.Cashfree'));
+        }
       };
-      script.onerror = () => {
-        reject(new Error('Failed to load Cashfree SDK'));
-      };
+      script.onerror = () => reject(new Error('Failed to load Cashfree SDK'));
       document.body.appendChild(script);
     });
-  };
+  }
 
   // Modify handleCashfreePayment function
   const handleCashfreePayment = async () => {
@@ -198,15 +172,8 @@ function CheckoutPageContents() {
     });
 
     try {
-      // Load SDK if not already loaded
-      if (!isSdkLoaded || !window.cashfree) {
-        await loadCashfreeSDK();
-      }
-
-      // Verify SDK is loaded
-      if (!window.cashfree) {
-        throw new Error('Cashfree SDK failed to initialize');
-      }
+      // Load SDK
+      const Cashfree = await loadCashfreeSDK();
 
       // Get form data using a promise-based approach
       let formData: CheckoutAddressFormData | null = null;
@@ -232,7 +199,7 @@ function CheckoutPageContents() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
           orderAmount: currentOrderTotal,
           orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
           customerInfo: {
@@ -252,82 +219,14 @@ function CheckoutPageContents() {
       });
 
       const result = await response.json();
+      console.log("Cashfree order creation result:", result);
 
       if (response.ok && result.success) {
-        // Double check SDK is available before proceeding
-        if (!window.cashfree) {
-          throw new Error('Cashfree SDK not available');
-        }
-
         // Initialize Cashfree checkout
-        window.cashfree.checkout({
+        const cashfree = Cashfree({ mode: "sandbox" });
+        cashfree.checkout({
           paymentSessionId: result.data.orderToken,
-          onSuccess: async (data) => {
-            console.log("Payment successful:", data);
-            toast({
-              title: "Payment Successful!",
-              description: "Your order has been placed successfully.",
-            });
-
-            // Call webhook to confirm payment and update stock
-            try {
-              const webhookResponse = await fetch('/api/webhook/payment-confirm', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  orderId: result.data.orderId,
-                  paymentId: data.paymentId,
-                  status: 'success',
-                  items: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
-                  customerInfo: {
-                    name: `${formData.firstName} ${formData.lastName || ''}`.trim(),
-                    email: formData.email,
-                    phone: formData.mobileNumber,
-                    address: {
-                      line1: formData.addressLine1,
-                      line2: formData.addressLine2,
-                      city: formData.city,
-                      state: formData.state,
-                      zipCode: formData.zipCode,
-                      country: formData.country,
-                    }
-                  }
-                }),
-              });
-
-              if (webhookResponse.ok) {
-                // Clear cart if not subscription checkout
-                if (!isSubscriptionCheckout) {
-                  clearCart();
-                }
-                // Redirect to success page
-                router.push('/order-success');
-              }
-            } catch (error) {
-              console.error("Error confirming payment:", error);
-              toast({
-                title: "Order Placed",
-                description: "Your payment was successful, but there was an error updating the order status. Please contact support.",
-                variant: "destructive",
-              });
-            }
-          },
-          onFailure: (data) => {
-            console.error("Payment failed:", data);
-            toast({
-              title: "Payment Failed",
-              description: "There was an error processing your payment. Please try again.",
-              variant: "destructive",
-            });
-          },
-          onClose: () => {
-            toast({
-              title: "Payment Cancelled",
-              description: "You closed the payment window. You can try again when you're ready.",
-            });
-          },
+          redirectTarget: "_self",
         });
       } else {
         throw new Error(result.message || "Failed to create order");
@@ -342,6 +241,20 @@ function CheckoutPageContents() {
     } finally {
       setIsProcessingPayment(false);
     }
+  };
+  
+  const handlePlaceSelected = (placeDetails: {
+    addressLine1: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  }) => {
+    setValue('addressLine1', placeDetails.addressLine1, { shouldValidate: true });
+    setValue('city', placeDetails.city, { shouldValidate: true });
+    setValue('state', placeDetails.state, { shouldValidate: true });
+    setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
+    setValue('country', placeDetails.country || 'India', { shouldValidate: true });
   };
 
   const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
