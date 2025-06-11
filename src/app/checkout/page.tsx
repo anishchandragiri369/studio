@@ -29,6 +29,11 @@ interface SubscriptionOrderItem {
   dataAiHint?: string;
 }
 
+// Declare Cashfree as a global variable
+// This is necessary because the Cashfree SDK is loaded externally
+// and might attach itself to the window object.
+declare const Cashfree: any;
+
 function CheckoutPageContents() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,6 +51,7 @@ function CheckoutPageContents() {
   const [currentOrderTotal, setCurrentOrderTotal] = useState(0);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isCashfreeSDKLoaded, setIsCashfreeSDKLoaded] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -129,6 +135,29 @@ function CheckoutPageContents() {
     }
   }, [cartItems, isSubscriptionCheckout, isLoadingSummary, toast]);
   
+  const loadCashfreeSDK = () => {
+    if (isCashfreeSDKLoaded) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js"; // Sandbox SDK URL
+      script.async = true;
+      script.onload = () => {
+        setIsCashfreeSDKLoaded(true);
+        console.log("Cashfree SDK loaded successfully.");
+        resolve();
+      };
+      script.onerror = (error) => {
+        console.error("Failed to load Cashfree SDK:", error);
+        setIsCashfreeSDKLoaded(false);
+        reject(new Error("Failed to load Cashfree SDK"));
+      };
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePlaceSelected = (placeDetails: {
     addressLine1: string;
     city: string;
@@ -146,6 +175,7 @@ function CheckoutPageContents() {
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
+
       title: "Processing Cashfree Payment...",
       description: "Attempting to create a conceptual order with our backend.",
     });
@@ -165,36 +195,52 @@ function CheckoutPageContents() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log("Conceptual Cashfree backend response:", result);
+        console.log("Cashfree backend response:", result);
         toast({
-          title: "Cashfree Order Created (Conceptual)",
-          description: `Received orderToken: ${result.data?.orderToken}. Next, use Cashfree JS SDK.`,
-        });
+          title: "Cashfree Order Created",
+          description: `Received orderToken. Launching Cashfree payment modal.`,
+ });
 
-        // Simulate calling the webhook after a conceptual successful order creation
-        console.log("Simulating webhook call to /api/webhook/payment-confirm");
-        const webhookResponse = await fetch('/api/webhook/payment-confirm', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ orderId: result.data?.orderId || 'conceptual-order-123' }), // Use the actual orderId if available
-        });
-        const webhookResult = await webhookResponse.json();
-        console.log("Conceptual webhook response:", webhookResult);
+        // Load the Cashfree SDK dynamically
+        await loadCashfreeSDK();
 
-        alert(`Conceptual: Received orderToken: ${result.data?.orderToken}. Total: Rs.${currentOrderTotal.toFixed(2)}. Would now invoke Cashfree SDK.`);
+        if (isCashfreeSDKLoaded && result.data?.orderToken) {
+          // Initialize and launch Cashfree checkout
+          const cashfree = new Cashfree.init({
+            paymentSessionId: result.data.orderToken,
+            redirectEnable: true, // Set to true for redirect payments if needed
+          });
+
+          cashfree.checkout();
+
+          // TODO: Handle payment success and failure events
+          // You would typically listen for Cashfree SDK events or rely on the webhook
+          // for final payment confirmation.
+
+          // On conceptual success (after webhook confirmation):
+          // - Clear the cart (if not subscription)
+          // - Redirect to an order confirmation page
+
+        } else {
+           console.error("Cashfree SDK not loaded or orderToken missing.");
+           throw new Error("Could not load Cashfree SDK or get order token.");
+        }
+
+        // Example (conceptual):
+        // Cashfree.init({ paymentSessionId: result.data.orderToken });
+        // Cashfree.checkout();
+
       } else {
         toast({
           title: "Cashfree Order Failed (Conceptual)",
-          description: result.message || "Could not create order with backend.",
+          description: result.message || "Could not create Cashfree order with backend.",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error calling /api/cashfree/create-order:", error);
       toast({
-        title: "Cashfree Payment Error (Conceptual)",
+        title: "Cashfree Payment Error",
         description: "Failed to connect to backend for Cashfree order.",
         variant: "destructive",
       });
