@@ -183,12 +183,10 @@ function CheckoutPageContents() {
   // Modify handleCashfreePayment function
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
-    toast({
+      toast({
       title: "Processing Payment...",
       description: "Initializing payment gateway...",
-    });
-
-    try {
+      });
       // Load SDK if not already loaded
       if (!isSdkLoaded) {
         await loadCashfreeSDK();
@@ -235,6 +233,7 @@ function CheckoutPageContents() {
       const result = await response.json();
 
       if (response.ok && result.success) {
+
         // Initialize Cashfree checkout
         window.cashfree.checkout({
           paymentSessionId: result.data.orderToken,
@@ -305,10 +304,9 @@ function CheckoutPageContents() {
             });
           },
         });
-      } else {
+
+    } else {
         throw new Error(result.message || "Failed to create order");
-      }
-    } catch (error) {
       console.error("Payment error:", error);
       toast({
         title: "Payment Error",
