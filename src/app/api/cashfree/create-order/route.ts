@@ -10,10 +10,14 @@ const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_API_MODE = process.env.CASHFREE_API_MODE as "sandbox" | "production" | undefined || "sandbox"; // Default to sandbox
 const API_VERSION = "2023-08-01"; // Or your desired API version
 
-// Log environment variable status during initialization (server-side)
-console.log("[Cashfree API Init] Attempting to read CASHFREE_APP_ID:", CASHFREE_APP_ID ? "Present" : "MISSING or EMPTY");
-console.log("[Cashfree API Init] Attempting to read CASHFREE_SECRET_KEY:", CASHFREE_SECRET_KEY ? "Present" : "MISSING or EMPTY");
-console.log("[Cashfree API Init] CASHFREE_API_MODE:", CASHFREE_API_MODE);
+// More explicit logging for environment variables right at module load time
+console.log("------------------------------------------------------");
+console.log("[Cashfree API Init - Module Load] SERVER_SIDE_ENV_CHECK:");
+console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_APP_ID: ${CASHFREE_APP_ID ? `'${CASHFREE_APP_ID}' (Present)` : 'MISSING or EMPTY'}`);
+console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_SECRET_KEY: ${CASHFREE_SECRET_KEY ? 'Present (Secret - value not logged)' : 'MISSING or EMPTY'}`);
+console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_API_MODE: ${CASHFREE_API_MODE}`);
+console.log("------------------------------------------------------");
+
 
 let sdkInitialized = false;
 
@@ -23,19 +27,19 @@ if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
     Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
     Cashfree.XEnvironment = CASHFREE_API_MODE === "production" ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
     sdkInitialized = true;
-    console.log("[Cashfree API Init] Cashfree SDK configured with Environment:", Cashfree.XEnvironment);
+    console.log("[Cashfree API Init] Cashfree SDK configured successfully with Environment:", Cashfree.XEnvironment);
   } catch (error) {
     console.error("[Cashfree API Init] Error configuring Cashfree SDK:", error);
     sdkInitialized = false;
   }
 } else {
-  console.warn("[Cashfree API Init] Cashfree App ID or Secret Key is missing. SDK not initialized.");
+  console.warn("[Cashfree API Init] Critical: Cashfree App ID or Secret Key is missing from server environment. SDK not initialized.");
   sdkInitialized = false;
 }
 
 export async function POST(request: NextRequest) {
   if (!sdkInitialized) {
-    console.error("[Cashfree Create Order] SDK not initialized. Aborting.");
+    console.error("[Cashfree Create Order API] SDK not initialized at request time. Aborting. This means CASHFREE_APP_ID or CASHFREE_SECRET_KEY were missing when the server started or this module was loaded.");
     return NextResponse.json(
       { success: false, message: 'Payment gateway SDK not initialized on server. Check server logs.' },
       { status: 503 } // Service Unavailable
@@ -57,7 +61,7 @@ export async function POST(request: NextRequest) {
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/order-success?order_id={order_id}`;
     // It's good practice to have a webhook for server-to-server confirmation
-    // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm`;
+    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm`;
 
 
     const orderRequest: CreateOrderRequest = {
@@ -72,19 +76,18 @@ export async function POST(request: NextRequest) {
       },
       order_meta: {
         return_url: returnUrl,
-        // notify_url: notifyUrl, // Optional: if you have a webhook
-        payment_methods: "cc,dc,nb,upi,paypal,wallet,credit_card_emi" // Example payment methods
+        notify_url: notifyUrl, 
+        payment_methods: "cc,dc,nb,upi,paypal,wallet,credit_card_emi" 
       },
       order_note: `Order for Elixr Juices. Items: ${Array.isArray(orderItems) ? orderItems.map((item: any) => `${item.name} (x${item.quantity})`).join(', ') : 'N/A'}`,
-      // order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // Example: Order expires in 30 mins
     };
 
-    console.log("[Cashfree Create Order] Creating order with request:", JSON.stringify(orderRequest, null, 2));
+    console.log("[Cashfree Create Order API] Creating order with request:", JSON.stringify(orderRequest, null, 2));
 
     try {
       const cfOrder = await Cashfree.PGCreateOrder(API_VERSION, orderRequest);
-      console.log("[Cashfree Create Order] Cashfree API Response Status:", cfOrder.status);
-      console.log("[Cashfree Create Order] Cashfree API Response Data:", JSON.stringify(cfOrder.data, null, 2));
+      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
+      // console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2)); // Log full data for debug
 
       if (cfOrder.data && cfOrder.data.payment_session_id) {
         return NextResponse.json({
@@ -92,31 +95,30 @@ export async function POST(request: NextRequest) {
           message: 'Order created successfully with Cashfree.',
           data: {
             orderId: cfOrder.data.order_id,
-            paymentSessionId: cfOrder.data.payment_session_id, // This is the token for frontend checkout
-            // orderToken: cfOrder.data.order_token, // order_token is also sometimes used, payment_session_id is key for Web JS SDK
-            rawResponse: cfOrder.data, // For debugging if needed
+            paymentSessionId: cfOrder.data.payment_session_id,
+            // orderToken is often an alias for payment_session_id with the Web JS SDK
+            orderToken: cfOrder.data.payment_session_id, 
+            rawResponse: cfOrder.data, 
           },
         });
       } else {
-        // This case handles if cfOrder.data is null/undefined or payment_session_id is missing
-        console.error("[Cashfree Create Order] Cashfree API call succeeded but response data is invalid or missing payment_session_id. Response Data:", cfOrder.data);
+        console.error("[Cashfree Create Order API] Cashfree API call succeeded but response data is invalid or missing payment_session_id. Response Data:", cfOrder.data);
         return NextResponse.json(
           { 
             success: false, 
             message: 'Failed to create Cashfree order: Invalid response from gateway.',
-            errorDetails: cfOrder.data // Send back what was received for client-side debugging if appropriate
+            errorDetails: cfOrder.data 
           }, 
           { status: 500 }
         );
       }
     } catch (sdkError: any) {
-      // This catches errors from the Cashfree.PGCreateOrder call itself
-      console.error("[Cashfree Create Order] Error calling Cashfree PGCreateOrder:", sdkError);
+      console.error("[Cashfree Create Order API] Error calling Cashfree PGCreateOrder:", sdkError);
       let errorMessage = "An unexpected error occurred while creating the payment order with Cashfree.";
       let errorDetails = null;
 
       if (sdkError.response && sdkError.response.data) {
-        console.error("[Cashfree Create Order] Cashfree SDK Error Response Data:", sdkError.response.data);
+        console.error("[Cashfree Create Order API] Cashfree SDK Error Response Data:", sdkError.response.data);
         errorMessage = sdkError.response.data.message || errorMessage;
         errorDetails = sdkError.response.data;
       } else if (sdkError.message) {
@@ -130,8 +132,13 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    // This catches errors like `request.json()` failing or other unexpected errors in the POST handler
-    console.error("[Cashfree Create Order] General error in POST handler:", error);
+    console.error("[Cashfree Create Order API] General error in POST handler:", error);
+    if (error instanceof SyntaxError) { // Specifically handle JSON parsing errors from request body
+        return NextResponse.json(
+            { success: false, message: `Invalid JSON payload in request: ${error.message}` },
+            { status: 400 }
+        );
+    }
     return NextResponse.json(
       { success: false, message: error.message || 'An unexpected error occurred on the server.' },
       { status: 500 }
