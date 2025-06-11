@@ -171,12 +171,12 @@ function CheckoutPageContents() {
       script.async = true;
       script.onload = () => {
         // Wait a bit to ensure SDK is fully initialized
-        console.log('Cashfree SDK script loaded. Waiting for initialization...');
-        setTimeout(() => { // Increased timeout for initialization check
+        console.log('Cashfree SDK script loaded.');
+        // Check for the SDK object with a timeout
+        const checkSdk = () => {
           if (window.cashfree) {
             console.log('Cashfree SDK initialized.');
             setIsSdkLoaded(true);
-            resolve();
           } else {
             reject(new Error('Cashfree SDK script loaded but window.cashfree object not found.'));
           }
