@@ -42,7 +42,6 @@ declare global {
     };
   }
 }
-
 function CheckoutPageContents() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,6 +129,21 @@ function CheckoutPageContents() {
       title: "Order Details Logged (Conceptual)",
       description: `Address details submitted. Total amount: Rs.${currentOrderTotal.toFixed(2)}. This is a conceptual confirmation.`,
     });
+  };
+
+  // Use the asynchronous load function pattern
+  async function initializeCashfree() {
+    if (typeof window === 'undefined' || !window.Cashfree || typeof window.Cashfree.load !== 'function') {
+      // Attempt to load if not already available or if load function is missing
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error('Failed to load Cashfree SDK script'));
+        document.body.appendChild(script);
+      });
+    }
     // Potentially redirect or clear cart/subscription state here
   };
 
@@ -144,26 +158,23 @@ function CheckoutPageContents() {
     }
   }, [cartItems, isSubscriptionCheckout, isLoadingSummary, toast]);
   
-  // Use the asynchronous load function pattern
-  async function loadCashfreeSDK() {
-    if (window.Cashfree) return window.Cashfree;
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-      script.async = true;
-      script.onload = () => {
-        if (window.Cashfree) {
-          resolve(window.Cashfree);
-        } else {
-          reject(new Error('Cashfree SDK did not attach to window.Cashfree'));
-        }
-      };
-      script.onerror = () => reject(new Error('Failed to load Cashfree SDK'));
-      document.body.appendChild(script);
-    });
+  // Function to create a checkout session using the Cashfree SDK instance
+  async function createCheckout(cashfree: any, paymentSessionId: string, returnUrl: string) {
+    let checkoutOptions = {
+      paymentSessionId: paymentSessionId,
+      returnUrl: returnUrl,
+    };
+    try {
+      const result = await cashfree.checkout(checkoutOptions);
+      if (result.error) {
+        console.error("Checkout error:", result.error.message);
+      } else if (result.redirect) {
+        console.log("Redirection initiated");
+      }
+    } catch (error) {
+      console.error("Error during checkout:", error);
+    }
   }
-
-  // Modify handleCashfreePayment function
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
@@ -172,8 +183,8 @@ function CheckoutPageContents() {
     });
 
     try {
-      // Load SDK
-      const Cashfree = await loadCashfreeSDK();
+      // Initialize Cashfree SDK asynchronously
+      await initializeCashfree(); // Ensure the script is loaded
 
       // Get form data using a promise-based approach
       let formData: CheckoutAddressFormData | null = null;
@@ -222,12 +233,12 @@ function CheckoutPageContents() {
       console.log("Cashfree order creation result:", result);
 
       if (response.ok && result.success) {
-        // Initialize Cashfree checkout
-        const cashfree = Cashfree({ mode: "sandbox" });
-        cashfree.checkout({
-          paymentSessionId: result.data.orderToken,
-          redirectTarget: "_self",
-        });
+         // Now that the SDK is loaded and order created, initiate checkout
+         if (window.Cashfree && typeof window.Cashfree.checkout === 'function') {
+             createCheckout(window.Cashfree, result.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
+         } else {
+             throw new Error("Cashfree SDK not available for checkout.");
+         }
       } else {
         throw new Error(result.message || "Failed to create order");
       }
