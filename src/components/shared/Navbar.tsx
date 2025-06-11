@@ -27,7 +27,7 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const Navbar = () => {
-  const { getItemCount } = useCart();
+  const { getItemCount, clearCart } = useCart();
   const { user, logOut, loading: authLoading, isSupabaseConfigured, isAdmin } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,6 +48,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     setIsMenuOpen(false); 
     await logOut();
+    clearCart(); // Clear cart and show toast upon explicit logout
     router.push('/');
   };
 

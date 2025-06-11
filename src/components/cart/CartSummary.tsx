@@ -41,7 +41,7 @@ const CartSummary = () => {
         <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link href="/checkout">Proceed to Checkout</Link>
         </Button>
-        <Button variant="outline" onClick={clearCart} className="w-full">
+        <Button variant="outline" onClick={() => clearCart(true)} className="w-full">
           Clear Cart
         </Button>
       </CardFooter>

@@ -1,16 +1,18 @@
+
 "use client";
 
 import type { CartItem, Juice } from '@/lib/types';
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/context/AuthContext';
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (juice: Juice, quantity?: number) => void;
   removeFromCart: (juiceId: string) => void;
   updateQuantity: (juiceId: string, quantity: number) => void;
-  clearCart: () => void;
+  clearCart: (showToast?: boolean) => void;
   getCartTotal: () => number;
   getItemCount: () => number;
 }
@@ -21,6 +23,7 @@ const CART_STORAGE_KEY = 'elixrCart';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { user, authLoading } = useAuth(); // Removed isAdmin as it wasn't used
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,6 +36,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const saveCartToLocalStorage = useCallback((items: CartItem[]) => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, []);
+  
+  // Effect to clear cart when authentication state is resolved and no user is logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      clearCart(false); // Clear cart without toast if user logs out or session ends
+    }
+  }, [user, authLoading, saveCartToLocalStorage]); // Added saveCartToLocalStorage to dependencies of clearCart called here
 
   const addToCart = (juice: Juice, quantityToAdd: number = 1) => {
     setCartItems(prevItems => {
@@ -51,12 +61,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return newItems;
     });
 
-    setTimeout(() => {
-      toast({
-        title: "Added to cart!",
-        description: `${juice.name} has been added to your cart.`,
-      });
-    }, 0);
+    // Toast is now in JuiceCard for better UX
   };
 
   const removeFromCart = (juiceId: string) => {
@@ -64,7 +69,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     setCartItems(prevItems => {
       const newItems = prevItems.filter(item => item.id !== juiceId);
-      if (newItems.length < prevItems.length) { // Check if something was actually removed
+      if (newItems.length < prevItems.length) { 
         saveCartToLocalStorage(newItems);
       }
       return newItems;
@@ -74,7 +79,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setTimeout(() => {
         toast({
           title: "Removed from cart",
-          description: `${itemToRemoveDetails.name} has been removed from your cart.`,
+          description: `${itemToRemoveDetails.name} has been removed.`,
           variant: "destructive"
         });
       }, 0);
@@ -84,10 +89,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantity = (juiceId: string, quantity: number) => {
     setCartItems(prevItems => {
       let newItems;
+      const itemToUpdate = prevItems.find(item => item.id === juiceId);
+      if (!itemToUpdate) return prevItems; // Should not happen if UI is correct
+
       if (quantity <= 0) {
-        // If quantity becomes 0 or less, consider removing the item or decide behavior.
-        // For now, just filter out. If toast on remove is desired, logic similar to removeFromCart is needed.
         newItems = prevItems.filter(item => item.id !== juiceId);
+        if (itemToUpdate) { // Only show toast if item was actually removed
+             setTimeout(() => {
+                toast({
+                    title: "Item Removed",
+                    description: `${itemToUpdate.name} removed from cart as quantity reached 0.`,
+                    variant: "destructive",
+                });
+            }, 0);
+        }
       } else {
         newItems = prevItems.map(item =>
           item.id === juiceId ? { ...item, quantity } : item
@@ -98,19 +113,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const clearCart = () => {
+  const clearCart = useCallback((showToast = true) => {
     const hadItems = cartItems.length > 0;
     setCartItems([]);
-    saveCartToLocalStorage([]);
+    saveCartToLocalStorage([]); // Pass empty array here
 
-    if (hadItems) { 
-      setTimeout(() => {
-        toast({
-          title: "Cart Cleared",
-          description: "Your shopping cart has been emptied.",
-        });
-      }, 0);
-    } else { 
+    if (showToast && hadItems) { // Only show toast if there were items to clear
       setTimeout(() => {
         toast({
           title: "Cart Cleared",
@@ -118,7 +126,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
       }, 0);
     }
-  };
+  }, [cartItems, saveCartToLocalStorage, toast]); // Added dependencies
 
 
   const getCartTotal = () => {

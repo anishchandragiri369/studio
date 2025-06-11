@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit } from 'lucide-react';
@@ -17,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AccountPage() {
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
+  const { clearCart } = useCart();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function AccountPage() {
   }, []);
 
   const handleLogout = async () => {
+    clearCart(); // Clear cart on logout
     await logOut();
     router.push('/');
   };
