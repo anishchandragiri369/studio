@@ -20,6 +20,7 @@ import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
 import { load } from "@cashfreepayments/cashfree-js";
+import { createBrowserClient } from '@supabase/ssr';
 
 interface SubscriptionOrderItem {
   id: string;
@@ -71,6 +72,9 @@ function CheckoutPageContents() {
   });
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  // Initialize Supabase client for client components
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   useEffect(() => {
     setIsLoadingSummary(true);
@@ -224,6 +228,20 @@ function CheckoutPageContents() {
         throw new Error("Please fill in all required shipping details");
       }
 
+      // Fetch authenticated user ID from Supabase using the component's client
+      const { data: { user }, error: userError } = await supabase.auth.getUser(); // Use the client initialized outside
+      if (userError || !user) {
+        console.error("Error fetching user:", userError);
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to place an order.",
+          variant: "destructive",
+        });
+        setIsProcessingPayment(false);
+        return; // Stop processing if user is not authenticated
+      }
+      const userId = user.id;
+      console.log("Authenticated User ID:", userId);
       // 1. Create order in your backend
       console.log("Calling /api/orders/create...");
       const orderCreationResponse = await fetch('/api/orders/create', {
@@ -234,6 +252,7 @@ function CheckoutPageContents() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
+          userId: userId, // Include the user ID
           orderAmount: currentOrderTotal,
           orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
           customerInfo: {
