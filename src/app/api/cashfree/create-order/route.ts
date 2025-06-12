@@ -1,7 +1,7 @@
 
 // src/app/api/cashfree/create-order/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { Cashfree, CFEnvironment, Orders } from "cashfree-pg"; // Corrected import for Orders if needed by type
+import { Cashfree , CFEnvironment } from "cashfree-pg";
 import type { CreateOrderRequest } from "cashfree-pg"; // Import specific types
 
 // Load environment variables
@@ -18,14 +18,18 @@ console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_SECRET_KEY: 
 console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_API_MODE: ${CASHFREE_API_MODE}`);
 console.log("------------------------------------------------------");
 
-const cashfree = new Cashfree();
+const cashfree = new Cashfree(
+  CFEnvironment.SANDBOX,
+  process.env.CASHFREE_APP_ID,
+  process.env.CASHFREE_SECRET_KEY
+);
+
 let sdkInitialized = false;
 
 if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
   try {
     cashfree.XClientId = CASHFREE_APP_ID;
     cashfree.XClientSecret = CASHFREE_SECRET_KEY;
-    cashfree.XEnvironment = CASHFREE_API_MODE === "production" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
     sdkInitialized = true;
     console.log("[Cashfree API Init] Cashfree SDK configured successfully with Environment:", cashfree.XEnvironment);
   } catch (error) {
@@ -76,8 +80,8 @@ export async function POST(request: NextRequest) {
       },
       order_meta: {
         return_url: returnUrl,
-        notify_url: notifyUrl,
-        payment_methods: "cc,dc,ppc,ccc,emi,paypal,upi,nb,app,paylater"
+        notify_url: notifyUrl, 
+        payment_methods: "cc,dc,ppc,ccc,emi,paypal,upi,nb,app,paylater" 
       },
       order_note: `Order for Elixr Juices. Items: ${Array.isArray(orderItems) ? orderItems.map((item: any) => `${item.name} (x${item.quantity})`).join(', ') : 'N/A'}`,
     };
@@ -85,10 +89,9 @@ export async function POST(request: NextRequest) {
     console.log("[Cashfree Create Order API] Creating order with request:", JSON.stringify(orderRequest, null, 2));
 
     try {
-      const cfOrder = await cashfree.PGCreateOrder(API_VERSION, orderRequest);
+      const cfOrder = await cashfree.PGCreateOrder(orderRequest);
       console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
-      // For debugging success cases:
-      // console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));
+      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2)); // Log full data for debug
 
       if (cfOrder.data && cfOrder.data.payment_session_id) {
         return NextResponse.json({
@@ -97,40 +100,38 @@ export async function POST(request: NextRequest) {
           data: {
             orderId: cfOrder.data.order_id,
             paymentSessionId: cfOrder.data.payment_session_id,
-            orderToken: cfOrder.data.payment_session_id, // Explicitly set orderToken for client
-            rawResponse: cfOrder.data,
+            // orderToken is often an alias for payment_session_id with the Web JS SDK
+            orderToken: cfOrder.data.payment_session_id, 
+            rawResponse: cfOrder.data, 
           },
         });
       } else {
         console.error("[Cashfree Create Order API] Cashfree API call succeeded but response data is invalid or missing payment_session_id. Response Data:", cfOrder.data);
         return NextResponse.json(
-          {
-            success: false,
+          { 
+            success: false, 
             message: 'Failed to create Cashfree order: Invalid response from gateway.',
-            errorDetails: cfOrder.data
-          },
+            errorDetails: cfOrder.data 
+          }, 
           { status: 500 }
         );
       }
     } catch (sdkError: any) {
       console.error("[Cashfree Create Order API] Error calling Cashfree PGCreateOrder:", sdkError);
       let errorMessage = "An unexpected error occurred while creating the payment order with Cashfree.";
-      let errorDetails: any = null; // Use 'any' or a more specific type if known
-      let errorStatus = 500;
+      let errorDetails = null;
 
       if (sdkError.response && sdkError.response.data) {
-        console.error("[Cashfree Create Order API] Cashfree SDK Error Response Status:", sdkError.response.status);
         console.error("[Cashfree Create Order API] Cashfree SDK Error Response Data:", sdkError.response.data);
         errorMessage = sdkError.response.data.message || errorMessage;
         errorDetails = sdkError.response.data;
-        errorStatus = sdkError.response.status || 500;
       } else if (sdkError.message) {
         errorMessage = sdkError.message;
       }
-
+      
       return NextResponse.json(
         { success: false, message: errorMessage, errorDetails },
-        { status: errorStatus }
+        { status: sdkError.response?.status || 500 }
       );
     }
 

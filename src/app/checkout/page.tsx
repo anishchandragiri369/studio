@@ -39,7 +39,7 @@ declare global {
         onScriptError?: (e: Error) => void;
       }) => void;
       checkout: any; // Use 'any' for flexibility, or define a more specific type if available
-      load: (options: { mode: "production" }) => Promise<any>; // Assuming a load function
+      load: (options: { mode: "sandbox" }) => Promise<any>; // Assuming a load function
     };
   }
 }
@@ -136,7 +136,7 @@ function CheckoutPageContents() {
   let cashfree;
   var initializeSDK = async function () {          
       cashfree = await load({
-          mode: "production"
+          mode: "sandbox"
       });
   }
   initializeSDK();
@@ -203,7 +203,7 @@ function CheckoutPageContents() {
     });
 
     try {
-      let cashfreeInstance = await load({ mode: "production" });
+      let cashfreeInstance = await load({ mode: "sandbox" });
       // Initialize Cashfree SDK asynchronously
       initializeSDK(); // Ensure the script is loaded
 
