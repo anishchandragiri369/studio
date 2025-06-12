@@ -197,7 +197,7 @@ function CheckoutPageContents() {
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
-      duration: 6000, // Extend duration for async process
+      duration: 6000, // Extend duration for ew  async process
       title: "Processing Payment...",
       description: "Initializing payment gateway...",
     });

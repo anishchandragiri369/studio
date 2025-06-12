@@ -71,6 +71,8 @@ export type CheckoutAddressFormData = z.infer<typeof checkoutAddressSchema>;
 export type EditProfileFormData = z.infer<typeof editProfileSchema>;
 
 // Order History Types
+type InternalOrderId = string; // Or number, depending on your Supabase ID type
+
 export interface OrderItem {
   juiceId: string;
   juiceName: string;
@@ -80,15 +82,17 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
-  orderDate: string; // ISO string or formatted date string
+  id: InternalOrderId; // Use InternalOrderId here for the database ID
+  cashfreeOrderId?: string; // Optional: To store the Cashfree order ID as well
+  orderDate?: string; // ISO string or formatted date string - Will be set by Supabase
   totalAmount: number;
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Payment Pending' | 'Payment Success' | 'Payment Failed'; // Added payment statuses
   items: OrderItem[];
   shippingAddress?: CheckoutAddressFormData; // Optional: if you want to show where it was shipped
+  // Add any other fields you store in your Supabase 'orders' table
+  // e.g., userId: string;
 }
 
 // New Product Form Data Type (using addProductFormSchema)
 export type AddProductFormData = z.infer<typeof addProductFormSchema>;
 
-    

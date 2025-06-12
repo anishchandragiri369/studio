@@ -1,8 +1,7 @@
-
 // src/app/api/cashfree/create-order/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Cashfree , CFEnvironment } from "cashfree-pg";
-import type { CreateOrderRequest } from "cashfree-pg"; // Import specific types
+import type { CreateOrderRequest } from "cashfree-pg";
 
 // Load environment variables
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
@@ -19,7 +18,7 @@ console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_API_MODE: ${
 console.log("------------------------------------------------------");
 
 const cashfree = new Cashfree(
-  CFEnvironment.SANDBOX,
+  CASHFREE_API_MODE === "production" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
   process.env.CASHFREE_APP_ID,
   process.env.CASHFREE_SECRET_KEY
 );
@@ -52,9 +51,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { orderAmount, orderItems, customerInfo } = body;
+    // ACCEPT internalOrderId from the request body
+    const { internalOrderId, orderAmount, orderItems, customerInfo } = body;
 
     // Basic validation (add more as needed)
+    if (!internalOrderId || typeof internalOrderId !== 'string') { // Validate internalOrderId
+       return NextResponse.json({ success: false, message: 'Internal Order ID is missing or invalid.' }, { status: 400 });
+    }
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid order amount.' }, { status: 400 });
     }
@@ -62,28 +65,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Customer email and phone are required.' }, { status: 400 });
     }
 
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/order-success?order_id={order_id}`;
-    // It's good practice to have a webhook for server-to-server confirmation
-    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm`;
+    // Use the internalOrderId for Cashfree's order_id if suitable,
+    // or use a new one but include the internalOrderId in metadata/URLs.
+    // Using the internalOrderId as Cashfree's order_id is common for simpler mapping.
+    // Ensure your internalOrderId format meets Cashfree's requirements if used directly.
+    const cashfreeOrderId = `elixr_${internalOrderId}`; // Prefixing to ensure uniqueness and identification
 
+    // Construct return and notify URLs including the internalOrderId
+    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/order-success?order_id=${internalOrderId}`;
+    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
 
     const orderRequest: CreateOrderRequest = {
-      order_id: orderId,
+      order_id: cashfreeOrderId, // Use the prefixed internal order ID
       order_amount: orderAmount,
-      order_currency: "INR",
+      order_currency: "INR", // Ensure this is correct
       customer_details: {
-        customer_id: customerInfo.id || `cust_${Date.now()}`,
+        // Use customerInfo passed from frontend
+        customer_id: customerInfo.id || customerInfo.email, // Use a stable customer ID
         customer_email: customerInfo.email,
         customer_phone: customerInfo.phone,
         customer_name: customerInfo.name || customerInfo.email.split('@')[0],
       },
       order_meta: {
         return_url: returnUrl,
-        notify_url: notifyUrl, 
-        payment_methods: "cc,dc,ppc,ccc,emi,paypal,upi,nb,app,paylater" 
+        notify_url: notifyUrl,
+        payment_methods: "cc,dc,ppc,ccc,emi,paypal,upi,nb,app,paylater"
       },
-      order_note: `Order for Elixr Juices. Items: ${Array.isArray(orderItems) ? orderItems.map((item: any) => `${item.name} (x${item.quantity})`).join(', ') : 'N/A'}`,
+      order_note: `Order for Elixr Juices. Internal ID: ${internalOrderId}`, // Include internal ID in note
+      // Add any other required fields for Cashfree
     };
 
     console.log("[Cashfree Create Order API] Creating order with request:", JSON.stringify(orderRequest, null, 2));
@@ -91,22 +100,28 @@ export async function POST(request: NextRequest) {
     try {
       const cfOrder = await cashfree.PGCreateOrder(orderRequest);
       console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
-      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2)); // Log full data for debug
+      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));
 
       if (cfOrder.data && cfOrder.data.payment_session_id) {
+        // Optionally update the order in Supabase with Cashfree order details here
+        // if you need to store cashfree_order_id or status immediately.
+        // A more robust approach is handling status updates via the webhook.
+
         return NextResponse.json({
           success: true,
           message: 'Order created successfully with Cashfree.',
           data: {
-            orderId: cfOrder.data.order_id,
+            // Return relevant data to the frontend
+            cashfreeOrderId: cfOrder.data.order_id, // Return Cashfree's ID
             paymentSessionId: cfOrder.data.payment_session_id,
-            // orderToken is often an alias for payment_session_id with the Web JS SDK
-            orderToken: cfOrder.data.payment_session_id, 
-            rawResponse: cfOrder.data, 
+            orderToken: cfOrder.data.payment_session_id,
+            internalOrderId: internalOrderId, // Pass internalOrderId back
+            rawResponse: cfOrder.data,
           },
         });
       } else {
         console.error("[Cashfree Create Order API] Cashfree API call succeeded but response data is invalid or missing payment_session_id. Response Data:", cfOrder.data);
+        // TODO: Potentially update Supabase order status to 'Payment Failed' or similar
         return NextResponse.json(
           { 
             success: false, 
@@ -118,6 +133,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (sdkError: any) {
       console.error("[Cashfree Create Order API] Error calling Cashfree PGCreateOrder:", sdkError);
+      // TODO: Potentially update Supabase order status to 'Payment Failed' or similar
       let errorMessage = "An unexpected error occurred while creating the payment order with Cashfree.";
       let errorDetails = null;
 
@@ -137,12 +153,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error("[Cashfree Create Order API] General error in POST handler:", error);
-    if (error instanceof SyntaxError) { // Specifically handle JSON parsing errors from request body
-        return NextResponse.json(
-            { success: false, message: `Invalid JSON payload in request: ${error.message}` },
-            { status: 400 }
-        );
-    }
+     if (error instanceof SyntaxError) { 
+         return NextResponse.json(
+             { success: false, message: `Invalid JSON payload in request: ${error.message}` },
+             { status: 400 }
+         );
+     }
     return NextResponse.json(
       { success: false, message: error.message || 'An unexpected error occurred on the server.' },
       { status: 500 }
