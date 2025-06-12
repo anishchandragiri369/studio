@@ -197,11 +197,10 @@ function CheckoutPageContents() {
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
-      duration: 6000, // Extend duration for ew  async process
+ duration: 6000, // Extend duration for async process
       title: "Processing Payment...",
-      description: "Initializing payment gateway...",
+ description: "Creating order and initializing payment gateway...",
     });
-
     try {
       let cashfreeInstance = await load({ mode: "sandbox" });
       // Initialize Cashfree SDK asynchronously
@@ -225,10 +224,13 @@ function CheckoutPageContents() {
         throw new Error("Please fill in all required shipping details");
       }
 
-      // Create order
-      const response = await fetch('/api/cashfree/create-order', {
+      // 1. Create order in your backend
+      console.log("Calling /api/orders/create...");
+      const orderCreationResponse = await fetch('/api/orders/create', {
         method: 'POST',
         headers: {
+          // Correcting header for JSON content
+
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
@@ -258,24 +260,45 @@ function CheckoutPageContents() {
         }),
       });
 
-      const result = await response.json();
-      console.log("Cashfree order creation result:", result);
-      console.log("Cashfree order response result:", response);
+      const orderCreationResult = await orderCreationResponse.json();
+      console.log("Order creation result:", orderCreationResult);
 
-      if (response.ok && result.success) {
-        console.log("Order created successfully");
+      if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.internalOrderId) {
+        throw new Error(orderCreationResult.message || "Failed to create internal order.");
+      }
+
+      const internalOrderId = orderCreationResult.data.internalOrderId;
+      console.log("Internal Order ID received:", internalOrderId);
+
+      // 2. Use the internalOrderId to create a Cashfree order session
+      console.log("Calling /api/cashfree/create-order...");
+      const cashfreeOrderResponse = await fetch('/api/cashfree/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderAmount: currentOrderTotal,
+          internalOrderId: internalOrderId, // Pass the obtained internalOrderId
+        }),
+      });
+
+      const cashfreeOrderResult = await cashfreeOrderResponse.json();
+      console.log("Cashfree order session creation result:", cashfreeOrderResult);
+
+      if (cashfreeOrderResponse.ok && cashfreeOrderResult.success && cashfreeOrderResult.data?.orderToken) {
         console.log("initiateadk", initializeSDK())
         console.log(" statement", window.Cashfree);
         console.log("in if statement", window.Cashfree.checkout);
          // Now that the SDK is loaded and order created, initiate checkout
          if (cashfreeInstance  && typeof cashfreeInstance .checkout === 'function') {
           console.log("in if statement for creat checkout")
-             createCheckout(cashfreeInstance , result.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
+             createCheckout(cashfreeInstance , cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
          } else {
              throw new Error("Cashfree SDK not available for checkout.");
          }
       } else {
-        throw new Error(result.message || "Failed to create order");
+        throw new Error(cashfreeOrderResult.message || "Failed to create Cashfree order session.");
       }
     } catch (error) {
       console.error("Payment error:", error);

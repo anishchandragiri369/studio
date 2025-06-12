@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // ACCEPT internalOrderId from the request body
     const { internalOrderId, orderAmount, orderItems, customerInfo } = body;
+    console.log("order-id",internalOrderId)
 
     // Basic validation (add more as needed)
     if (!internalOrderId || typeof internalOrderId !== 'string') { // Validate internalOrderId
