@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export', // Required for Capacitor static export
+  // output: 'export', // Required for Capacitor static export
   typescript: {
     ignoreBuildErrors: true,
   },
