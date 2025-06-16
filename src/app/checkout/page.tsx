@@ -20,7 +20,7 @@ import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
 import { load } from "@cashfreepayments/cashfree-js";
-// import { useAuth } from '@/hooks/useAuth'; // Assuming the hook path
+import { useAuth } from '@/context/AuthContext';
 
 interface SubscriptionOrderItem {
   id: string;
@@ -28,6 +28,7 @@ interface SubscriptionOrderItem {
   quantity: number;
   image?: string;
   dataAiHint?: string;
+  juiceName?: string; // Added to fix compile error
 }
 
 // Add Cashfree SDK types
@@ -50,8 +51,7 @@ function CheckoutPageContents() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { cartItems, getCartTotal, clearCart } = useCart();
-
-  // const { user, isLoading: isAuthLoading } = useAuth(); // Consume auth context
+  const { user, loading: isAuthLoading } = useAuth(); // Enable user context
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
     planId: string;
@@ -127,12 +127,9 @@ function CheckoutPageContents() {
   }, []);
 
   const handleFormSubmit: SubmitHandler<CheckoutAddressFormData> = (data) => {
-    console.log("Checkout Form Data (Address):", data);
-    console.log("Order Total for conceptual processing:", currentOrderTotal.toFixed(2));
-    toast({
-      title: "Order Details Logged (Conceptual)",
-      description: `Address details submitted. Total amount: Rs.${currentOrderTotal.toFixed(2)}. This is a conceptual confirmation.`,
-    });
+    // Remove conceptual logging and toast
+    // Instead, trigger the real Cashfree payment flow
+    handleCashfreePayment();
   };
 
   let cashfree;
@@ -238,7 +235,10 @@ function CheckoutPageContents() {
       }
       const orderPayload = {
         orderAmount: currentOrderTotal,
-        orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
+        orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
+          ...item,
+          juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name // Ensure juiceName is always present
+        })),
         customerInfo: {
           name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
           email: (formData as CheckoutAddressFormData).email,
@@ -251,7 +251,8 @@ function CheckoutPageContents() {
             zipCode: (formData as CheckoutAddressFormData).zipCode,
             country: (formData as CheckoutAddressFormData).country,
           }
-        }
+        },
+        userId: user?.id // <-- Pass the userId to backend
       };
       console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
       // const userId = user.id;
@@ -259,7 +260,8 @@ function CheckoutPageContents() {
       console.log("Calling /api/orders/create...");
       const orderCreationResponse = await fetch('/api/orders/create', {
         method: 'POST',
-        headers: {
+        headers:
+         {
           // Correcting header for JSON content
 
           'Content-Type': 'application/json',
@@ -344,13 +346,19 @@ function CheckoutPageContents() {
   const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <Button variant="outline" asChild className="mb-8">
-        <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
-        </Link>
-      </Button>
+    <div className="min-h-screen relative">
+      <div className="absolute inset-0 z-0">
+        <Image src="/images/fruit-bowl-custom.jpg" alt="Checkout background" fill className="object-cover opacity-50 blur pointer-events-none select-none" priority />
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-orange-50/80 to-yellow-100/80 mix-blend-multiply" />
+      </div>
+      <div className="relative z-10">
+        <div className="container mx-auto px-4 py-12">
+          <Button variant="outline" asChild className="mb-8">
+            <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
+            </Link>
+          </Button>
 
       <section className="text-center mb-10">
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
@@ -503,15 +511,8 @@ function CheckoutPageContents() {
                     className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
                     disabled={isCheckoutDisabled}
                   >
-                    <CreditCard className="mr-2 h-5 w-5" /> Confirm Details & Proceed (Concept)
+                    <CreditCard className="mr-2 h-5 w-5" /> Proceed to Payment
                   </Button>
-                   <Alert variant="default" className="mt-4 p-3 text-xs bg-muted/30 border-primary/30">
-                      <Info className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                      <AlertDescription>
-                      This is a conceptual checkout. Clicking 'Confirm Details' will log your address. Payment method selection is for demonstration.
-                      Cashfree payment is a conceptual frontend to backend call. The total amount is dynamically calculated.
-                      </AlertDescription>
-                  </Alert>
                 </form>
               </CardContent>
             </Card>
@@ -611,6 +612,8 @@ function CheckoutPageContents() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

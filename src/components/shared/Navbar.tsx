@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -140,12 +139,20 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/add-product" className="cursor-pointer">
-                          <PackagePlus className="mr-2 h-4 w-4" /> {/* Using PackagePlus for add product */}
-                          <span>Add Product</span>
-                        </Link>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/add-product" className="cursor-pointer">
+                            <PackagePlus className="mr-2 h-4 w-4" />
+                            <span>Add Product</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/manage-stock" className="cursor-pointer">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Manage Stock</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -249,4 +256,3 @@ const Navbar = () => {
 
 export default Navbar;
 
-    

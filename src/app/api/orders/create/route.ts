@@ -34,11 +34,10 @@ export async function POST(req: NextRequest) {
     // }
 
     const orderToInsert = {
-      // user_id: userId, // Link order to user
+      user_id: userId, // Link order to user
       total_amount: orderAmount, // Use underscore to match schema
       items: orderItems, // Supabase can handle JSON columns
       shipping_address: customerInfo, // Use underscore to match schema
-      // customerInfo: customerInfo, // Might also store customer info if needed
       status: 'Payment Pending', // Initial status
       // created_at will be automatically set by Supabase
     };
