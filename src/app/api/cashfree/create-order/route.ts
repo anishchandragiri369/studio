@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid order amount.' }, { status: 400 });
     }
+    console.log("customerinfo",customerInfo.email)
+    console.log("customerinfo",customerInfo.phone)
     if (!customerInfo || !customerInfo.email || !customerInfo.phone) {
       return NextResponse.json({ success: false, message: 'Customer email and phone are required.' }, { status: 400 });
     }
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
     // Construct return and notify URLs including the internalOrderId
     const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/order-success?order_id=${internalOrderId}`;
     const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
+    const customer_id = `${customerInfo.name?.substring(0, 4) || ""}_${customerInfo.phoneNumber?.replace(/\D/g, '').substring(0, 5) || ""}`;
 
     const orderRequest: CreateOrderRequest = {
       order_id: cashfreeOrderId, // Use the prefixed internal order ID
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       order_currency: "INR", // Ensure this is correct
       customer_details: {
         // Use customerInfo passed from frontend
-        customer_id: customerInfo.id || customerInfo.email, // Use a stable customer ID
+        customer_id: `${customerInfo.name?.substring(0, 4) || ""}_${customerInfo.phone?.replace(/\D/g, '').substring(0, 5) || ""}`, // Use a stable customer ID // Use a stable customer ID
         customer_email: customerInfo.email,
         customer_phone: customerInfo.phone,
         customer_name: customerInfo.name || customerInfo.email.split('@')[0],

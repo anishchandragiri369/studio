@@ -20,7 +20,7 @@ import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
 import { load } from "@cashfreepayments/cashfree-js";
-import { createBrowserClient } from '@supabase/ssr';
+// import { useAuth } from '@/hooks/useAuth'; // Assuming the hook path
 
 interface SubscriptionOrderItem {
   id: string;
@@ -51,6 +51,7 @@ function CheckoutPageContents() {
   const { toast } = useToast();
   const { cartItems, getCartTotal, clearCart } = useCart();
 
+  // const { user, isLoading: isAuthLoading } = useAuth(); // Consume auth context
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
     planId: string;
@@ -72,9 +73,6 @@ function CheckoutPageContents() {
   });
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  // Initialize Supabase client for client components
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   useEffect(() => {
     setIsLoadingSummary(true);
@@ -206,6 +204,17 @@ function CheckoutPageContents() {
  description: "Creating order and initializing payment gateway...",
     });
     try {
+    //    if (isAuthLoading) {
+    //      toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
+    //      setIsProcessingPayment(false);
+    //      return;
+    //    }
+    //   if (!user) {
+    //     toast({ title: "Authentication Required", description: "Please log in to complete your order.", variant: "destructive" });
+    //     setIsProcessingPayment(false);
+    //     // Optionally redirect to login page: router.push('/login');
+    //     return;
+    //   }
       let cashfreeInstance = await load({ mode: "sandbox" });
       // Initialize Cashfree SDK asynchronously
       initializeSDK(); // Ensure the script is loaded
@@ -227,21 +236,25 @@ function CheckoutPageContents() {
       if (!formData) {
         throw new Error("Please fill in all required shipping details");
       }
-
-      // Fetch authenticated user ID from Supabase using the component's client
-      const { data: { user }, error: userError } = await supabase.auth.getUser(); // Use the client initialized outside
-      if (userError || !user) {
-        console.error("Error fetching user:", userError);
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to place an order.",
-          variant: "destructive",
-        });
-        setIsProcessingPayment(false);
-        return; // Stop processing if user is not authenticated
-      }
-      const userId = user.id;
-      console.log("Authenticated User ID:", userId);
+      const orderPayload = {
+        orderAmount: currentOrderTotal,
+        orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
+        customerInfo: {
+          name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
+          email: (formData as CheckoutAddressFormData).email,
+          phone: (formData as CheckoutAddressFormData).mobileNumber,
+          address: {
+            line1: (formData as CheckoutAddressFormData).addressLine1,
+            line2: (formData as CheckoutAddressFormData).addressLine2,
+            city: (formData as CheckoutAddressFormData).city,
+            state: (formData as CheckoutAddressFormData).state,
+            zipCode: (formData as CheckoutAddressFormData).zipCode,
+            country: (formData as CheckoutAddressFormData).country,
+          }
+        }
+      };
+      console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
+      // const userId = user.id;
       // 1. Create order in your backend
       console.log("Calling /api/orders/create...");
       const orderCreationResponse = await fetch('/api/orders/create', {
@@ -251,55 +264,38 @@ function CheckoutPageContents() {
 
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          userId: userId, // Include the user ID
-          orderAmount: currentOrderTotal,
-          orderItems: isSubscriptionCheckout ? subscriptionOrderItems : cartItems,
-          customerInfo: {
-            // The 'formData' variable is typed as 'CheckoutAddressFormData | null'.
-            // After the 'if (!formData)' check, TypeScript should ideally narrow it to 'CheckoutAddressFormData'.
-            // However, the lint error indicates that 'formData' is inferred as 'never' at this point,
-            // suggesting an issue with the definition or import of 'CheckoutAddressFormData' itself,
-            // or how it's being inferred from 'handleSubmit'.
-            // To resolve the 'Property 'X' does not exist on type 'never'.' error within this selection,
-            // we explicitly assert 'formData' to 'CheckoutAddressFormData'.
-            // This assumes 'CheckoutAddressFormData' is correctly defined elsewhere and contains these properties.
-            name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
-            email: (formData as CheckoutAddressFormData).email,
-            phone: (formData as CheckoutAddressFormData).mobileNumber,
-            address: {
-              line1: (formData as CheckoutAddressFormData).addressLine1,
-              line2: (formData as CheckoutAddressFormData).addressLine2,
-              city: (formData as CheckoutAddressFormData).city, // City removed as per Cashfree docs example structure
-              state: (formData as CheckoutAddressFormData).state,
-              zipCode: (formData as CheckoutAddressFormData).zipCode,
-              country: (formData as CheckoutAddressFormData).country,
-            }
-          }
-        }),
+        body: JSON.stringify(orderPayload),
       });
-
+      
       const orderCreationResult = await orderCreationResponse.json();
       console.log("Order creation result:", orderCreationResult);
+      console.log("Order creation response:", orderCreationResponse);
+      console.log("Order creation data:", orderCreationResult.Data);
 
-      if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.internalOrderId) {
+      if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
         throw new Error(orderCreationResult.message || "Failed to create internal order.");
       }
 
-      const internalOrderId = orderCreationResult.data.internalOrderId;
+      const internalOrderId = orderCreationResult.data.id;
       console.log("Internal Order ID received:", internalOrderId);
 
       // 2. Use the internalOrderId to create a Cashfree order session
       console.log("Calling /api/cashfree/create-order...");
+      const cashfreeOrderPayload = {
+        orderAmount: currentOrderTotal,
+        internalOrderId: internalOrderId,
+        customerInfo: {
+          name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
+          email: (formData as CheckoutAddressFormData).email,
+          phone: (formData as CheckoutAddressFormData).mobileNumber,
+       }
+      };
       const cashfreeOrderResponse = await fetch('/api/cashfree/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderAmount: currentOrderTotal,
-          internalOrderId: internalOrderId, // Pass the obtained internalOrderId
-        }),
+        body: JSON.stringify(cashfreeOrderPayload),
       });
 
       const cashfreeOrderResult = await cashfreeOrderResponse.json();

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient'; // Assuming this is your Supaba
 import type { OrderItem, CheckoutAddressFormData } from '@/lib/types'; // Import necessary types
 // If you have user authentication and want to link orders to users,
 // import auth helper or get user session here.
+console.log("inside orders page");
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
       { status: 503 } // Service Unavailable
     );
   }
-
+  console.log("inside orders page");
   try {
     const body = await req.json();
     const { orderAmount, orderItems, shippingAddress, customerInfo, userId } = body;
@@ -28,20 +29,20 @@ export async function POST(req: NextRequest) {
 
     // TODO: Get authenticated user ID if orders are tied to users
     // Ensure userId is provided in the request body if user authentication is required
-    if (!userId) {
-         return NextResponse.json({ success: false, message: 'User ID is required.' }, { status: 400 });
-    }
+    // if (!userId) {
+    //      return NextResponse.json({ success: false, message: 'User ID is required.' }, { status: 400 });
+    // }
 
     const orderToInsert = {
-      user_id: userId, // Link order to user
+      // user_id: userId, // Link order to user
       total_amount: orderAmount, // Use underscore to match schema
       items: orderItems, // Supabase can handle JSON columns
-      shipping_address: shippingAddress, // Use underscore to match schema
+      shipping_address: customerInfo, // Use underscore to match schema
       // customerInfo: customerInfo, // Might also store customer info if needed
       status: 'Payment Pending', // Initial status
       // created_at will be automatically set by Supabase
     };
-
+    console.log("orders to insert", orderToInsert);
     console.log('[API /orders/create] Attempting to insert order:', orderToInsert);
 
     const { data, error } = await supabase
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
       .insert([orderToInsert])
       .select('id') // Select the generated ID to return
       .single(); // Expecting a single row back
+    console.log("data is", data);
+    console.log("error is", error);
 
     if (error) {
       console.error('[API /orders/create] Error inserting order into Supabase:', error);
