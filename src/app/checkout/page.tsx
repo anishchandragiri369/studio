@@ -272,7 +272,6 @@ function CheckoutPageContents() {
       const orderCreationResult = await orderCreationResponse.json();
       console.log("Order creation result:", orderCreationResult);
       console.log("Order creation response:", orderCreationResponse);
-      console.log("Order creation data:", orderCreationResult.Data);
 
       if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
         throw new Error(orderCreationResult.message || "Failed to create internal order.");

@@ -1,8 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient'; // Assuming this is your Supabase client
 import type { OrderItem, CheckoutAddressFormData } from '@/lib/types'; // Import necessary types
-import nodemailer from 'nodemailer';
-import { google } from 'googleapis';
 
 // If you have user authentication and want to link orders to users,
 // import auth helper or get user session here.
@@ -62,46 +60,7 @@ export async function POST(req: NextRequest) {
 
     console.log('[API /orders/create] Order created in Supabase with ID:', data.id);
 
-    // Send emails after order is created using Gmail OAuth2
-    try {
-      const oAuth2Client = new google.auth.OAuth2(
-        process.env.GMAIL_CLIENT_ID,
-        process.env.GMAIL_CLIENT_SECRET,
-        "https://developers.google.com/oauthplayground"
-      );
-      oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
-      const accessToken = await oAuth2Client.getAccessToken();
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: process.env.GMAIL_USER,
-          clientId: process.env.GMAIL_CLIENT_ID,
-          clientSecret: process.env.GMAIL_CLIENT_SECRET,
-          refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-          accessToken: accessToken?.token,
-        },
-      });
-      // Send confirmation to user
-      await transporter.sendMail({
-        from: `"Elixr Orders" <${process.env.GMAIL_USER}>`,
-        to: customerInfo?.email,
-        subject: 'Order Confirmation',
-        text: `Thank you for your order! Your order ID is ${data.id}.`,
-        html: `<p>Thank you for your order! Your order ID is <b>${data.id}</b>.</p>`,
-      });
-      // Send notification to admin
-      await transporter.sendMail({
-        from: `"Elixr Orders" <${process.env.GMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL,
-        subject: 'New Order Received',
-        text: `A new order has been placed by ${customerInfo?.email}. Order ID: ${data.id}`,
-        html: `<p>New order from <b>${customerInfo?.email}</b>. Order ID: <b>${data.id}</b></p>`,
-      });
-    } catch (mailError) {
-      console.error('Error sending order emails:', mailError);
-    }
-
+    // Remove email sending from here. Only create the order and return the response.
     return NextResponse.json({ success: true, data: { id: data.id } }); // Return the internal order ID
 
   } catch (error: any) {
