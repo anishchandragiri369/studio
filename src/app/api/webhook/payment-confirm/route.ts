@@ -29,7 +29,25 @@ function verifyWebhookSignature(signature: string | null, rawBody: string, times
   }
 }
 
+// Simple in-memory rate limiter
+const rateLimitWindowMs = 60 * 1000; // 1 minute
+const maxRequestsPerWindow = 10;
+const ipRequestCounts: Record<string, { count: number; timestamp: number }> = {};
+
 export async function POST(request: NextRequest) {
+  // Rate limiting logic
+  const ip = request.headers.get('x-forwarded-for') || 'unknown';
+  const now = Date.now();
+  if (!ipRequestCounts[ip] || now - ipRequestCounts[ip].timestamp > rateLimitWindowMs) {
+    ipRequestCounts[ip] = { count: 1, timestamp: now };
+  } else {
+    ipRequestCounts[ip].count += 1;
+  }
+  if (ipRequestCounts[ip].count > maxRequestsPerWindow) {
+    console.warn(`Rate limit exceeded for IP: ${ip}`);
+    return NextResponse.json({ success: false, message: 'Too Many Requests' }, { status: 429 });
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json(
       { success: false, message: 'Supabase connection error on server.' },
