@@ -32,7 +32,7 @@ function verifyWebhookSignature(signature: string | null, rawBody: string, times
 
 // Simple in-memory rate limiter
 const rateLimitWindowMs = 60 * 1000; // 1 minute
-const maxRequestsPerWindow = 10;
+const maxRequestsPerWindow = 30;
 const ipRequestCounts: Record<string, { count: number; timestamp: number }> = {};
 
 export async function POST(request: NextRequest) {
