@@ -1,3 +1,4 @@
+console.log('Loading webhook handler for payment confirmation...');
 // src/app/api/webhook/payment-confirm/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
   } else {
     ipRequestCounts[ip].count += 1;
   }
+  console.log(`[RateLimit] IP: ${ip}, Count: ${ipRequestCounts[ip].count}, Timestamp: ${new Date(ipRequestCounts[ip].timestamp).toISOString()}`);
   if (ipRequestCounts[ip].count > maxRequestsPerWindow) {
     console.warn(`Rate limit exceeded for IP: ${ip}`);
     return NextResponse.json({ success: false, message: 'Too Many Requests' }, { status: 429 });
