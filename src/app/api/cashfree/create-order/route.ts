@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/order-success?order_id=${internalOrderId}`;
     // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
     const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.exlir.in'}/order-success?order_id=${internalOrderId}`;
-    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.elixr.in'}/api/webhook/payment-confirm/?order_id=${internalOrderId}`;
+    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.elixr.in'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
     const customer_id = `${customerInfo.name?.substring(0, 4) || ""}_${customerInfo.phoneNumber?.replace(/\D/g, '').substring(0, 5) || ""}`;
 
     const orderRequest: CreateOrderRequest = {

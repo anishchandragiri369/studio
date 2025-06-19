@@ -15,6 +15,13 @@ function verifyWebhookSignature(signature: string | null, rawBody: string, times
       .createHmac('sha256', clientSecret)
       .update(signingString)
       .digest('base64');
+
+      // Debug logs
+    console.log('Received signature:', signature);
+    console.log('Timestamp:', timestamp);
+    console.log('Client secret present:', !!clientSecret);
+    console.log('Raw body:', rawBody);
+    console.log('Computed signature:', generatedSignature);
     return generatedSignature === signature;
   } catch (error) {
     console.error('Signature verification error:', error);
