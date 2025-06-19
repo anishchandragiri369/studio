@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
-const fetch = require('node-fetch');
 
 // Set up Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -137,6 +136,7 @@ exports.handler = async (event) => {
       };
       console.log('Calling /api/send-order-email with payload:', emailPayload);
       // Call Next.js API route to send email
+      const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
       const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
       const emailRes = await fetch(apiUrl, {
         method: 'POST',
