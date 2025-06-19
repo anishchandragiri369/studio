@@ -107,15 +107,16 @@ exports.handler = async (event) => {
   console.log('Webhook event_time:', event_time);
 
   // Only process successful payment events
-  if (type === 'PAYMENT_SUCCESS_WEBHOOK' && data && data.order_id) {
-    const orderId = data.order_id;
-    console.log('Processing PAYMENT_SUCCESS_WEBHOOK for orderId:', orderId);
+  if (type === 'PAYMENT_SUCCESS_WEBHOOK' && data?.order?.order_id) {
+    const cashfreeOrderId = data.order.order_id; // e.g., 'elixr_0528303b-233b-41f3-aece-9c5b1385e84b'
+    const internalOrderId = cashfreeOrderId.replace(/^elixr_/, ''); // Remove prefix to get your internal order ID
+    console.log('Processing PAYMENT_SUCCESS_WEBHOOK for internalOrderId:', internalOrderId);
     try {
-      // Fetch order details from Supabase
+      // Fetch order details from Supabase using internal order ID
       const { data: order, error } = await supabase
         .from('orders')
         .select('*')
-        .eq('id', orderId)
+        .eq('id', internalOrderId)
         .single();
       console.log('Supabase order fetch result:', order, error);
       if (error || !order) {
