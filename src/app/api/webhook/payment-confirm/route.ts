@@ -1,4 +1,7 @@
 console.log('Loading webhook handler for payment confirmation...');
+// Add a log at the top-level and inside the POST handler to ensure logs are visible
+console.log('Webhook handler module loaded (top-level)');
+
 // src/app/api/webhook/payment-confirm/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
@@ -36,6 +39,8 @@ const maxRequestsPerWindow = 30;
 const ipRequestCounts: Record<string, { count: number; timestamp: number }> = {};
 
 export async function POST(request: NextRequest) {
+  console.log('Webhook POST handler invoked');
+
   // Rate limiting logic
   const ip = request.headers.get('x-forwarded-for') || 'unknown';
   const now = Date.now();
