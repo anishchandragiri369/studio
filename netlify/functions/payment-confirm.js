@@ -126,13 +126,31 @@ exports.handler = async (event) => {
           body: JSON.stringify({ success: false, message: 'Order not found' }),
         };
       }
+      // Extract user email from all possible locations
+      const userEmail =
+        order.email ||
+        order.customer_email ||
+        order.shipping_address?.email ||
+        order.customerInfo?.email ||
+        order.customerinfo?.email;
+      if (!userEmail) {
+        console.error('No user email found in order:', order);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ success: false, message: 'No user email found in order' }),
+        };
+      }
+      // Extract order details from items array
+      const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : {};
+      const juiceName = firstItem.juiceName || firstItem.name || '';
+      const price = firstItem.price || '';
       // Prepare payload for Next.js API
       const emailPayload = {
         orderId: order.id,
-        userEmail: order.email,
+        userEmail,
         orderDetails: {
-          juiceName: order.juice_name || order.product_name || '',
-          price: order.price || '',
+          juiceName,
+          price,
         },
       };
       console.log('Calling /api/send-order-email with payload:', emailPayload);
