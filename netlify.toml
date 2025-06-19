@@ -1,0 +1,4 @@
+[[redirects]]
+  from = "/api/webhook/payment-confirm"
+  to = "/.netlify/functions/payment-confirm"
+  status = 200
