@@ -3,8 +3,8 @@ const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
 
 // Set up Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Set up Nodemailer transporter (OAuth2 or SMTP)
@@ -12,11 +12,10 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     type: 'OAuth2',
-    user: process.env.EMAIL_FROM,
-    clientId: process.env.EMAIL_CLIENT_ID,
-    clientSecret: process.env.EMAIL_CLIENT_SECRET,
-    refreshToken: process.env.EMAIL_REFRESH_TOKEN,
-    accessToken: process.env.EMAIL_ACCESS_TOKEN, // Optional, can be refreshed
+    user: process.env.GMAIL_USER,
+    clientId: process.env.GMAIL_CLIENT_ID,
+    clientSecret: process.env.GMAIL_CLIENT_SECRET,
+    refreshToken: process.env.GMAIL_REFRESH_TOKEN, // Optional, can be refreshed
   },
 });
 
