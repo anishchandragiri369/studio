@@ -72,7 +72,7 @@ exports.handler = async (event) => {
   // Get headers
   const signature = event.headers['x-webhook-signature'];
   const timestamp = event.headers['x-webhook-timestamp'];
-  const clientSecret = process.env.CASHFREE_CLIENT_SECRET;
+  const clientSecret = process.env.CASHFREE_SECRET_KEY;
 
   // Read raw body
   const rawBody = event.body;
