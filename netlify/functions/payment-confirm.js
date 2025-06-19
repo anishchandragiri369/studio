@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 // Set up Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -91,6 +92,7 @@ exports.handler = async (event) => {
   let webhookData;
   try {
     webhookData = JSON.parse(rawBody);
+    console.log('Parsed webhookData:', webhookData);
   } catch (error) {
     console.error('Webhook processing error:', error);
     return {
@@ -99,13 +101,16 @@ exports.handler = async (event) => {
     };
   }
 
-  // Example: process the webhook
+  // Log event type and data
   const { type, data, event_time } = webhookData;
-  console.log(`Processing webhook: ${type} at ${event_time}`);
+  console.log('Webhook type:', type);
+  console.log('Webhook data:', data);
+  console.log('Webhook event_time:', event_time);
 
   // Only process successful payment events
   if (type === 'PAYMENT_SUCCESS_WEBHOOK' && data && data.order_id) {
     const orderId = data.order_id;
+    console.log('Processing PAYMENT_SUCCESS_WEBHOOK for orderId:', orderId);
     try {
       // Fetch order details from Supabase
       const { data: order, error } = await supabase
@@ -113,6 +118,7 @@ exports.handler = async (event) => {
         .select('*')
         .eq('id', orderId)
         .single();
+      console.log('Supabase order fetch result:', order, error);
       if (error || !order) {
         console.error('Order not found or Supabase error:', error);
         return {
@@ -120,17 +126,28 @@ exports.handler = async (event) => {
           body: JSON.stringify({ success: false, message: 'Order not found' }),
         };
       }
-      // Prepare email
-      const mailOptions = {
-        from: process.env.EMAIL_FROM,
-        to: order.email,
-        subject: `Order Confirmation - Order #${order.id}`,
-        text: `Thank you for your order! Your order ID is ${order.id}.`,
-        html: `<h2>Thank you for your order!</h2><p>Your order ID is <b>${order.id}</b>.</p>`,
+      // Prepare payload for Next.js API
+      const emailPayload = {
+        orderId: order.id,
+        userEmail: order.email,
+        orderDetails: {
+          juiceName: order.juice_name || order.product_name || '',
+          price: order.price || '',
+        },
       };
-      // Send email
-      await transporter.sendMail(mailOptions);
-      console.log('Order confirmation email sent to', order.email);
+      console.log('Calling /api/send-order-email with payload:', emailPayload);
+      // Call Next.js API route to send email
+      const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+      const emailRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload),
+      });
+      const emailResult = await emailRes.json();
+      console.log('Email API response:', emailResult);
+      if (!emailResult.success) {
+        throw new Error(emailResult.error || 'Email API failed');
+      }
     } catch (err) {
       console.error('Error sending order confirmation email:', err);
       return {
@@ -138,6 +155,8 @@ exports.handler = async (event) => {
         body: JSON.stringify({ success: false, message: 'Email send error' }),
       };
     }
+  } else {
+    console.log('Webhook type did not match or missing order_id. Skipping email logic.');
   }
 
   return {
