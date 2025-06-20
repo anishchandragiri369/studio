@@ -98,23 +98,6 @@ export default function GoogleMapPicker({ onPlaceSelected }: GoogleMapPickerProp
     tryInit();
   }, [onPlaceSelected]);
 
-  // Load Google Maps JS API and Web Components loader
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (document.getElementById("google-maps-script")) return;
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.onload = () => {
-      const wcScript = document.createElement("script");
-      wcScript.src = "https://unpkg.com/@googlemaps/extended-component-library@latest/dist/index.umd.js";
-      wcScript.async = true;
-      document.body.appendChild(wcScript);
-    };
-    document.body.appendChild(script);
-  }, []);
-
   return (
     <div>
       <gmpx-place-picker style={{ width: "100%", marginBottom: 8 }}></gmpx-place-picker>
