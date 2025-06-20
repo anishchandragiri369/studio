@@ -18,14 +18,24 @@ export default function HomePage() {
       {/* Hero Section with Fruits Theme */}
       <section className="relative bg-gradient-to-br from-yellow-100 via-orange-50 to-lime-100 py-10 md:py-16 text-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image src="/images/fruits.jpg" alt="Fruits background" fill className="object-cover object-center opacity-90 pointer-events-none select-none" priority />
-          <div className="absolute inset-0 bg-black/30" aria-hidden="true"></div>
+          <Image src="/images/Welcome-to-the-world-of-Elixirs_page.jpg" alt="Fruits background" fill className="object-cover object-center opacity-100 pointer-events-none select-none" priority />
+          <div className="absolute inset-0 bg-black/5" aria-hidden="true"></div>
         </div>
         <div className="container mx-auto px-4 relative z-10">
-          <h1 className="text-5xl md:text-7xl font-headline font-bold text-primary mb-4 animate-fade-in drop-shadow-lg">
+          <h1
+            className="text-5xl md:text-7xl font-headline font-bold mb-4 animate-fade-in drop-shadow-lg"
+            style={{
+              background: 'linear-gradient(90deg, #2e7d32 0%, #fb8c00 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent',
+              display: 'inline-block',
+            }}
+          >
             Taste the Freshness.
           </h1>
-          <p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-6 animate-fade-in animation-delay-300 px-4 py-2 shadow-lg">
+          <p className="text-xl md:text-2xl text-black max-w-3xl mx-auto mb-6 animate-fade-in-shadow-lg">
             Discover vibrant, delicious juices made from the finest ingredients, delivered right to your door.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in animation-delay-600">

@@ -1,11 +1,29 @@
 import Link from 'next/link';
-import { Citrus } from 'lucide-react';
+
+const letterColors = [
+  // W  O     R      L      D      (space) O      F      (space) E      L      I      X      I      R      S
+  '#2e7d32', '#43a047', '#fb8c00', '#388e3c', '#fbc02d', '',    '#43a047', '#e53935', '',    '#388e3c', '#43a047', '#fb8c00', '#43a047', '#fbc02d', '#e53935'
+];
+const logoText = 'World of Elixirs';
 
 const Logo = () => {
   return (
-    <Link href="/" className="flex items-center gap-2 text-2xl md:text-3xl font-headline font-bold text-accent hover:text-accent/90 transition-colors">
-      <Citrus className="h-7 w-7 md:h-8 md:w-8" />
-      <span>Elixr</span>
+    <Link href="/" className="flex items-center gap-4 text-2xl md:text-3xl font-headline font-bold text-accent hover:text-accent/90 transition-colors">
+      <img
+        src="/images/elixr-logo.png"
+        alt="Elixr Logo"
+        className="h-12 w-auto md:h-16 object-contain"
+        style={{ objectFit: 'contain', objectPosition: 'center', maxWidth: '180px', minWidth: '40px' }}
+      />
+      <span className="ml-2 text-xl md:text-2xl font-semibold whitespace-nowrap">
+        {logoText.split('').map((char, i) =>
+          char === ' ' ? (
+            <span key={i}>&nbsp;</span>
+          ) : (
+            <span key={i} style={{ color: letterColors[i % letterColors.length] }}>{char}</span>
+          )
+        )}
+      </span>
     </Link>
   );
 };

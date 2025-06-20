@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -15,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { useToast } from "@/hooks/use-toast";
+import { JUICE_IMAGE_EXAMPLES } from '@/lib/constants';
 
 interface JuiceCardProps {
   juice: Juice;
@@ -24,7 +24,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0); // Start at 0
   const [currentStock, setCurrentStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [editedStock, setEditedStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [availabilityStatus, setAvailabilityStatus] = useState<'In Stock' | 'Low Stock' | 'Out of Stock'>('In Stock');
@@ -47,17 +47,17 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   }, [currentStock]);
 
   const handleAddToCart = () => {
-    if (availabilityStatus === 'Out of Stock' || currentStock < quantity) {
+    if (quantity <= 0 || availabilityStatus === 'Out of Stock' || currentStock < quantity) {
       toast({
         title: "Cannot Add to Cart",
-        description: "This item is out of stock or has insufficient quantity.",
+        description: quantity <= 0 ? "Please select at least 1 item to add to cart." : "This item is out of stock or has insufficient quantity.",
         variant: "destructive",
       });
       return;
     }
     const imageToUse = juice.image_url || juice.image;
     addToCart({ ...juice, image: imageToUse }, quantity);
-    setQuantity(1);
+    setQuantity(0);
      toast({ // Added toast on successful add to cart
         title: "Added to Cart!",
         description: `${quantity} x ${juice.name} added.`,
@@ -65,7 +65,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
-  const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+  const decrementQuantity = () => setQuantity(prev => Math.max(0, prev - 1)); // Allow going back to 0
 
   const handleStockInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -136,7 +136,9 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
     }
   };
   
-  const displayImage = juice.image_url || juice.image;
+  // Pick a fallback image from the examples if no image is provided
+  const fallbackJuiceImage = JUICE_IMAGE_EXAMPLES[Math.floor(Math.random() * JUICE_IMAGE_EXAMPLES.length)];
+  const displayImage = juice.image_url || juice.image || fallbackJuiceImage;
   const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
   return (
@@ -226,11 +228,11 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
             <Button
               onClick={handleAddToCart}
               className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isEffectivelyOutOfStock || quantity > currentStock}
-              aria-disabled={isEffectivelyOutOfStock || quantity > currentStock}
+              disabled={isEffectivelyOutOfStock || quantity > currentStock || quantity <= 0}
+              aria-disabled={isEffectivelyOutOfStock || quantity > currentStock || quantity <= 0}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
-              {isEffectivelyOutOfStock ? 'Out of Stock' : (quantity > currentStock ? 'Not Enough Stock' : 'Add to Cart')}
+              {isEffectivelyOutOfStock ? 'Out of Stock' : (quantity > currentStock ? 'Not Enough Stock' : (quantity <= 0 ? 'Add to Cart' : 'Add to Cart'))}
             </Button>
           </div>
         )}
