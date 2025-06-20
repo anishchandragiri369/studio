@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import AddressAutocomplete from '@/components/checkout/AddressAutocomplete';
+import GoogleMapPicker from '@/components/checkout/GoogleMapPicker';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
@@ -391,16 +392,22 @@ function CheckoutPageContents() {
                         apiKey={googleMapsApiKey} 
                         onPlaceSelected={handlePlaceSelected} 
                       />
-                       {!googleMapsApiKey && (
-                          <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
-                            <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                             <AlertTitle className="text-sm font-semibold">Address Autocomplete Not Configured</AlertTitle>
-                            <AlertDescription>
-                             To enable Google Maps address search, set the `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in your .env file and restart the server.
-                             You can still enter your address manually below.
-                            </AlertDescription>
-                         </Alert>
-                       )}
+                      {!googleMapsApiKey && (
+                        <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
+                          <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+                          <AlertTitle className="text-sm font-semibold">Address Autocomplete Not Configured</AlertTitle>
+                          <AlertDescription>
+                            To enable Google Maps address search, set the `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in your .env file and restart the server.
+                            You can still enter your address manually below.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      {/* Google Map Picker for visual address selection */}
+                      {googleMapsApiKey && (
+                        <div className="my-4">
+                          <GoogleMapPicker />
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="firstName">First Name *</Label>

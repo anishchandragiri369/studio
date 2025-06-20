@@ -58,6 +58,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
         });
         
         const addressLine1 = `${streetNumber} ${route}`.trim();
+        const typesToIgnoreInName = ['establishment', 'point_of_interest'];
 
         onPlaceSelected({
           addressLine1: addressLine1 || (place.name && !typesToIgnoreInName.some(t => place.types?.includes(t))) ? place.name || "" : "",
