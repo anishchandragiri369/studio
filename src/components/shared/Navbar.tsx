@@ -61,7 +61,46 @@ const Navbar = () => {
         <Logo />
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           {navLinks.map(link => (
-            link.label === 'Subscriptions' && 'subLinks' in link ? (
+            link.label === 'Contact Us' ? (
+              <React.Fragment key={link.href}>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={link.href}
+                    className={`transition-colors hover:text-primary ${
+                      pathname === link.href ? "text-primary font-semibold" : "text-foreground/70"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                  <a
+                    href="https://instagram.com/elixr_healthy_sips" // TODO: replace with your real Instagram URL
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="ml-1 flex items-center justify-center"
+                    style={{ lineHeight: 0 }}
+                  >
+                    <svg
+                      width="36" height="36" viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8"
+                    >
+                      <defs>
+                        <linearGradient id="ig-gradient" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#f58529" />
+                          <stop offset="50%" stopColor="#dd2a7b" />
+                          <stop offset="100%" stopColor="#515bd4" />
+                        </linearGradient>
+                      </defs>
+                      <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig-gradient)" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#fff"/>
+                      <circle cx="17.5" cy="6.5" r="1.5" fill="#fff"/>
+                    </svg>
+                  </a>
+                </div>
+              </React.Fragment>
+            ) : link.label === 'Subscriptions' && 'subLinks' in link ? (
               <DropdownMenu key={link.href}>
                 <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}>
                   {link.label}
@@ -84,11 +123,8 @@ const Navbar = () => {
                 key={link.href}
                 href={link.href}
                 className={`transition-colors hover:text-primary ${
-                  // Highlight if the current path exactly matches the link href
                   pathname === link.href ||
-                  // Or if it's a base path match (for subscriptions dropdown)
                   ('basePath' in link && link.basePath && pathname.startsWith(link.basePath)) ||
-                  // Or if it's a sub-link within a dropdown that matches the current path
                   ('subLinks' in link && link.subLinks?.some(subLink => pathname === subLink.href))
                     ? "text-primary font-semibold"
                     : "text-foreground/70"
