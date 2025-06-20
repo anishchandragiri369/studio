@@ -14,8 +14,8 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // The token is usually passed as a query param, e.g. /reset-password?token=...
-  const token = searchParams.get('token');
+  // Supabase sends access_token as the query param for password reset
+  const accessToken = searchParams.get('access_token');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,17 +24,18 @@ function ResetPasswordForm() {
       setError('Passwords do not match.');
       return;
     }
-    if (!token) {
+    if (!accessToken) {
       setError('Invalid or missing reset token.');
       return;
     }
     setLoading(true);
-    // Supabase expects the access_token for password reset
     if (!supabase) {
       setLoading(false);
       setError('Supabase client is not initialized.');
       return;
     }
+    // Set the access token before updating the password
+    await supabase.auth.setSession({ access_token: accessToken, refresh_token: searchParams.get('refresh_token') || '' });
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
