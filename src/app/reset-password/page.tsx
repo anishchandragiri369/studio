@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,34 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Supabase sends access_token as the query param for password reset
+  // Support both access_token and token (for recovery/magic link)
   const accessToken = searchParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token');
+  const recoveryToken = searchParams.get('token');
+  const type = searchParams.get('type');
+
+  // Debug: Show all query params if token is missing
+  const debugParams = Array.from(searchParams.entries());
+
+  // If recoveryToken and type=recovery, exchange for session
+  const [sessionReady, setSessionReady] = useState(!recoveryToken || type !== 'recovery');
+  useEffect(() => {
+    async function handleRecovery() {
+      if (recoveryToken && type === 'recovery') {
+        if (!supabase) {
+          setError('Supabase client is not initialized.');
+          return;
+        }
+        const { data, error } = await supabase.auth.exchangeCodeForSession(recoveryToken);
+        if (error) {
+          setError('Invalid or expired recovery link.');
+        } else {
+          setSessionReady(true);
+        }
+      }
+    }
+    handleRecovery();
+  }, [recoveryToken, type]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +50,7 @@ function ResetPasswordForm() {
       setError('Passwords do not match.');
       return;
     }
-    if (!accessToken) {
+    if (!accessToken && !sessionReady) {
       setError('Invalid or missing reset token.');
       return;
     }
@@ -34,8 +60,9 @@ function ResetPasswordForm() {
       setError('Supabase client is not initialized.');
       return;
     }
-    // Set the access token before updating the password
-    await supabase.auth.setSession({ access_token: accessToken, refresh_token: searchParams.get('refresh_token') || '' });
+    if (accessToken) {
+      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' });
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
@@ -75,6 +102,13 @@ function ResetPasswordForm() {
               {loading ? 'Resetting...' : 'Reset Password'}
             </Button>
           </>
+        )}
+        {(!accessToken || !refreshToken) && (
+          <div className="mb-4 text-yellow-700 text-xs bg-yellow-100 p-2 rounded">
+            <div><b>Debug:</b> Query params received:</div>
+            <pre>{JSON.stringify(debugParams, null, 2)}</pre>
+            <div>Expected <code>access_token</code> and <code>refresh_token</code> in the URL.</div>
+          </div>
         )}
       </form>
     </div>
