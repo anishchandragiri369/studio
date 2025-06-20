@@ -18,7 +18,14 @@ export default function HomePage() {
       {/* Hero Section with Fruits Theme */}
       <section className="relative bg-gradient-to-br from-yellow-100 via-orange-50 to-lime-100 py-10 md:py-16 text-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image src="/images/Welcome-to-the-world-of-Elixirs_page.jpg" alt="Fruits background" fill className="object-cover object-center opacity-100 pointer-events-none select-none" priority />
+          <Image
+            src="/images/Welcome-to-the-world-of-Elixirs_page.jpg"
+            alt="Fruits background"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1920px"
+            className="object-cover object-center opacity-100 pointer-events-none select-none"
+            priority
+          />
           <div className="absolute inset-0 bg-black/5" aria-hidden="true"></div>
         </div>
         <div className="container mx-auto px-4 relative z-10">
