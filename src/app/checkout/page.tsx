@@ -15,7 +15,7 @@ import type { CheckoutAddressFormData, Juice as JuiceType } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import AddressAutocomplete from '@/components/checkout/AddressAutocomplete';
+import GoogleMapPicker from '@/components/checkout/GoogleMapPicker';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
@@ -64,6 +64,7 @@ function CheckoutPageContents() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | undefined>();
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -334,299 +335,299 @@ function CheckoutPageContents() {
     state: string;
     zipCode: string;
     country: string;
+    lat?: number;
+    lng?: number;
   }) => {
     setValue('addressLine1', placeDetails.addressLine1, { shouldValidate: true });
     setValue('city', placeDetails.city, { shouldValidate: true });
     setValue('state', placeDetails.state, { shouldValidate: true });
     setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
     setValue('country', placeDetails.country || 'India', { shouldValidate: true });
+    if (placeDetails.lat && placeDetails.lng) {
+      setSelectedLocation({ lat: placeDetails.lat, lng: placeDetails.lng });
+    }
   };
 
   const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
 
   return (
-    <div className="min-h-screen relative">
-      <div className="absolute inset-0 z-0">
-        <Image src="/images/fruit-bowl-custom.jpg" alt="Checkout background" fill className="object-cover opacity-50 blur pointer-events-none select-none" priority />
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-orange-50/80 to-yellow-100/80 mix-blend-multiply" />
-      </div>
-      <div className="relative z-10">
-        <div className="container mx-auto px-4 py-12">
-          <Button variant="outline" asChild className="mb-8">
-            <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
-            </Link>
-          </Button>
-
-      <section className="text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
-          Checkout
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-          You&apos;re almost there! Please provide your shipping details and complete your purchase.
-        </p>
-      </section>
-
-      {isLoadingSummary ? (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <>
+      <div className="min-h-screen relative">
+        <div className="absolute inset-0 z-0">
+          <Image src="/images/fruit-bowl-custom.jpg" alt="Checkout background" fill className="object-cover opacity-50 blur pointer-events-none select-none" priority />
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-orange-50/80 to-yellow-100/80 mix-blend-multiply" />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Shipping & Payment</CardTitle>
-                <CardDescription>Please enter your shipping address and payment details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">Shipping Address</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <AddressAutocomplete 
-                        apiKey={googleMapsApiKey} 
-                        onPlaceSelected={handlePlaceSelected} 
-                      />
-                       {!googleMapsApiKey && (
-                          <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
-                            <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                             <AlertTitle className="text-sm font-semibold">Address Autocomplete Not Configured</AlertTitle>
-                            <AlertDescription>
-                             To enable Google Maps address search, set the `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in your .env file and restart the server.
-                             You can still enter your address manually below.
-                            </AlertDescription>
-                         </Alert>
-                       )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="firstName">First Name *</Label>
-                          <Input id="firstName" {...register("firstName")} placeholder="John" />
-                          {errors.firstName && <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" {...register("lastName")} placeholder="Doe" />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email Address *</Label>
-                        <Input id="email" type="email" {...register("email")} placeholder="you@example.com" />
-                        {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
-                      </div>
-                      <div>
-                        <Label htmlFor="mobileNumber">Mobile Number</Label>
-                        <Input id="mobileNumber" type="tel" {...register("mobileNumber")} placeholder="+91 98765 43210" />
-                      </div> 
-                      <div>
-                        <Label htmlFor="addressLine1">Address Line 1 *</Label>
-                        <Input id="addressLine1" {...register("addressLine1")} placeholder="123 Juice Street" />
-                        {errors.addressLine1 && <p className="text-sm text-destructive mt-1">{errors.addressLine1.message}</p>}
-                      </div>
-                      <div>
-                        <Label htmlFor="addressLine2">Address Line 2 (Apartment, Suite, etc.)</Label>
-                        <Input id="addressLine2" {...register("addressLine2")} placeholder="Apt 4B" />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="city">City *</Label>
-                          <Input id="city" {...register("city")} placeholder="Flavor Town" />
-                          {errors.city && <p className="text-sm text-destructive mt-1">{errors.city.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="state">State / Province *</Label>
-                          <Input id="state" {...register("state")} placeholder="California" />
-                          {errors.state && <p className="text-sm text-destructive mt-1">{errors.state.message}</p>}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="zipCode">ZIP / Postal Code *</Label>
-                          <Input id="zipCode" {...register("zipCode")} placeholder="90210" />
-                          {errors.zipCode && <p className="text-sm text-destructive mt-1">{errors.zipCode.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="country">Country *</Label>
-                          <Input id="country" {...register("country")} />
-                          {errors.country && <p className="text-sm text-destructive mt-1">{errors.country.message}</p>}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <div className="relative z-10">
+          <div className="container mx-auto px-4 py-12">
+            <Button variant="outline" asChild className="mb-8">
+              <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
+              </Link>
+            </Button>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pb-0">
-                       {isCheckoutDisabled && (
-                           <Alert variant="default" className="text-center">
-                               <ShoppingBag className="mx-auto h-6 w-6 mb-2 text-muted-foreground" />
-                               <AlertTitle>No items to checkout</AlertTitle>
-                               <AlertDescription>
-                                   {isSubscriptionCheckout ? "Subscription details are missing." : "Your cart is empty."} Please add items or select a subscription to proceed.
-                                   {isSubscriptionCheckout && !subscriptionDetails && " You might need to go back and select a plan."}
-                               </AlertDescription>
-                                {!isSubscriptionCheckout && (
-                                    <Button asChild variant="link" className="mt-2 text-primary">
-                                        <Link href="/menu">Browse Juices</Link>
- 
-                                    </Button>
-                                )}
-                           </Alert>
-                       )}
-                      <div className="p-4 border rounded-lg bg-muted/30">
-                        <h4 className="font-semibold mb-1">Credit/Debit Card</h4>
-                        <p className="text-sm text-muted-foreground">Secure card payment form would be here (e.g., Stripe Elements).</p>
-                      </div>
-                      <div className="p-4 border rounded-lg bg-muted/30">
-                        <h4 className="font-semibold mb-1">Cashfree</h4>
-                        <p className="text-sm text-muted-foreground">Securely pay using Cashfree Payment Gateway.</p>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="mt-2 w-full border-primary text-primary hover:bg-primary/10"
-                          onClick={handleCashfreePayment}
-                          disabled={isProcessingPayment || isCheckoutDisabled}
-                        >
-                          {isProcessingPayment ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Wallet className="mr-2 h-4 w-4" />
-                          )}
-                           Pay with Cashfree (Conceptual)
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                 
-                  
-                  <Button 
-                    type="submit"
-                    size="lg" 
-                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
-                    disabled={isCheckoutDisabled}
-                  >
-                    <CreditCard className="mr-2 h-5 w-5" /> Proceed to Payment
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+        <section className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
+            Checkout
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            You&apos;re almost there! Please provide your shipping details and complete your purchase.
+          </p>
+        </section>
+
+        {isLoadingSummary ? (
+          <div className="flex justify-center items-center py-10">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
-
-          <div className="md:col-span-1">
-            <Card className="shadow-lg sticky top-24">
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-
-                {isSubscriptionCheckout && subscriptionDetails ? (
-                  <>
-                    <h3 className="font-semibold text-primary">{subscriptionDetails.planName}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">{subscriptionDetails.planFrequency} Delivery</p>
-                    {subscriptionOrderItems.length > 0 && (
-                       <>
-                        <Separator className="my-2" />
-                        <h4 className="text-sm font-medium mb-1">Selected Juices:</h4>
-                        {subscriptionOrderItems.map(item => (
-                          <div key={item.id} className="flex items-center gap-2 text-xs">
-                            {item.image && (
-                              <Image 
-                                src={item.image} 
-                                alt={item.name} 
-                                width={32} 
-                                height={32} 
-                                className="rounded-sm object-cover border"
-                                data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
-                                unoptimized={item.image.startsWith('https://placehold.co')}
-                                onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
-                              />
-                            )}
-                            <span className="flex-grow">{item.quantity}x {item.name}</span>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="font-headline text-2xl">Shipping & Payment</CardTitle>
+                  <CardDescription>Please enter your shipping address and payment details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="font-headline text-xl">Shipping Address</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <GoogleMapPicker 
+                          location={selectedLocation} 
+                          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID} 
+                          onPlaceSelected={handlePlaceSelected} 
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName">First Name *</Label>
+                            <Input id="firstName" {...register("firstName")} placeholder="John" />
+                            {errors.firstName && <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>}
                           </div>
-                        ))}
-                       </>
-                    )}
-                     <Separator className="my-2" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-semibold text-accent">Rs.0.00</span>
-                    </div>
-                     <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
-                      <span>Total</span>
-                      <span>Rs.{currentOrderTotal.toFixed(2)}</span>
-                    </div>
+                          <div>
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input id="lastName" {...register("lastName")} placeholder="Doe" />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="email">Email Address *</Label>
+                          <Input id="email" type="email" {...register("email")} placeholder="you@example.com" />
+                          {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
+                        </div>
+                        <div>
+                          <Label htmlFor="mobileNumber">Mobile Number</Label>
+                          <Input id="mobileNumber" type="tel" {...register("mobileNumber")} placeholder="+91 98765 43210" />
+                        </div> 
+                        <div>
+                          <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                          <Input id="addressLine1" {...register("addressLine1")} placeholder="123 Juice Street" />
+                          {errors.addressLine1 && <p className="text-sm text-destructive mt-1">{errors.addressLine1.message}</p>}
+                        </div>
+                        <div>
+                          <Label htmlFor="addressLine2">Address Line 2 (Apartment, Suite, etc.)</Label>
+                          <Input id="addressLine2" {...register("addressLine2")} placeholder="Apt 4B" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="city">City *</Label>
+                            <Input id="city" {...register("city")} placeholder="Flavor Town" />
+                            {errors.city && <p className="text-sm text-destructive mt-1">{errors.city.message}</p>}
+                          </div>
+                          <div>
+                            <Label htmlFor="state">State / Province *</Label>
+                            <Input id="state" {...register("state")} placeholder="California" />
+                            {errors.state && <p className="text-sm text-destructive mt-1">{errors.state.message}</p>}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="zipCode">ZIP / Postal Code *</Label>
+                            <Input id="zipCode" {...register("zipCode")} placeholder="90210" />
+                            {errors.zipCode && <p className="text-sm text-destructive mt-1">{errors.zipCode.message}</p>}
+                          </div>
+                          <div>
+                            <Label htmlFor="country">Country *</Label>
+                            <Input id="country" {...register("country")} />
+                            {errors.country && <p className="text-sm text-destructive mt-1">{errors.country.message}</p>}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                  </>
-                ) : cartItems.length > 0 ? (
-                  <>
-                    {cartItems.map(item => (
-                      <div key={item.id} className="flex items-center gap-2 text-xs">
-                         {item.image && (
-                            <Image 
-                                src={item.image} 
-                                alt={item.name} 
-                                width={32} 
-                                height={32} 
-                                className="rounded-sm object-cover border"
-                                data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
-                                unoptimized={item.image.startsWith('https://placehold.co')}
-                                onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
-                              />
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pb-0">
+                         {isCheckoutDisabled && (
+                             <Alert variant="default" className="text-center">
+                                 <ShoppingBag className="mx-auto h-6 w-6 mb-2 text-muted-foreground" />
+                                 <AlertTitle>No items to checkout</AlertTitle>
+                                 <AlertDescription>
+                                     {isSubscriptionCheckout ? "Subscription details are missing." : "Your cart is empty."} Please add items or select a subscription to proceed.
+                                     {isSubscriptionCheckout && !subscriptionDetails && " You might need to go back and select a plan."}
+                                 </AlertDescription>
+                                  {!isSubscriptionCheckout && (
+                                      <Button asChild variant="link" className="mt-2 text-primary">
+                                          <Link href="/menu">Browse Juices</Link>
+ 
+                                      </Button>
+                                  )}
+                             </Alert>
                          )}
-                        <span className="flex-grow">{item.quantity}x {item.name}</span>
-                        <span className="font-semibold text-accent">Rs.{(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-semibold">
-                      <span>Subtotal</span>
-                      <span className="text-accent">Rs.{getCartTotal().toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-semibold text-accent">Rs.{(currentOrderTotal - getCartTotal()).toFixed(2)}</span>
-                    </div>
-                    <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
-                      <span>Total</span>
-                      <span>Rs.{currentOrderTotal.toFixed(2)}</span>
-                    </div>
-
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Your cart is empty.</p>
-                    <Button asChild variant="link" className="mt-2 text-primary">
-                        <Link href="/menu">Browse Our Juices</Link>
+                        <div className="p-4 border rounded-lg bg-muted/30">
+                          <h4 className="font-semibold mb-1">Credit/Debit Card</h4>
+                          <p className="text-sm text-muted-foreground">Secure card payment form would be here (e.g., Stripe Elements).</p>
+                        </div>
+                        <div className="p-4 border rounded-lg bg-muted/30">
+                          <h4 className="font-semibold mb-1">Cashfree</h4>
+                          <p className="text-sm text-muted-foreground">Securely pay using Cashfree Payment Gateway.</p>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="mt-2 w-full border-primary text-primary hover:bg-primary/10"
+                            onClick={handleCashfreePayment}
+                            disabled={isProcessingPayment || isCheckoutDisabled}
+                          >
+                            {isProcessingPayment ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Wallet className="mr-2 h-4 w-4" />
+                            )}
+                             Pay with Cashfree (Conceptual)
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                   
+                    
+                    <Button 
+                      type="submit"
+                      size="lg" 
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
+                      disabled={isCheckoutDisabled}
+                    >
+                      <CreditCard className="mr-2 h-5 w-5" /> Proceed to Payment
                     </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="md:col-span-1">
+              <Card className="shadow-lg sticky top-24">
+                <CardHeader>
+                  <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+
+                  {isSubscriptionCheckout && subscriptionDetails ? (
+                    <>
+                      <h3 className="font-semibold text-primary">{subscriptionDetails.planName}</h3>
+                      <p className="text-sm text-muted-foreground capitalize">{subscriptionDetails.planFrequency} Delivery</p>
+                      {subscriptionOrderItems.length > 0 && (
+                         <>
+                          <Separator className="my-2" />
+                          <h4 className="text-sm font-medium mb-1">Selected Juices:</h4>
+                          {subscriptionOrderItems.map(item => (
+                            <div key={item.id} className="flex items-center gap-2 text-xs">
+                              {item.image && (
+                                <Image 
+                                  src={item.image} 
+                                  alt={item.name} 
+                                  width={32} 
+                                  height={32} 
+                                  className="rounded-sm object-cover border"
+                                  data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
+                                  unoptimized={item.image.startsWith('https://placehold.co')}
+                                  onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
+                                />
+                              )}
+                              <span className="flex-grow">{item.quantity}x {item.name}</span>
+                            </div>
+                          ))}
+                         </>
+                      )}
+                       <Separator className="my-2" />
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Shipping</span>
+                        <span className="font-semibold text-accent">Rs.0.00</span>
+                      </div>
+                       <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
+                        <span>Total</span>
+                        <span>Rs.{currentOrderTotal.toFixed(2)}</span>
+                      </div>
+
+                    </>
+                  ) : cartItems.length > 0 ? (
+                    <>
+                      {cartItems.map(item => (
+                        <div key={item.id} className="flex items-center gap-2 text-xs">
+                           {item.image && (
+                              <Image 
+                                  src={item.image} 
+                                  alt={item.name} 
+                                  width={32} 
+                                  height={32} 
+                                  className="rounded-sm object-cover border"
+                                  data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
+                                  unoptimized={item.image.startsWith('https://placehold.co')}
+                                  onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
+                                />
+                           )}
+                          <span className="flex-grow">{item.quantity}x {item.name}</span>
+                          <span className="font-semibold text-accent">Rs.{(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <Separator className="my-2" />
+                      <div className="flex justify-between font-semibold">
+                        <span>Subtotal</span>
+                        <span className="text-accent">Rs.{getCartTotal().toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Shipping</span>
+                        <span className="font-semibold text-accent">Rs.{(currentOrderTotal - getCartTotal()).toFixed(2)}</span>
+                      </div>
+                      <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
+                        <span>Total</span>
+                        <span>Rs.{currentOrderTotal.toFixed(2)}</span>
+                      </div>
+
+                    </>
+                  ) : (
+                    <div className="text-center py-6">
+                      <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">Your cart is empty.</p>
+                      <Button asChild variant="link" className="mt-2 text-primary">
+                          <Link href="/menu">Browse Our Juices</Link>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
           </div>
         </div>
-      )}
-        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Loading checkout...</p>
-      </div>
-    }>
-      <CheckoutPageContents />
-    </Suspense>
+    <>
+      <Suspense fallback={
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Loading checkout...</p>
+        </div>
+      }>
+        <CheckoutPageContents />
+      </Suspense>
+    </>
   );
 }
 
