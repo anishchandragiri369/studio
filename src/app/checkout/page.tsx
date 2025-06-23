@@ -462,10 +462,6 @@ function CheckoutPageContents() {
                              </Alert>
                          )}
                         <div className="p-4 border rounded-lg bg-muted/30">
-                          <h4 className="font-semibold mb-1">Credit/Debit Card</h4>
-                          <p className="text-sm text-muted-foreground">Secure card payment form would be here (e.g., Stripe Elements).</p>
-                        </div>
-                        <div className="p-4 border rounded-lg bg-muted/30">
                           <h4 className="font-semibold mb-1">Cashfree</h4>
                           <p className="text-sm text-muted-foreground">Securely pay using Cashfree Payment Gateway.</p>
                           <Button 
@@ -480,7 +476,7 @@ function CheckoutPageContents() {
                             ) : (
                               <Wallet className="mr-2 h-4 w-4" />
                             )}
-                             Pay with Cashfree (Conceptual)
+                             Pay with Cashfree
                           </Button>
                         </div>
                       </CardContent>
