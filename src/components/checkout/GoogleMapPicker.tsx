@@ -208,7 +208,7 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
 
   }, [mounted, isLoaded, location, mapId, onPlaceSelected]);  if (!mounted) {
     return (
-      <div style={{ minHeight: 420, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div>Initializing...</div>
       </div>
     );
@@ -216,7 +216,7 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
 
   if (error) {
     return (
-      <div style={{ minHeight: 420, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: 'red' }}>Error loading Google Maps: {error}</div>
       </div>
     );
@@ -224,18 +224,17 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
 
   if (isLoading || !isLoaded) {
     return (
-      <div style={{ minHeight: 420, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div>Loading Google Maps...</div>
       </div>
     );
   }
 
-  console.log('GoogleMapPicker rendering components');
   return (
-    <div style={{ minHeight: 420, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8 }}>
+    <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8 }}>
       {/* Only render the map and picker when API is ready */}
       <gmpx-place-picker ref={placePickerRef} style={{ width: "100%", marginBottom: 8 }}></gmpx-place-picker>
-      <gmp-map ref={mapRef} style={{ width: "100%", height: 400, background: '#e0e7ef', borderRadius: 8 }} map-id={mapId}>
+      <gmp-map ref={mapRef} style={{ width: "100%", height: 250, background: '#e0e7ef', borderRadius: 8 }} map-id={mapId}>
         <gmp-advanced-marker ref={markerRef}></gmp-advanced-marker>
       </gmp-map>
     </div>
