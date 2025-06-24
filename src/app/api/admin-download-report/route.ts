@@ -4,11 +4,28 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    console.log('[admin-download-report] Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      supabaseUrl: supabaseUrl?.substring(0, 20) + '...'
+    });
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[admin-download-report] Missing environment variables');
+      return NextResponse.json({ 
+        error: 'Server configuration error',
+        details: 'Missing required environment variables'
+      }, { status: 500 });
+    }
+
     // Initialize Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    console.log('[admin-download-report] Fetching subscriptions...');
 
     // Fetch all subscriptions with related data
     const { data: subscriptions, error } = await supabase
@@ -24,9 +41,14 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching subscriptions:', error);
-      return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
+      console.error('[admin-download-report] Supabase error:', error);
+      return NextResponse.json({ 
+        error: 'Failed to fetch subscriptions', 
+        details: error.message 
+      }, { status: 500 });
     }
+
+    console.log('[admin-download-report] Fetched subscriptions:', subscriptions?.length || 0);
 
     // Create a new workbook
     const workbook = new ExcelJS.Workbook();
@@ -171,14 +193,19 @@ export async function GET(request: NextRequest) {
       worksheet.getCell(`A${rowNum}`).value = row[0];
       worksheet.getCell(`B${rowNum}`).value = row[1];
       worksheet.getCell(`A${rowNum}`).font = { bold: true };
-    });
-
-    // Generate Excel buffer
+    });    // Generate Excel buffer
+    console.log('[admin-download-report] Generating Excel buffer...');
     const buffer = await workbook.xlsx.writeBuffer();
 
     // Create filename with current date
     const today = new Date().toISOString().split('T')[0];
     const filename = `Elixr_Subscription_Report_${today}.xlsx`;
+
+    console.log('[admin-download-report] Report generated successfully:', {
+      filename,
+      bufferSize: buffer.byteLength,
+      subscriptionCount: subscriptions?.length || 0
+    });
 
     // Return the Excel file
     return new NextResponse(buffer, {
@@ -191,9 +218,13 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error generating admin report:', error);
+    console.error('[admin-download-report] Error generating report:', error);
     return NextResponse.json(
-      { error: 'Failed to generate report', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to generate report', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
