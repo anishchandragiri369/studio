@@ -94,8 +94,8 @@ exports.handler = async (event) => {
     }
     
     // Extract signature, timestamp, and raw body for verification
-    const signature = event.headers['x-signature'] || '';
-    const timestamp = event.headers['x-timestamp'] || '';
+    const signature = event.headers['x-webhook-signature'] || '';
+    const timestamp = event.headers['x-webhook-timestamp'] || '';
     const rawBody = event.body || '';
     const clientSecret = process.env.CASHFREE_SECRET_KEY;
     
@@ -149,60 +149,20 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Order not found' }),
           };
         }
-
-        // Extract user email from all possible locations
-        const userEmail =
-          order.email ||
-          order.customer_email ||
-          order.shipping_address?.email ||
-          order.customerInfo?.email ||
-          order.customerinfo?.email;
-        if (!userEmail) {
-          console.error('No user email found in order:', order);
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ success: false, message: 'No user email found in order' }),
-          };
-        }
-
-        // Extract order details from items array
-        const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : {};
-        const juiceName = firstItem.juiceName || firstItem.name || '';
-        const price = firstItem.price || '';
-
-        // Prepare payload for Next.js API
-        const emailPayload = {
-          orderId: order.id,
-          userEmail,
-          orderDetails: {
-            juiceName,
-            price,
-          },
+        // If order found, just return success
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true, message: 'Order found and webhook processed.' }),
         };
-        console.log('Calling /api/send-order-email with payload:', emailPayload);
-
-        // Call Next.js API route to send email
-        const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
-        const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
-        const emailRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emailPayload),
-        });
-        const emailResult = await emailRes.json();
-        console.log('Email API response:', emailResult);
-        if (!emailResult.success) {
-          throw new Error(emailResult.error || 'Email API failed');
-        }
       } catch (err) {
-        console.error('Error sending order confirmation email:', err);
+        console.error('Error fetching order:', err);
         return {
           statusCode: 500,
-          body: JSON.stringify({ success: false, message: 'Email send error', error: err.message }),
+          body: JSON.stringify({ success: false, message: 'Order fetch error', error: err.message }),
         };
       }
     } else {
-      console.log('Webhook type did not match or missing order_id. Skipping email logic.');
+      console.log('Webhook type did not match or missing order_id. Skipping order logic.');
     }
 
     return {
