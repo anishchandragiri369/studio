@@ -157,13 +157,15 @@ function generateCustomerEmailHtml(order: OrderData, customerName: string): stri
             <h3>${isSubscription ? 'Subscription' : 'Order'} Details</h3>
             <p><strong>${isSubscription ? 'Subscription' : 'Order'} ID:</strong> ${order.id}</p>
             <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
-            
-            ${isSubscription && subscriptionInfo ? `
+              ${isSubscription && subscriptionInfo ? `
             <div class="subscription-info">
                 <h4>📅 Subscription Information</h4>
                 <p><strong>Plan:</strong> ${subscriptionInfo.planName}</p>
                 <p><strong>Frequency:</strong> ${subscriptionInfo.planFrequency === 'weekly' ? 'Weekly' : 'Monthly'} deliveries</p>
-                <p><strong>Duration:</strong> ${subscriptionInfo.subscriptionDuration} months</p>
+                <p><strong>Duration:</strong> ${subscriptionInfo.planFrequency === 'weekly' 
+                  ? (subscriptionInfo.subscriptionDuration === 1 ? '1 week' : `${subscriptionInfo.subscriptionDuration} weeks`)
+                  : (subscriptionInfo.subscriptionDuration === 12 ? '1 year' : `${subscriptionInfo.subscriptionDuration} months`)
+                }</p>
                 ${subscriptionInfo.discountPercentage > 0 ? `
                 <p><strong>Discount Applied:</strong> ${subscriptionInfo.discountPercentage}% off (${formatCurrency(subscriptionInfo.discountAmount)} saved!)</p>
                 ` : ''}
@@ -280,14 +282,16 @@ function generateAdminEmailHtml(order: OrderData, customerName: string, customer
             <p><strong>${isSubscription ? 'Subscription' : 'Order'} ID:</strong> ${order.id}</p>
             <p><strong>Order Date:</strong> ${formatDate(order.created_at)}</p>
             <p><strong>Payment Status:</strong> ✅ CONFIRMED</p>
-            
-            ${isSubscription && subscriptionInfo ? `
+              ${isSubscription && subscriptionInfo ? `
             <div class="subscription-highlight">
                 <h4>🔄 Subscription Details</h4>
                 <p><strong>Plan:</strong> ${subscriptionInfo.planName}</p>
                 <p><strong>Frequency:</strong> ${subscriptionInfo.planFrequency === 'weekly' ? 'Weekly' : 'Monthly'}</p>
-                <p><strong>Duration:</strong> ${subscriptionInfo.subscriptionDuration} months</p>
-                <p><strong>Total Deliveries Expected:</strong> ${subscriptionInfo.planFrequency === 'weekly' ? subscriptionInfo.subscriptionDuration * 4 : subscriptionInfo.subscriptionDuration}</p>
+                <p><strong>Duration:</strong> ${subscriptionInfo.planFrequency === 'weekly' 
+                  ? (subscriptionInfo.subscriptionDuration === 1 ? '1 week' : `${subscriptionInfo.subscriptionDuration} weeks`)
+                  : (subscriptionInfo.subscriptionDuration === 12 ? '1 year' : `${subscriptionInfo.subscriptionDuration} months`)
+                }</p>
+                <p><strong>Total Deliveries Expected:</strong> ${subscriptionInfo.planFrequency === 'weekly' ? subscriptionInfo.subscriptionDuration : subscriptionInfo.subscriptionDuration}</p>
                 ${subscriptionInfo.discountPercentage > 0 ? `
                 <p><strong>Discount Applied:</strong> ${subscriptionInfo.discountPercentage}% (${formatCurrency(subscriptionInfo.discountAmount)} saved)</p>
                 ` : ''}

@@ -179,25 +179,19 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
 ];
 
-// Subscription Duration Options with Discounts
+// Subscription Duration Options with Discounts - Monthly
 export const SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
   {
-    months: 2,
+    months: 1,
     discountPercentage: 0,
     discountType: 'bronze',
-    label: '2 Months - No Discount'
+    label: '1 Month - No Discount'
   },
   {
     months: 3,
     discountPercentage: 5,
     discountType: 'bronze',
     label: '3 Months - 5% OFF'
-  },
-  {
-    months: 4,
-    discountPercentage: 8,
-    discountType: 'silver',
-    label: '4 Months - 8% OFF'
   },
   {
     months: 6,
@@ -212,6 +206,39 @@ export const SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
     label: '1 Year - 20% OFF'
   }
 ];
+
+// Subscription Duration Options for Weekly subscriptions (in weeks)
+export const WEEKLY_SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
+  {
+    months: 1, // Represents 1 week for weekly subscriptions
+    discountPercentage: 0,
+    discountType: 'bronze',
+    label: '1 Week - No Discount',
+    weeks: 1
+  },
+  {
+    months: 2, // Represents 2 weeks for weekly subscriptions
+    discountPercentage: 5,
+    discountType: 'bronze',
+    label: '2 Weeks - 5% OFF',
+    weeks: 2
+  },
+  {
+    months: 3, // Represents 3 weeks for weekly subscriptions
+    discountPercentage: 10,
+    discountType: 'silver',
+    label: '3 Weeks - 10% OFF',
+    weeks: 3
+  }
+];
+
+// Custom month selector options (1-11 months)
+export const CUSTOM_MONTH_OPTIONS = Array.from({ length: 11 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1} Month${i + 1 > 1 ? 's' : ''}`,
+  discountPercentage: 0, // No discount for custom selections
+  discountType: 'bronze' as const
+}));
 
 // Days before subscription end to show renewal notification
 export const RENEWAL_NOTIFICATION_DAYS = 5;

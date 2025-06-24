@@ -25,11 +25,10 @@ export default function SubscriptionRenewalDialog({
 }: SubscriptionRenewalDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [isRenewing, setIsRenewing] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState<2 | 3 | 4 | 6 | 12 | null>(null);
+  const [isRenewing, setIsRenewing] = useState(false);  const [selectedDuration, setSelectedDuration] = useState<1 | 2 | 3 | 4 | 6 | 12 | null>(null);
   const [selectedPricing, setSelectedPricing] = useState<any>(null);
 
-  const handleDurationSelect = (duration: 2 | 3 | 4 | 6 | 12, pricing: any) => {
+  const handleDurationSelect = (duration: 1 | 2 | 3 | 4 | 6 | 12, pricing: any) => {
     setSelectedDuration(duration);
     setSelectedPricing(pricing);
   };
@@ -48,20 +47,22 @@ export default function SubscriptionRenewalDialog({
     try {
       const response = await fetch('/api/subscriptions/renew', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({
           subscriptionId: subscription.id,
           durationMonths: selectedDuration,
-          basePrice: basePrice
+          basePrice: basePrice,
+          frequency: subscription.delivery_frequency
         }),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      const result = await response.json();      if (result.success) {
+        const durationText = subscription.delivery_frequency === 'weekly' 
+          ? (selectedDuration === 1 ? '1 week' : `${selectedDuration} weeks`)
+          : (selectedDuration === 12 ? '1 year' : `${selectedDuration} months`);
+        
         toast({
           title: "Subscription Renewed!",
-          description: `Your subscription has been renewed for ${selectedDuration === 12 ? '1 year' : `${selectedDuration} months`}. Your next delivery is scheduled for ${new Date(result.data.nextDeliveryDate).toLocaleDateString()}.`,
+          description: `Your subscription has been renewed for ${durationText}. Your next delivery is scheduled for ${new Date(result.data.nextDeliveryDate).toLocaleDateString()}.`,
           variant: "default",
         });
         setIsOpen(false);
@@ -106,11 +107,10 @@ export default function SubscriptionRenewalDialog({
               </div>
             )}
           </DialogDescription>
-        </DialogHeader>
-
-        <div className="py-4">
+        </DialogHeader>        <div className="py-4">
           <SubscriptionDurationSelector
             basePrice={basePrice}
+            frequency={subscription.delivery_frequency}
             selectedDuration={selectedDuration || undefined}
             onDurationSelect={handleDurationSelect}
           />
@@ -118,16 +118,19 @@ export default function SubscriptionRenewalDialog({
 
         {selectedPricing && (
           <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-            <h3 className="font-semibold mb-2">Renewal Summary</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+            <h3 className="font-semibold mb-2">Renewal Summary</h3>            <div className="space-y-2 text-sm">              <div className="flex justify-between">
                 <span>Duration:</span>
                 <span className="font-medium">
-                  {selectedDuration === 12 ? '1 Year' : `${selectedDuration} Months`}
+                  {subscription.delivery_frequency === 'weekly' 
+                    ? (selectedDuration === 1 ? '1 Week' : `${selectedDuration} Weeks`)
+                    : (selectedDuration === 12 ? '1 Year' : 
+                       selectedDuration === 1 ? '1 Month' : 
+                       `${selectedDuration} Months`)
+                  }
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Monthly Rate:</span>
+                <span>{subscription.delivery_frequency === 'weekly' ? 'Weekly' : 'Monthly'} Rate:</span>
                 <span>₹{basePrice.toFixed(2)}</span>
               </div>
               {selectedPricing.discountPercentage > 0 && (

@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { subscriptionId, durationMonths, basePrice } = body;
+    const body = await req.json();    const { subscriptionId, durationMonths, basePrice, frequency } = body;
 
     if (!subscriptionId || !durationMonths || !basePrice) {
       return NextResponse.json(
@@ -21,8 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate duration
-    if (![2, 3, 4, 6, 12].includes(durationMonths)) {
+    // Validate duration - now includes 1 month for weekly subscriptions
+    if (![1, 2, 3, 4, 6, 12].includes(durationMonths)) {
       return NextResponse.json(
         { success: false, message: 'Invalid subscription duration.' },
         { status: 400 }
@@ -41,10 +40,9 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Subscription not found.' },
         { status: 404 }
       );
-    }
-
-    // Calculate new pricing
-    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, durationMonths);
+    }    // Calculate new pricing - use frequency from subscription or passed parameter
+    const subscriptionFrequency = frequency || subscription.delivery_frequency;
+    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, durationMonths, subscriptionFrequency);
     
     // Calculate new subscription dates
     const startDate = new Date();

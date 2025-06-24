@@ -124,10 +124,11 @@ export interface UserSubscription {
 
 // Subscription duration options with discount tiers
 export interface SubscriptionDurationOption {
-  months: 2 | 3 | 4 | 6 | 12;
+  months: 1 | 2 | 3 | 4 | 6 | 12;
   discountPercentage: number;
   discountType: 'bronze' | 'silver' | 'gold' | 'platinum';
   label: string;
+  weeks?: number; // Optional field for weekly subscriptions to specify actual weeks
 }
 
 export interface SubscriptionDelivery {

@@ -23,7 +23,7 @@ function SubscribePageContents() {
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
   const [customSelections, setCustomSelections] = useState<CustomSelections>({});
   const [totalSelectedJuices, setTotalSelectedJuices] = useState(0);
-  const [selectedDuration, setSelectedDuration] = useState<2 | 3 | 4 | 6 | 12>(3);
+  const [selectedDuration, setSelectedDuration] = useState<1 | 2 | 3 | 4 | 6 | 12>(selectedPlan?.frequency === 'weekly' ? 2 : 3);
   const [selectedPricing, setSelectedPricing] = useState<any>(null);
   useEffect(() => {
     if (selectedPlan && selectedPlan.isCustomizable && selectedPlan.defaultJuices) {
@@ -42,7 +42,8 @@ function SubscribePageContents() {
     if (selectedPlan) {
       const initialPricing = SubscriptionManager.calculateSubscriptionPricing(
         selectedPlan.pricePerDelivery, 
-        selectedDuration
+        selectedDuration,
+        selectedPlan.frequency
       );
       setSelectedPricing(initialPricing);
     }
@@ -77,8 +78,7 @@ function SubscribePageContents() {
     });
   };
   const canAddMore = selectedPlan?.maxJuices ? totalSelectedJuices < selectedPlan.maxJuices : true;
-
-  const handleDurationSelect = (duration: 2 | 3 | 4 | 6 | 12, pricing: any) => {
+  const handleDurationSelect = (duration: 1 | 2 | 3 | 4 | 6 | 12, pricing: any) => {
     setSelectedDuration(duration);
     setSelectedPricing(pricing);
   };
@@ -93,11 +93,11 @@ function SubscribePageContents() {
       return;
     }
       if (!selectedPricing) {
-      console.error('No selected pricing - initializing now');
-      // Try to initialize pricing if it's missing
+      console.error('No selected pricing - initializing now');      // Try to initialize pricing if it's missing
       const pricing = SubscriptionManager.calculateSubscriptionPricing(
         selectedPlan.pricePerDelivery, 
-        selectedDuration
+        selectedDuration,
+        selectedPlan.frequency
       );
       setSelectedPricing(pricing);
       
@@ -173,10 +173,10 @@ function SubscribePageContents() {
                 </div>
               )}            </div>
 
-            {/* Duration Selector */}
-            <div className="space-y-4">
+            {/* Duration Selector */}            <div className="space-y-4">
               <SubscriptionDurationSelector
                 basePrice={selectedPlan.pricePerDelivery}
+                frequency={selectedPlan.frequency}
                 selectedDuration={selectedDuration}
                 onDurationSelect={handleDurationSelect}
               />

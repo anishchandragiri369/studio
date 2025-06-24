@@ -1,6 +1,6 @@
 // Subscription management utilities
 import type { SubscriptionDurationOption } from './types';
-import { SUBSCRIPTION_DURATION_OPTIONS, RENEWAL_NOTIFICATION_DAYS } from './constants';
+import { SUBSCRIPTION_DURATION_OPTIONS, WEEKLY_SUBSCRIPTION_DURATION_OPTIONS, RENEWAL_NOTIFICATION_DAYS } from './constants';
 
 export class SubscriptionManager {
   
@@ -228,31 +228,75 @@ export class SubscriptionManager {
   static isSubscriptionExpired(pauseDate: string): boolean {
     const { canReactivate } = this.canReactivateSubscription(pauseDate);
     return !canReactivate;
-  }
-
-  /**
+  }  /**
    * Calculate subscription pricing with discount
    */
-  static calculateSubscriptionPricing(basePrice: number, durationMonths: 2 | 3 | 4 | 6 | 12): {
+  static calculateSubscriptionPricing(basePrice: number, durationMonths: 1 | 2 | 3 | 4 | 6 | 12, frequency: 'weekly' | 'monthly' = 'monthly'): {
     originalPrice: number;
     discountPercentage: number;
     discountAmount: number;
     finalPrice: number;
     discountType: string;
   } {
-    const durationOption = SUBSCRIPTION_DURATION_OPTIONS.find(option => option.months === durationMonths);
+    const durationOptions = frequency === 'weekly' ? WEEKLY_SUBSCRIPTION_DURATION_OPTIONS : SUBSCRIPTION_DURATION_OPTIONS;
+    const durationOption = durationOptions.find(option => option.months === durationMonths);
+    
+    // For weekly subscriptions, use the weeks field if available, otherwise use months as weeks
+    // For monthly subscriptions, use months as normal
+    let multiplier: number;
+    if (frequency === 'weekly') {
+      multiplier = durationOption?.weeks || durationMonths; // Use actual weeks
+    } else {
+      multiplier = durationMonths; // Use months for monthly subscriptions
+    }
+    
+    const originalPrice = basePrice * multiplier;
     
     if (!durationOption) {
+      // For custom durations that don't have predefined discounts
+      // Still apply some basic discount logic based on duration
+      let discountPercentage = 0;
+      let discountType = 'bronze';
+      
+      if (frequency === 'monthly') {
+        // Apply discount logic for monthly subscriptions
+        if (durationMonths >= 12) {
+          discountPercentage = 20;
+          discountType = 'platinum';
+        } else if (durationMonths >= 6) {
+          discountPercentage = 12;
+          discountType = 'gold';
+        } else if (durationMonths >= 4) {
+          discountPercentage = 8;
+          discountType = 'silver';
+        } else if (durationMonths >= 3) {
+          discountPercentage = 5;
+          discountType = 'bronze';
+        }
+      } else {
+        // Apply discount logic for weekly subscriptions
+        if (durationMonths >= 3) {
+          discountPercentage = 10;
+          discountType = 'silver';
+        } else if (durationMonths >= 2) {
+          discountPercentage = 5;
+          discountType = 'bronze';
+        }
+      }
+      
+      const discountAmount = (originalPrice * discountPercentage) / 100;
+      const finalPrice = originalPrice - discountAmount;
+      
       return {
-        originalPrice: basePrice * durationMonths,
-        discountPercentage: 0,
-        discountAmount: 0,
-        finalPrice: basePrice * durationMonths,
-        discountType: 'bronze'
+        originalPrice,
+        discountPercentage,
+        discountAmount,
+        finalPrice,
+        discountType
       };
     }
 
-    const originalPrice = basePrice * durationMonths;
+    // Use predefined discount from the option
     const discountAmount = (originalPrice * durationOption.discountPercentage) / 100;
     const finalPrice = originalPrice - discountAmount;
 
@@ -320,12 +364,11 @@ export class SubscriptionManager {
       };
     }
   }
-
   /**
    * Get available duration options
    */
-  static getDurationOptions(): SubscriptionDurationOption[] {
-    return SUBSCRIPTION_DURATION_OPTIONS;
+  static getDurationOptions(frequency: 'weekly' | 'monthly' = 'monthly'): SubscriptionDurationOption[] {
+    return frequency === 'weekly' ? WEEKLY_SUBSCRIPTION_DURATION_OPTIONS : SUBSCRIPTION_DURATION_OPTIONS;
   }
 
   /**
