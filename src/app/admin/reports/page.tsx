@@ -15,11 +15,10 @@ export default function AdminReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [lastReportTime, setLastReportTime] = useState<string | null>(null);
-
   // Check if user is admin (you can customize this logic)
   const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || 
                   user?.user_metadata?.role === 'admin' ||
-                  ['admin@elixr.com', 'anishbobby@gmail.com'].includes(user?.email || '');
+                  ['admin@elixr.com', 'anishbobby@gmail.com', 'anishchandragiri@gmail.com'].includes(user?.email || '');
   const handleDownloadReport = async () => {
     setIsGenerating(true);
     try {

@@ -115,11 +115,10 @@ export default function AccountPage() {
     }
     return parts.substring(0, 2).toUpperCase();
   };
-
   // Check if user is admin
   const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || 
                   user?.user_metadata?.role === 'admin' ||
-                  ['admin@elixr.com', 'anishbobby@gmail.com'].includes(user?.email || '');
+                  ['admin@elixr.com', 'anishbobby@gmail.com', 'anishchandragiri@gmail.com'].includes(user?.email || '');
 
   return (
     <div className="min-h-screen relative">
