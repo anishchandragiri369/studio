@@ -55,9 +55,7 @@ export async function POST(req: NextRequest) {
     // Calculate next delivery date
     const nextDelivery = newDeliveryDate ? 
       new Date(newDeliveryDate) : 
-      SubscriptionManager.calculateNextDeliveryDate(new Date(), subscription.delivery_frequency);
-
-    // Ensure next delivery is at least 24 hours from now
+      SubscriptionManager.calculateNextDeliveryDate(new Date(), subscription.delivery_frequency);    // Ensure next delivery is at least 24 hours from now
     const minDeliveryDate = new Date();
     minDeliveryDate.setHours(minDeliveryDate.getHours() + 24);
 
@@ -65,12 +63,22 @@ export async function POST(req: NextRequest) {
       nextDelivery.setTime(minDeliveryDate.getTime());
     }
 
-    // Update subscription status to active
+    // Calculate pause duration and extend subscription end date
+    const now = new Date();
+    const pauseStartDate = new Date(subscription.pause_date);
+    const pauseDurationMs = now.getTime() - pauseStartDate.getTime();
+    
+    // Extend the subscription end date by the pause duration
+    const currentEndDate = new Date(subscription.subscription_end_date);
+    const extendedEndDate = new Date(currentEndDate.getTime() + pauseDurationMs);
+
+    // Update subscription status to active with extended end date
     const { data: updatedSubscription, error: updateError } = await supabase
       .from('user_subscriptions')
       .update({
         status: 'active',
         next_delivery_date: nextDelivery.toISOString(),
+        subscription_end_date: extendedEndDate.toISOString(),
         pause_date: null,
         pause_reason: null,
         reactivation_deadline: null,
@@ -101,15 +109,15 @@ export async function POST(req: NextRequest) {
     if (deliveryError) {
       console.error('Error creating delivery schedule:', deliveryError);
       // Continue execution - this is not critical for reactivation
-    }
-
-    return NextResponse.json({
+    }    return NextResponse.json({
       success: true,
       message: 'Subscription reactivated successfully.',
       data: {
         subscription: updatedSubscription,
         nextDeliveryDate: nextDelivery.toISOString(),
-        nextDeliveryFormatted: SubscriptionManager.formatDate(nextDelivery)
+        nextDeliveryFormatted: SubscriptionManager.formatDate(nextDelivery),
+        extendedEndDate: extendedEndDate.toISOString(),
+        pauseDurationDays: Math.round(pauseDurationMs / (1000 * 60 * 60 * 24))
       }
     });
 
