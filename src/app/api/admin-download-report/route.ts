@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // Check environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     console.log('[admin-download-report] Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
@@ -14,11 +14,24 @@ export async function GET(request: NextRequest) {
       supabaseUrl: supabaseUrl?.substring(0, 20) + '...'
     });
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('[admin-download-report] Missing environment variables');
+    if (!supabaseUrl) {
       return NextResponse.json({ 
-        error: 'Server configuration error',
-        details: 'Missing required environment variables'
+        error: 'Missing NEXT_PUBLIC_SUPABASE_URL',
+        details: 'Supabase URL is required but not configured'
+      }, { status: 500 });
+    }
+
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ 
+        error: 'Missing SUPABASE_SERVICE_ROLE_KEY',
+        details: 'Service role key is required for admin operations. Get it from Supabase Dashboard > Settings > API',
+        instructions: [
+          '1. Go to https://supabase.com/dashboard',
+          '2. Select your project',
+          '3. Go to Settings > API',
+          '4. Copy the "service_role" key (not anon key)',
+          '5. Add SUPABASE_SERVICE_ROLE_KEY=your_key to .env file'
+        ]
       }, { status: 500 });
     }
 
