@@ -140,17 +140,16 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const fallbackJuiceImage = JUICE_IMAGE_EXAMPLES[Math.floor(Math.random() * JUICE_IMAGE_EXAMPLES.length)];
   const displayImage = juice.image_url || juice.image || fallbackJuiceImage;
   const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0,2).join(" ");
-
   return (
     <Card className={cn(
-        "flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card group", // Added group for hover effects on link
+        "glass-card border-0 shadow-soft hover:shadow-glass-lg transition-all duration-300 rounded-xl overflow-hidden group flex flex-col", 
         isEffectivelyOutOfStock && !isAdmin && "opacity-70"
       )}>
       <CardHeader className="p-0">
         <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
           <div
             className={cn(
-              "relative w-full",
+              "relative w-full overflow-hidden",
               (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3]" : "h-48 md:h-56"
             )}
           >
@@ -160,16 +159,37 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className={cn(
-                  "transition-transform duration-300 group-hover:scale-105 object-cover",
+                  "transition-transform duration-500 group-hover:scale-110 object-cover",
                   isEffectivelyOutOfStock && "grayscale"
               )}
               data-ai-hint={displayDataAiHint}
               unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
               onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
             />
+            
+            {/* Status Badge */}
+            <div className="absolute top-3 right-3 z-10">
+              <span className={cn(
+                "px-2 py-1 rounded-full text-xs font-medium glass border backdrop-blur-sm",
+                availabilityStatus === 'In Stock' 
+                  ? "text-green-700 border-green-200 bg-green-50/90" 
+                  : availabilityStatus === 'Low Stock'
+                  ? "text-orange-700 border-orange-200 bg-orange-50/90"
+                  : "text-red-700 border-red-200 bg-red-50/90"
+              )}>
+                {availabilityStatus}
+              </span>
+            </div>
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
             {isEffectivelyOutOfStock && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <PackageX className="h-16 w-16 text-white/70" />
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                <div className="text-center text-white">
+                  <PackageX className="h-12 w-12 mx-auto mb-2 opacity-70" />
+                  <span className="text-sm font-medium">Out of Stock</span>
+                </div>
               </div>
             )}
           </div>
@@ -177,7 +197,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
-          <CardTitle className="font-headline text-xl mb-1 text-primary group-hover:text-accent transition-colors">{juice.name}</CardTitle>
+          <CardTitle className="font-headline text-xl mb-2 gradient-text group-hover:text-primary transition-colors">{juice.name}</CardTitle>
         </Link>
         <CardDescription className="text-sm text-muted-foreground mb-2">{juice.flavor}</CardDescription>
         <p className="text-xs text-foreground/80 mb-3 min-h-[3em] line-clamp-3">{juice.description}</p>

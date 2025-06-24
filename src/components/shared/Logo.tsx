@@ -4,7 +4,7 @@ const letterColors = [
   // W  O     R      L      D      (space) O      F      (space) E      L      I      X      I      R      S
   '#2e7d32', '#43a047', '#fb8c00', '#388e3c', '#fbc02d', '',    '#43a047', '#e53935', '',    '#388e3c', '#43a047', '#fb8c00', '#43a047', '#fbc02d', '#e53935'
 ];
-const logoText = 'World of Elixirs';
+const logoText = 'World of Elixrs';
 
 const Logo = () => {
   return (

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
-import { NAV_LINKS as DEFAULT_NAV_LINKS } from '@/lib/constants';
+import { NAV_LINKS as DEFAULT_NAV_LINKS, TRADITIONAL_JUICE_CATEGORIES } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -54,12 +54,35 @@ const Navbar = () => {
   const navLinks = (user || !isSupabaseConfigured)
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Logo />
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <Logo />        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          {/* Categories Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70">
+              Categories
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Shop by Category</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {TRADITIONAL_JUICE_CATEGORIES.map(category => (
+                <DropdownMenuItem key={category} asChild>
+                  <Link href={`/menu?category=${encodeURIComponent(category)}`} className="cursor-pointer">
+                    {category}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/menu" className="cursor-pointer font-medium">
+                  View All Products
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           {navLinks.map(link => (
             link.label === 'Contact Us' ? (
               <React.Fragment key={link.href}>
