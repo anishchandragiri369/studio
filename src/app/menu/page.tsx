@@ -129,7 +129,7 @@ function MenuPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with World of Elixirs Background */}
-      <section className="relative py-16 overflow-hidden">
+      <section className="relative py-10 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-green-900/20 to-blue-900/20"></div>
           <Image
@@ -140,61 +140,63 @@ function MenuPageContent() {
             className="object-cover opacity-30"
             priority
             quality={90}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60"></div>
+          />          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60"></div>
           
-          {/* More Floating Elements */}
-          <div className="absolute top-16 right-10 w-24 h-24 bg-gradient-to-r from-orange-500 to-red-500 rounded-full opacity-20 animate-float-ultra"></div>
-          <div className="absolute bottom-20 left-16 w-20 h-20 bg-gradient-to-r from-green-500 to-teal-500 rounded-full opacity-20 animate-float-ultra" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-32 left-10 w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full opacity-15 animate-float-ultra" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute bottom-32 right-20 w-18 h-18 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full opacity-15 animate-float-ultra" style={{ animationDelay: '3s' }}></div>
-          <div className="absolute top-40 right-32 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-10 animate-float-ultra" style={{ animationDelay: '4s' }}></div>
-          <div className="absolute bottom-16 left-32 w-14 h-14 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full opacity-12 animate-float-ultra" style={{ animationDelay: '5s' }}></div>
+          {/* Floating Elements - Reduced for better spacing */}
+          <div className="absolute top-20 right-12 w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full opacity-15 animate-float-ultra"></div>
+          <div className="absolute bottom-24 left-20 w-14 h-14 bg-gradient-to-r from-green-500 to-teal-500 rounded-full opacity-15 animate-float-ultra" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-36 left-16 w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full opacity-10 animate-float-ultra" style={{ animationDelay: '4s' }}></div>
+          <div className="absolute bottom-28 right-24 w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-10 animate-float-ultra" style={{ animationDelay: '6s' }}></div>
         </div>        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-5xl mx-auto">
-            <div className="mb-8">
-              <span className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-primary/30 to-accent/30 text-white text-sm font-medium border border-white/30 shadow-lg">
+            <div className="mb-4">
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/30 to-accent/30 text-white text-sm font-medium border border-white/30 shadow-lg">
                 <Sparkles className="w-5 h-5 mr-2" />
                 Fresh Cold-Pressed Elixirs
               </span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-headline font-bold gradient-text mb-8 animate-fade-in">
-              {selectedCategory ? `${selectedCategory} Collection` : 'Our Fresh Elixirs'}
+            <h1 className="text-5xl md:text-7xl font-headline font-bold gradient-text mb-6 animate-fade-in">
+              {selectedCategory ? `${selectedCategory} Collection` : 'Our Fresh Elixrs'}
             </h1>
             
-            <p className="text-xl md:text-2xl text-foreground/90 mb-10 leading-relaxed animate-fade-in font-medium drop-shadow-md" style={{ animationDelay: '200ms' }}>
+            <p className="text-xl md:text-2xl text-foreground/90 mb-6 leading-relaxed animate-fade-in font-medium drop-shadow-md" style={{ animationDelay: '200ms' }}>
               {selectedCategory 
                 ? `Discover our premium ${selectedCategory.toLowerCase()} selection, crafted with the finest ingredients`
                 : 'Discover a world of flavor with our handcrafted elixirs, made from the freshest ingredients'
               }
-            </p>
-
-            {selectedCategory && (
-              <Button asChild variant="outline" className="glass-card border-primary/30 text-primary hover:bg-primary/10 btn-hover-lift animate-fade-in shadow-lg" style={{ animationDelay: '400ms' }}>
-                <Link href="/menu">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  View All Elixirs
-                </Link>
+            </p>            {selectedCategory && (
+              <Button 
+                variant="outline" 
+                className="glass-card border-primary/30 text-primary hover:bg-primary/10 btn-hover-lift animate-fade-in shadow-lg" 
+                style={{ animationDelay: '400ms' }}
+                onClick={() => {
+                  setSelectedCategory(null);
+                  // Use router to update URL without page reload
+                  window.history.pushState(null, '', '/menu');
+                }}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                View All Elixirs
               </Button>
             )}
           </div>
         </div>
       </section>      {/* Filters Section */}
-      <section className="py-12 bg-background/95 backdrop-blur-sm border-b border-border/20">
+      <section className="py-03 bg-background/95 backdrop-blur-sm border-b border-border/20">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-center">
             {/* Search */}
             <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               <Input
-                placeholder="Search elixirs..."
+                placeholder="Search elixrs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 glass-card border-border/50 bg-card/80 h-12 rounded-xl shadow-soft focus:border-primary/50 transition-all"
               />
             </div>            {/* Controls */}
-            <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
+            <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end mt-4 lg:mt-0">
               <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-36 sm:w-44 glass-card border-border/50 bg-card/80 h-12 rounded-xl shadow-soft">
                   <SelectValue placeholder="Sort by" />
@@ -230,13 +232,13 @@ function MenuPageContent() {
             </div>
           </div>          {/* Categories */}
           {!selectedCategory && (
-            <div className="mt-8">
-              <div className="flex flex-wrap gap-3">
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2 justify-center">
                 {categories.map((category, index) => (
                   <Badge
                     key={category.name}
                     variant="outline"
-                    className="glass-card border-border/50 hover:bg-primary/10 hover:border-primary/50 cursor-pointer transition-all duration-300 animate-fade-in px-4 py-2 text-sm font-medium shadow-soft hover:shadow-lg rounded-full text-foreground hover:text-primary"
+                    className="glass-card border-border/50 hover:bg-primary/10 hover:border-primary/50 cursor-pointer transition-all duration-300 animate-fade-in px-3 py-1.5 text-sm font-medium shadow-soft hover:shadow-lg rounded-full text-foreground hover:text-primary"
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => setSelectedCategory(category.name)}
                   >
@@ -248,11 +250,11 @@ function MenuPageContent() {
           )}
         </div>
       </section>      {/* Products Section */}
-      <section className="py-20 bg-background">
+      <section className="py-06 bg-background">
         <div className="container mx-auto px-4">
           {filteredJuices.length > 0 ? (
             <>
-              <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center justify-between mb-6">
                 <div className="glass-card px-6 py-4 rounded-xl shadow-soft">
                   <p className="text-foreground/90 font-medium">
                     ✨ Showing <span className="text-primary font-bold">{filteredJuices.length}</span> elixir{filteredJuices.length !== 1 ? 's' : ''}
@@ -264,8 +266,8 @@ function MenuPageContent() {
 
               <div className={
                 viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-                  : "space-y-6"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  : "space-y-4"
               }>
                 {filteredJuices.map((juice, index) => (
                   <div 
@@ -311,10 +313,10 @@ function MenuPageContent() {
         </div>
       </section>      {/* Ultra HD Featured Categories */}
       {!selectedCategory && (
-        <section className="py-24 bg-gradient-to-br from-background/80 via-primary/5 to-accent/5 bg-mesh-gradient">
+        <section className="py-16 bg-gradient-to-br from-background/80 via-primary/5 to-accent/5 bg-mesh-gradient">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-headline font-bold gradient-text-warm mb-6 neon-text">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl md:text-6xl font-headline font-bold gradient-text-warm mb-4 neon-text">
                 Shop by Category
               </h2>
               <p className="text-xl text-white/80 max-w-3xl mx-auto font-medium">
@@ -322,7 +324,7 @@ function MenuPageContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {categories.filter(cat => cat.count > 0).map((category, index) => (
                 <Card 
                   key={category.name}
@@ -330,16 +332,16 @@ function MenuPageContent() {
                   style={{ animationDelay: `${index * 100}ms` }}
                   onClick={() => setSelectedCategory(category.name)}
                 >
-                  <CardContent className="p-8">
-                    <div className="flex items-center gap-6">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary via-accent to-secondary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-glow-pulse">
-                          <Star className="w-8 h-8 text-white" />
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-primary via-accent to-secondary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-glow-pulse">
+                          <Star className="w-7 h-7 text-white" />
                         </div>
                         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 animate-pulse"></div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-white mb-2">
+                        <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-white mb-1">
                           {category.name}
                         </h3>
                         <p className="text-white/70 text-lg">
