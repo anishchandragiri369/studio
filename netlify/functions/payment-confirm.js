@@ -135,7 +135,21 @@ exports.handler = async (event) => {
       console.log('Processing PAYMENT_SUCCESS_WEBHOOK for internalOrderId:', internalOrderId);
 
       try {
-        // Fetch order details from Supabase using internal order ID
+        // Update order status to 'Payment Success' in Supabase
+        const { data: updateResult, error: updateError } = await supabase
+          .from('orders')
+          .update({ status: 'Payment Success' })
+          .eq('id', internalOrderId)
+          .select();
+        console.log('Order status update result:', updateResult, updateError);
+        if (updateError) {
+          console.error('Error updating order status:', updateError);
+          return {
+            statusCode: 500,
+            body: JSON.stringify({ success: false, message: 'Failed to update order status', error: updateError.message }),
+          };
+        }
+        // Fetch the updated order to confirm
         const { data: order, error } = await supabase
           .from('orders')
           .select('*')
@@ -149,16 +163,16 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Order not found' }),
           };
         }
-        // If order found, just return success
+        // If order found and updated, just return success
         return {
           statusCode: 200,
-          body: JSON.stringify({ success: true, message: 'Order found and webhook processed.' }),
+          body: JSON.stringify({ success: true, message: 'Order updated to Payment Success and webhook processed.' }),
         };
       } catch (err) {
-        console.error('Error fetching order:', err);
+        console.error('Error updating/fetching order:', err);
         return {
           statusCode: 500,
-          body: JSON.stringify({ success: false, message: 'Order fetch error', error: err.message }),
+          body: JSON.stringify({ success: false, message: 'Order update/fetch error', error: err.message }),
         };
       }
     } else {
