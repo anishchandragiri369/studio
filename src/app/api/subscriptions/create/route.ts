@@ -62,12 +62,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate subscription pricing
-    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, subscriptionDuration);
-    
-    // Calculate subscription dates
+    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, subscriptionDuration);    // Calculate subscription dates
     const startDate = new Date();
-    const endDate = SubscriptionManager.calculateSubscriptionEndDate(startDate, subscriptionDuration);
-    const nextDeliveryDate = SubscriptionManager.calculateNextDeliveryDate(startDate, planFrequency);
+    const endDate = SubscriptionManager.calculateSubscriptionEndDate(startDate, subscriptionDuration);    // Calculate first delivery date using SubscriptionManager
+    const firstDeliveryDate = SubscriptionManager.getNextScheduledDelivery(
+      startDate, 
+      planFrequency as 'weekly' | 'monthly'
+    );
+    
+    // Set to 10 AM
+    firstDeliveryDate.setHours(10, 0, 0, 0);
+    
+    const nextDeliveryDate = firstDeliveryDate;
 
     // Create subscription record
     const subscriptionData = {
@@ -103,21 +109,35 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Failed to create subscription.', error: subscriptionError.message },
         { status: 500 }
       );
+    }    // Generate initial delivery schedule
+    let deliveryRecords = [];
+    
+    if (planFrequency === 'monthly') {
+      // Generate 2 months of delivery schedule
+      const monthlyDeliveries = SubscriptionManager.generateMonthlyDeliverySchedule(nextDeliveryDate, 2);
+      deliveryRecords = monthlyDeliveries.map(date => ({
+        subscription_id: subscription.id,
+        delivery_date: date.toISOString(),
+        status: 'scheduled',
+        items: selectedJuices || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+    } else {
+      // For weekly, create first delivery record
+      deliveryRecords = [{
+        subscription_id: subscription.id,
+        delivery_date: nextDeliveryDate.toISOString(),
+        status: 'scheduled',
+        items: selectedJuices || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }];
     }
-
-    // Create initial delivery record
-    const deliveryData = {
-      subscription_id: subscription.id,
-      delivery_date: nextDeliveryDate.toISOString(),
-      status: 'scheduled',
-      items: selectedJuices || [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
 
     const { error: deliveryError } = await supabase
       .from('subscription_deliveries')
-      .insert([deliveryData]);
+      .insert(deliveryRecords);
 
     if (deliveryError) {
       console.error('Error creating delivery record:', deliveryError);

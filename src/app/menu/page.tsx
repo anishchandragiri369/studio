@@ -72,10 +72,14 @@ function MenuPageContent() {
   const filteredJuices = useMemo(() => {
     let filtered = allJuices;
 
-    // Filter by category
+    // Filter by category or tag
     if (selectedCategory) {
-      filtered = filtered.filter(juice => juice.category === selectedCategory);
-    }    // Filter by search term
+      filtered = filtered.filter(juice =>
+        juice.category === selectedCategory ||
+        (Array.isArray(juice.tags) && juice.tags.includes(selectedCategory))
+      );
+    }
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(juice =>
         juice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,18 +106,30 @@ function MenuPageContent() {
 
     return filtered;
   }, [allJuices, selectedCategory, searchTerm, sortBy]);
-  const categories = useMemo(() => {
-    const categoryCount = allJuices.reduce((acc, juice) => {
-      if (juice.category) {
-        acc[juice.category] = (acc[juice.category] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
 
-    return TRADITIONAL_JUICE_CATEGORIES.map(catName => ({
-      name: catName,
-      count: categoryCount[catName] || 0
-    }));
+  // Show all unique tags and categories as filter options
+  const categories = useMemo(() => {
+    const tagCount: Record<string, number> = {};
+    const categoryCount: Record<string, number> = {};
+    allJuices.forEach(juice => {
+      if (juice.category) {
+        categoryCount[juice.category] = (categoryCount[juice.category] || 0) + 1;
+      }
+      if (Array.isArray(juice.tags)) {
+        juice.tags.forEach(tag => {
+          tagCount[tag] = (tagCount[tag] || 0) + 1;
+        });
+      }
+    });
+    // Combine categories and tags, but avoid duplicates
+    const allNames = new Set([
+      ...Object.keys(categoryCount),
+      ...Object.keys(tagCount)
+    ]);
+    return Array.from(allNames).map(name => ({
+      name,
+      count: categoryCount[name] || tagCount[name] || 0
+    })).sort((a, b) => b.count - a.count);
   }, [allJuices]);
   if (isLoading) {
     return (

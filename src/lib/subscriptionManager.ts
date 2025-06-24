@@ -51,15 +51,130 @@ export class SubscriptionManager {
    * Calculate next delivery date based on frequency
    */
   static calculateNextDeliveryDate(currentDate: Date, frequency: 'weekly' | 'monthly'): Date {
-    const nextDate = new Date(currentDate);
-    
     if (frequency === 'weekly') {
-      nextDate.setDate(nextDate.getDate() + 7);
-    } else if (frequency === 'monthly') {
-      nextDate.setMonth(nextDate.getMonth() + 1);
+      return this.calculateNextWeeklyDelivery(currentDate);
+    } else {
+      return this.calculateNextMonthlyDelivery(currentDate);
+    }
+  }
+
+  /**
+   * Calculate next weekly delivery date (skip Sundays)
+   */
+  private static calculateNextWeeklyDelivery(currentDate: Date): Date {
+    const nextDate = new Date(currentDate);
+    nextDate.setDate(nextDate.getDate() + 7);
+    
+    // If it falls on Sunday (0), move to Monday
+    if (nextDate.getDay() === 0) {
+      nextDate.setDate(nextDate.getDate() + 1);
     }
     
     return nextDate;
+  }  /**
+   * Calculate next monthly delivery date with alternate day pattern (excluding Sundays)
+   */
+  private static calculateNextMonthlyDelivery(currentDate: Date): Date {
+    const nextDate = new Date(currentDate);
+    
+    // Add 2 days to skip one day in between
+    nextDate.setDate(nextDate.getDate() + 2);
+    
+    // If it falls on Sunday, move to Monday
+    if (nextDate.getDay() === 0) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
+    
+    return nextDate;
+  }/**
+   * Generate all delivery dates for a month with alternate day pattern (skip 1 day, exclude Sundays)
+   */
+  static generateMonthlyDeliverySchedule(startDate: Date, monthsCount: number = 1): Date[] {
+    const deliveries: Date[] = [];
+    let currentDate = new Date(startDate);
+    
+    // Calculate end date for the period
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + monthsCount);
+    
+    // Start from the first valid delivery date
+    while (currentDate < endDate) {
+      // Skip Sundays
+      if (currentDate.getDay() !== 0) {
+        deliveries.push(new Date(currentDate));
+      }
+      
+      // Move to next delivery date (skip 1 day in between)
+      currentDate.setDate(currentDate.getDate() + 2);
+      
+      // If we land on Sunday, move to Monday
+      if (currentDate.getDay() === 0) {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+    
+    return deliveries;
+  }
+
+  /**
+   * Calculate optimal delivery days within a month
+   */
+  private static calculateOptimalDeliveryDays(daysInMonth: number): number[] {
+    const deliveriesPerMonth = 14;
+    const spacing = Math.floor(daysInMonth / deliveriesPerMonth);
+    const deliveryDays: number[] = [];
+    
+    // Start from day 3-5 to avoid beginning of month rush
+    let currentDay = 4;
+    
+    for (let i = 0; i < deliveriesPerMonth && currentDay <= daysInMonth; i++) {
+      deliveryDays.push(currentDay);
+      currentDay += spacing;
+      
+      // Add some variation to avoid predictable patterns
+      if (i % 2 === 1) {
+        currentDay += 1; // Add extra day every other delivery
+      }
+    }
+    
+    // Ensure we don't exceed month boundaries
+    return deliveryDays.filter(day => day <= daysInMonth);
+  }
+
+  /**
+   * Skip Sundays and adjust delivery date
+   */
+  private static skipSundaysAndAdjust(date: Date): Date {
+    const adjustedDate = new Date(date);
+    
+    // If it's Sunday (0), move to Monday
+    if (adjustedDate.getDay() === 0) {
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+    }
+    
+    return adjustedDate;
+  }
+  /**
+   * Get next delivery date from current date with daily scheduling
+   */  static getNextScheduledDelivery(currentDate: Date, frequency: 'weekly' | 'monthly', lastDeliveryDate?: Date): Date {
+    if (frequency === 'weekly') {
+      return this.calculateNextWeeklyDelivery(lastDeliveryDate || currentDate);
+    }
+    
+    // For monthly, use Mon/Wed/Fri pattern
+    return this.calculateNextMonthlyDelivery(lastDeliveryDate || currentDate);
+  }  /**
+   * Check if a date is a valid delivery date (not Sunday, alternate day pattern for monthly)
+   */
+  static isValidDeliveryDate(date: Date, frequency: 'weekly' | 'monthly' = 'monthly'): boolean {
+    const dayOfWeek = date.getDay();
+    
+    if (frequency === 'weekly') {
+      return dayOfWeek !== 0; // Not Sunday for weekly
+    }
+    
+    // For monthly: any day except Sunday (alternate day pattern handled in scheduling)
+    return dayOfWeek !== 0;
   }
 
   /**
@@ -211,5 +326,25 @@ export class SubscriptionManager {
    */
   static getDurationOptions(): SubscriptionDurationOption[] {
     return SUBSCRIPTION_DURATION_OPTIONS;
+  }
+
+  /**
+   * Get upcoming deliveries for a subscription (next 4 deliveries)
+   */
+  static getUpcomingDeliveries(
+    startDate: Date, 
+    frequency: 'weekly' | 'monthly', 
+    count: number = 4
+  ): Date[] {
+    const deliveries: Date[] = [];
+    let currentDate = new Date(startDate);
+    
+    for (let i = 0; i < count; i++) {
+      const nextDelivery = this.getNextScheduledDelivery(currentDate, frequency, currentDate);
+      deliveries.push(new Date(nextDelivery));
+      currentDate = nextDelivery;
+    }
+    
+    return deliveries;
   }
 }

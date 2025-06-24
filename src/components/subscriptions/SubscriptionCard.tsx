@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, Pause, Play, AlertTriangle, CheckCircle, Package, Crown, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, Pause, Play, AlertTriangle, CheckCircle, Package, Crown, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import SubscriptionRenewalDialog from './SubscriptionRenewalDialog';
+import DeliverySchedule from './DeliverySchedule';
 import type { UserSubscription } from '@/lib/types';
 
 interface SubscriptionCardProps {
@@ -21,12 +22,12 @@ interface SubscriptionCardProps {
 }
 
 export default function SubscriptionCard({ subscription, onUpdate, basePrice = 120 }: SubscriptionCardProps) {
-  const { toast } = useToast();
-  const [isPausing, setIsPausing] = useState(false);
+  const { toast } = useToast();  const [isPausing, setIsPausing] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [pauseReason, setPauseReason] = useState('');
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [showDeliverySchedule, setShowDeliverySchedule] = useState(false);
 
   const canPause = subscription.status === 'active' && 
     SubscriptionManager.canPauseSubscription(subscription.next_delivery_date).canPause;
@@ -93,7 +94,6 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
       setIsPausing(false);
     }
   };
-
   const handleReactivateSubscription = async () => {
     if (!canReactivate) {
       toast({
@@ -142,8 +142,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
       });
     } finally {
       setIsReactivating(false);
-    }
-  };
+    }  };
 
   const getStatusBadge = () => {
     switch (subscription.status) {
@@ -234,23 +233,83 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
               </div>
             </AlertDescription>
           </Alert>
-        )}
+        )}        {subscription.status === 'active' && (
+          <div className="space-y-2">            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                <span>Next delivery: {SubscriptionManager.formatDate(subscription.next_delivery_date)}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/subscriptions/regenerate-schedule', {
+                      method: 'POST'
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                      toast({
+                        title: "Schedule Regenerated",
+                        description: `Updated ${result.data.processedCount} subscriptions with daily deliveries`,
+                        variant: "default",
+                      });
+                      onUpdate();
+                    }
+                  } catch (error) {
+                    console.error('Error regenerating schedule:', error);
+                  }
+                }}
+                className="text-xs"
+              >
+                Regen Daily
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>
+                {SubscriptionManager.getTimeUntilDelivery(subscription.next_delivery_date)} until next delivery
+              </span>
+            </div>
 
-        {subscription.status === 'active' && (
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-blue-500" />
-            <span>Next delivery: {SubscriptionManager.formatDate(subscription.next_delivery_date)}</span>
+            {/* Toggle to show full delivery schedule */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeliverySchedule(!showDeliverySchedule)}
+              className="h-auto p-1 text-xs text-blue-600 hover:text-blue-700"
+            >
+              {showDeliverySchedule ? (
+                <>
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  Hide schedule
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  View delivery schedule
+                </>
+              )}
+            </Button>
+
+            {/* Full delivery schedule */}
+            {showDeliverySchedule && (
+              <div className="mt-3 pt-3 border-t">
+                <DeliverySchedule subscriptionId={subscription.id} />
+              </div>
+            )}
           </div>
         )}
 
-        {subscription.status === 'active' && (
+        {/* {subscription.status === 'active' && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>
               {SubscriptionManager.getTimeUntilDelivery(subscription.next_delivery_date)} until next delivery
             </span>
           </div>
-        )}
+        )} */}
 
         {subscription.status === 'paused' && subscription.pause_date && (
           <Alert>
@@ -280,8 +339,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         )}        {needsRenewal && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Renewal Reminder</AlertTitle>
-            <AlertDescription>
+            <AlertTitle>Renewal Reminder</AlertTitle>            <AlertDescription>
               {renewalInfo?.message}
             </AlertDescription>
           </Alert>
