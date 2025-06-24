@@ -12,19 +12,12 @@
 
 [build]
   functions = "netlify/functions"
+  command = "npm run build"
 
 [functions]
-  external_node_modules = ["exceljs"]
+  external_node_modules = ["exceljs", "nodemailer"]
 
-# Scheduled functions configuration
-[[plugins]]
-  package = "netlify-plugin-cron"
-
-  [plugins.inputs]
-    jobs = [
-      {
-        name = "daily-subscription-report",
-        cron = "0 18 * * *",
-        command = "curl -X POST https://develixr.netlify.app/.netlify/functions/daily-subscription-report-cron"
-      }
-    ]
+# Scheduled function configuration
+# This function will run daily at 6 PM (18:00 UTC)
+[functions."daily-subscription-report-cron"]
+  schedule = "0 18 * * *"
