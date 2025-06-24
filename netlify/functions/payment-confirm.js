@@ -185,6 +185,55 @@ exports.handler = async (event) => {
         } catch (emailError) {
           console.error('Error calling send-order-email API:', emailError);
         }
+        // Create subscription ONLY if payment was successful and order has subscription data
+        if (type === 'PAYMENT_SUCCESS_WEBHOOK' && order.order_type === 'subscription' && order.subscription_info) {
+          console.log('Creating subscription for successful payment...');
+          try {
+            const subscriptionData = order.subscription_info;
+            const customerInfo = order.shipping_address || {};
+
+            const subscriptionPayload = {
+              userId: order.user_id,
+              planId: subscriptionData.planId,
+              planName: subscriptionData.planName,
+              planPrice: subscriptionData.planPrice,
+              planFrequency: subscriptionData.planFrequency,
+              customerInfo: {
+                name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
+                email: order.email || customerInfo.email,
+                phone: customerInfo.mobileNumber || customerInfo.phone,
+                ...customerInfo
+              },
+              selectedJuices: subscriptionData.selectedJuices || [],
+              subscriptionDuration: subscriptionData.subscriptionDuration || 3,
+              basePrice: subscriptionData.basePrice || 120
+            };
+
+            console.log('Creating subscription with payload:', subscriptionPayload);
+
+            // Call the subscription creation API
+            const apiUrl = process.env.SUBSCRIPTION_CREATE_API_URL || 'https://develixr.netlify.app/api/subscriptions/create';
+
+            const subscriptionRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(subscriptionPayload),
+            });
+
+            const subscriptionResult = await subscriptionRes.json();
+            console.log('Subscription creation result:', subscriptionResult);
+
+            if (!subscriptionResult.success) {
+              console.error('Failed to create subscription:', subscriptionResult.message);
+              // Continue with the webhook processing even if subscription creation fails
+            } else {
+              console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);
+            }
+          } catch (subscriptionError) {
+            console.error('Error creating subscription in webhook:', subscriptionError);
+            // Continue with the webhook processing even if subscription creation fails
+          }
+        }
         // Return success regardless of email result
         return {
           statusCode: 200,
