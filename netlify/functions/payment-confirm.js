@@ -50,6 +50,10 @@ const maxRequestsPerWindow = 30;
 const ipRequestCounts = {};
 
 exports.handler = async (event) => {
+  console.log('=== WEBHOOK HANDLER START ===');
+  console.log('Event method:', event.httpMethod);
+  console.log('Event headers:', JSON.stringify(event.headers, null, 2));
+  console.log('Event body length:', event.body?.length || 0);
   console.log('Webhook POST handler invoked');
 
   // Rate limiting logic
@@ -104,15 +108,13 @@ exports.handler = async (event) => {
   const { type, data, event_time } = webhookData;
   console.log('Webhook type:', type);
   console.log('Webhook data:', data);
-  console.log('Webhook event_time:', event_time);
-  // Process payment events (both success and failure)
+  console.log('Webhook event_time:', event_time);  // Process payment events (both success and failure)
   if ((type === 'PAYMENT_SUCCESS_WEBHOOK' || type === 'PAYMENT_FAILED_WEBHOOK') && data?.order?.order_id) {
     const cashfreeOrderId = data.order.order_id; // e.g., 'elixr_0528303b-233b-41f3-aece-9c5b1385e84b'
     const internalOrderId = cashfreeOrderId.replace(/^elixr_/, ''); // Remove prefix to get your internal order ID
-    console.log(`Processing ${type} for internalOrderId:`, internalOrderId);
-    
-    // Determine order status based on webhook type
-    const orderStatus = type === 'PAYMENT_SUCCESS_WEBHOOK' ? 'payment_success' : 'payment_failed';
+    console.log(`Processing ${type} for cashfreeOrderId: ${cashfreeOrderId}, internalOrderId: ${internalOrderId}`);
+      // Determine order status based on webhook type - using proper status values
+    const orderStatus = type === 'PAYMENT_SUCCESS_WEBHOOK' ? 'Payment Success' : 'Payment Failed';
     console.log('Setting order status to:', orderStatus);
     
     try {
@@ -130,25 +132,36 @@ exports.handler = async (event) => {
       
       if (updateError) {
         console.error('Error updating order status:', updateError);
+        // Log more details about the error
+        console.error('Update error details:', JSON.stringify(updateError, null, 2));
         return {
           statusCode: 500,
-          body: JSON.stringify({ success: false, message: 'Failed to update order status' }),
+          body: JSON.stringify({ success: false, message: 'Failed to update order status', error: updateError.message }),
         };
-      }
-        // Fetch order details from Supabase using internal order ID
+      }      // Fetch order details from Supabase using internal order ID
       const { data: order, error } = await supabase
         .from('orders')
         .select('*')
         .eq('id', internalOrderId)
         .single();
+      
       console.log('Supabase order fetch result:', order, error);
       if (error || !order) {
         console.error('Order not found or Supabase error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return {
           statusCode: 404,
-          body: JSON.stringify({ success: false, message: 'Order not found' }),
+          body: JSON.stringify({ success: false, message: 'Order not found', error: error?.message }),
         };
       }
+
+      console.log('Order found successfully:', { 
+        id: order.id, 
+        order_type: order.order_type, 
+        status: order.status,
+        email: order.email,
+        total_amount: order.total_amount 
+      });
 
       // Create subscription ONLY if payment was successful and order has subscription data
       if (type === 'PAYMENT_SUCCESS_WEBHOOK' && order.order_type === 'subscription' && order.subscription_info) {
@@ -199,64 +212,94 @@ exports.handler = async (event) => {
           console.error('Error creating subscription in webhook:', subscriptionError);
           // Continue with the webhook processing even if subscription creation fails
         }
-      }
-      // Extract user email from all possible locations
+      }      // Extract user email from all possible locations
       const userEmail =
         order.email ||
         order.customer_email ||
         order.shipping_address?.email ||
         order.customerInfo?.email ||
         order.customerinfo?.email;
+      
+      console.log('Extracted user email:', userEmail);
+      
       if (!userEmail) {
-        console.error('No user email found in order:', order);
+        console.error('No user email found in order:', {
+          order_id: order.id,
+          email: order.email,
+          customer_email: order.customer_email,
+          shipping_address_email: order.shipping_address?.email
+        });
         return {
           statusCode: 400,
           body: JSON.stringify({ success: false, message: 'No user email found in order' }),
         };
-      }
-      // Extract order details from items array
-      const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : {};
-      const juiceName = firstItem.juiceName || firstItem.name || '';
-      const price = firstItem.price || '';      // Only send email for successful payments
+      }      // Only send email for successful payments
       if (type === 'PAYMENT_SUCCESS_WEBHOOK') {
-        // Prepare payload for Next.js API
+        console.log('Payment successful - sending confirmation emails...');
+        
+        // Prepare payload for the robust email API (no longer need orderDetails)
         const emailPayload = {
           orderId: order.id,
-          userEmail,
-          orderDetails: {
-            juiceName,
-            price,
-          },
+          userEmail: userEmail // Optional - API will fetch from DB if not provided
         };
+        
         console.log('Calling /api/send-order-email with payload:', emailPayload);
-        // Call Next.js API route to send email
-        const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
-        const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
-        const emailRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(emailPayload),
-        });
-        const emailResult = await emailRes.json();
-        console.log('Email API response:', emailResult);
-        if (!emailResult.success) {
-          throw new Error(emailResult.error || 'Email API failed');
+        
+        try {
+          // Call Next.js API route to send email
+          const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
+          const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+          const emailRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailPayload),
+          });
+          
+          const emailResult = await emailRes.json();
+          console.log('Email API response:', emailResult);
+          
+          if (!emailResult.success) {
+            console.error('Email sending failed:', emailResult.error);
+            console.error('Email errors:', emailResult.errors);
+            // Don't fail the webhook if email fails, just log it
+            console.warn('Continuing webhook processing despite email failure');
+          } else {
+            console.log('Emails sent successfully:', {
+              userEmailSent: emailResult.userEmailSent,
+              adminEmailSent: emailResult.adminEmailSent
+            });
+          }
+        } catch (emailError) {
+          console.error('Error calling email API:', emailError);
+          // Don't fail the webhook if email fails, just log it
+          console.warn('Continuing webhook processing despite email API error');
         }
       } else {
         console.log('Payment failed - skipping email notification');
       }    } catch (err) {
       console.error('Error processing payment webhook:', err);
+      console.error('Error stack:', err.stack);
+      console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+      
       return {
         statusCode: 500,
-        body: JSON.stringify({ success: false, message: 'Webhook processing error' }),
+        body: JSON.stringify({ 
+          success: false, 
+          message: 'Webhook processing error',
+          error: err.message,
+          timestamp: new Date().toISOString()
+        }),
       };
-    }
-  } else {
+    }  } else {
     console.log('Webhook type did not match or missing order_id. Skipping processing.');
+    console.log('Expected: PAYMENT_SUCCESS_WEBHOOK or PAYMENT_FAILED_WEBHOOK');
+    console.log('Received type:', type);
+    console.log('Order ID present:', !!data?.order?.order_id);
   }
 
+  console.log('=== WEBHOOK HANDLER END ===');
   return {
     statusCode: 200,
-    body: JSON.stringify({ success: true }),
+    body: JSON.stringify({ success: true, timestamp: new Date().toISOString() }),
   };
 };
