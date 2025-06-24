@@ -150,14 +150,16 @@ export default function HomePage() {
       <section className="py-16 bg-gradient-to-br from-background to-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
-              background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text"
-            }}>
-              Shop by Category
-            </h2>
+            <div className="inline-block pb-4 w-full">
+              <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4 leading-[1.3] pb-2 inline-block" style={{ 
+                background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text"
+              }}>
+                Shop by Category
+              </h2>
+            </div>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
               Find the perfect juice for your wellness journey
             </p>

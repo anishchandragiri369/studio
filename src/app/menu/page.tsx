@@ -311,15 +311,15 @@ function MenuPageContent() {
             </Card>
           )}
         </div>
-      </section>      {/* Ultra HD Featured Categories */}
+      </section>      {/* Shop by Category */}
       {!selectedCategory && (
-        <section className="py-16 bg-gradient-to-br from-background/80 via-primary/5 to-accent/5 bg-mesh-gradient">
+        <section className="py-16 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-4xl md:text-6xl font-headline font-bold gradient-text-warm mb-4 neon-text">
+              <h2 className="text-4xl md:text-6xl font-headline font-bold mb-4 leading-tight text-foreground">
                 Shop by Category
               </h2>
-              <p className="text-xl text-white/80 max-w-3xl mx-auto font-medium">
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium">
                 Explore our carefully curated elixir categories, each crafted with premium ingredients
               </p>
             </div>
@@ -328,23 +328,22 @@ function MenuPageContent() {
               {categories.filter(cat => cat.count > 0).map((category, index) => (
                 <Card 
                   key={category.name}
-                  className="card-premium border-white/20 shadow-neon hover:shadow-glass-ultra group cursor-pointer transition-all duration-500 animate-fade-in overflow-hidden"
+                  className="border border-border/20 group cursor-pointer transition-all duration-300 animate-fade-in overflow-hidden bg-card"
                   style={{ animationDelay: `${index * 100}ms` }}
                   onClick={() => setSelectedCategory(category.name)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-primary via-accent to-secondary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 animate-glow-pulse">
-                          <Star className="w-7 h-7 text-white" />
+                        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                          <Star className="w-7 h-7 text-primary" />
                         </div>
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 animate-pulse"></div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-white mb-1">
+                        <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-foreground mb-1">
                           {category.name}
                         </h3>
-                        <p className="text-white/70 text-lg">
+                        <p className="text-muted-foreground text-lg">
                           {category.count} premium elixir{category.count !== 1 ? 's' : ''}
                         </p>
                       </div>
