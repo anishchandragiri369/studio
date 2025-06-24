@@ -64,7 +64,7 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto text-center">
             {/* Tagline and Premium Badge */}
             <div className="mb-4">
-              <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/30 to-accent/30 text-white text-sm font-medium mb-4 border border-white/50">
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-sm font-medium mb-4 border border-white/50">
                 <Zap className="w-4 h-4 mr-2" />
                 Premium Cold-Pressed elixrs
               </span>
@@ -98,7 +98,7 @@ export default function HomePage() {
                 asChild 
                 variant="outline" 
                 size="lg" 
-                className="border-2 border-white/40 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
+                className="border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-8 py-4 text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
               >
                 <Link href="/subscriptions">
                   <Gift className="mr-2 h-5 w-5" />
