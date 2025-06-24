@@ -88,7 +88,11 @@ async function getTransporter() {
   });
 }
 
-function formatCurrency(amount: number): string {
+function formatCurrency(amount: number | undefined | null): string {
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    console.warn('[formatCurrency] Invalid amount received:', amount);
+    return '₹0.00';
+  }
   return `₹${amount.toFixed(2)}`;
 }
 
@@ -165,22 +169,20 @@ function generateCustomerEmailHtml(order: OrderData, customerName: string): stri
                 ` : ''}
             </div>
             ` : ''}
-            
-            <h4>Items ${isSubscription ? '(per delivery)' : ''}:</h4>
-            ${order.items.map(item => `
+              <h4>Items ${isSubscription ? '(per delivery)' : ''}:</h4>
+            ${order.items && order.items.length > 0 ? order.items.map(item => `
                 <div class="item-row">
                     <div>
-                        <strong>${item.juiceName}</strong><br>
-                        <small>Quantity: ${item.quantity}</small>
+                        <strong>${item.juiceName || 'Unknown Item'}</strong><br>
+                        <small>Quantity: ${item.quantity || 0}</small>
                     </div>
-                    <div>${formatCurrency(item.pricePerItem * item.quantity)}</div>
+                    <div>${formatCurrency((item.pricePerItem || 0) * (item.quantity || 0))}</div>
                 </div>
-            `).join('')}
-            
-            <div class="total-row">
+            `).join('') : '<p>No items found</p>'}
+              <div class="total-row">
                 <div style="display: flex; justify-content: space-between;">
                     <span>Total Amount:</span>
-                    <span>${formatCurrency(order.total_amount)}</span>
+                    <span>${formatCurrency(order.total_amount || 0)}</span>
                 </div>
             </div>
         </div>
@@ -291,20 +293,18 @@ function generateAdminEmailHtml(order: OrderData, customerName: string, customer
                 ` : ''}
             </div>
             ` : ''}
-            
-            <h4>Items to ${isSubscription ? 'deliver per shipment' : 'ship'}:</h4>
-            ${order.items.map(item => `
+              <h4>Items to ${isSubscription ? 'deliver per shipment' : 'ship'}:</h4>
+            ${order.items && order.items.length > 0 ? order.items.map(item => `
                 <div class="item-row">
                     <div>
-                        <strong>${item.juiceName}</strong> (ID: ${item.juiceId})<br>
-                        <small>Quantity: ${item.quantity} | Unit Price: ${formatCurrency(item.pricePerItem)}</small>
+                        <strong>${item.juiceName || 'Unknown Item'}</strong> (ID: ${item.juiceId || 'N/A'})<br>
+                        <small>Quantity: ${item.quantity || 0} | Unit Price: ${formatCurrency(item.pricePerItem || 0)}</small>
                     </div>
-                    <div><strong>${formatCurrency(item.pricePerItem * item.quantity)}</strong></div>
+                    <div><strong>${formatCurrency((item.pricePerItem || 0) * (item.quantity || 0))}</strong></div>
                 </div>
-            `).join('')}
-            
-            <div class="total-row">
-                Total Amount: ${formatCurrency(order.total_amount)}
+            `).join('') : '<p>No items found</p>'}
+              <div class="total-row">
+                Total Amount: ${formatCurrency(order.total_amount || 0)}
             </div>
         </div>
         
@@ -351,11 +351,23 @@ async function sendOrderConfirmationEmails(orderData: OrderData): Promise<{ user
   const customerName = orderData.shipping_address?.firstName 
     ? `${orderData.shipping_address.firstName} ${orderData.shipping_address.lastName || ''}`.trim()
     : orderData.shipping_address?.name || 'Valued Customer';
-
   console.log('[sendOrderConfirmationEmails] Customer details extracted:', {
     customerEmail,
     customerName,
     orderType: orderData.order_type
+  });
+
+  // Debug: Log order data structure to identify missing fields
+  console.log('[sendOrderConfirmationEmails] Order data structure:', {
+    id: orderData.id,
+    order_type: orderData.order_type,
+    total_amount: orderData.total_amount,
+    items: orderData.items ? orderData.items.map(item => ({
+      juiceId: item.juiceId,
+      juiceName: item.juiceName,
+      quantity: item.quantity,
+      pricePerItem: item.pricePerItem
+    })) : 'No items'
   });
   if (!customerEmail) {
     console.error('[sendOrderConfirmationEmails] Customer email not found in order data');
