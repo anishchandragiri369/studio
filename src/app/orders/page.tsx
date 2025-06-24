@@ -56,7 +56,7 @@ export default function OrdersPage() {
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
-        .in('status', ['payment_success', 'delivered', 'shipped', 'processing']) // Only show successful/processed orders
+        .in('status', ['payment_success', 'Payment Success', 'delivered', 'shipped', 'processing']) // Only show successful/processed orders
         .order('created_at', { ascending: false });
 
       if (error) {

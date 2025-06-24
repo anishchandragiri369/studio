@@ -163,10 +163,32 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Order not found' }),
           };
         }
-        // If order found and updated, just return success
+        // If order found and updated, send confirmation email
+        try {
+          const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
+          const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+          const emailPayload = {
+            orderId: order.id,
+            userEmail: order.email || order.customer_email || order.shipping_address?.email
+          };
+          console.log('Calling send-order-email API with payload:', emailPayload);
+          const emailRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailPayload),
+          });
+          const emailResult = await emailRes.json();
+          console.log('Email API response:', emailResult);
+          if (!emailResult.success) {
+            console.error('Email sending failed:', emailResult.errors || emailResult.error);
+          }
+        } catch (emailError) {
+          console.error('Error calling send-order-email API:', emailError);
+        }
+        // Return success regardless of email result
         return {
           statusCode: 200,
-          body: JSON.stringify({ success: true, message: 'Order updated to Payment Success and webhook processed.' }),
+          body: JSON.stringify({ success: true, message: 'Order updated to Payment Success, webhook processed, email attempted.' }),
         };
       } catch (err) {
         console.error('Error updating/fetching order:', err);
