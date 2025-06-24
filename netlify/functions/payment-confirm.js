@@ -105,14 +105,37 @@ exports.handler = async (event) => {
   console.log('Webhook type:', type);
   console.log('Webhook data:', data);
   console.log('Webhook event_time:', event_time);
-
-  // Only process successful payment events
-  if (type === 'PAYMENT_SUCCESS_WEBHOOK' && data?.order?.order_id) {
+  // Process payment events (both success and failure)
+  if ((type === 'PAYMENT_SUCCESS_WEBHOOK' || type === 'PAYMENT_FAILED_WEBHOOK') && data?.order?.order_id) {
     const cashfreeOrderId = data.order.order_id; // e.g., 'elixr_0528303b-233b-41f3-aece-9c5b1385e84b'
     const internalOrderId = cashfreeOrderId.replace(/^elixr_/, ''); // Remove prefix to get your internal order ID
-    console.log('Processing PAYMENT_SUCCESS_WEBHOOK for internalOrderId:', internalOrderId);
+    console.log(`Processing ${type} for internalOrderId:`, internalOrderId);
+    
+    // Determine order status based on webhook type
+    const orderStatus = type === 'PAYMENT_SUCCESS_WEBHOOK' ? 'payment_success' : 'payment_failed';
+    console.log('Setting order status to:', orderStatus);
+    
     try {
-      // Fetch order details from Supabase using internal order ID
+      // First, update the order status in the database
+      const { data: updateResult, error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          status: orderStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', internalOrderId)
+        .select();
+      
+      console.log('Order status update result:', updateResult, updateError);
+      
+      if (updateError) {
+        console.error('Error updating order status:', updateError);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ success: false, message: 'Failed to update order status' }),
+        };
+      }
+        // Fetch order details from Supabase using internal order ID
       const { data: order, error } = await supabase
         .from('orders')
         .select('*')
@@ -125,6 +148,57 @@ exports.handler = async (event) => {
           statusCode: 404,
           body: JSON.stringify({ success: false, message: 'Order not found' }),
         };
+      }
+
+      // Create subscription ONLY if payment was successful and order has subscription data
+      if (type === 'PAYMENT_SUCCESS_WEBHOOK' && order.order_type === 'subscription' && order.subscription_info) {
+        console.log('Creating subscription for successful payment...');
+        try {
+          const subscriptionData = order.subscription_info;
+          const customerInfo = order.shipping_address || {};
+          
+          const subscriptionPayload = {
+            userId: order.user_id,
+            planId: subscriptionData.planId,
+            planName: subscriptionData.planName,
+            planPrice: subscriptionData.planPrice,
+            planFrequency: subscriptionData.planFrequency,
+            customerInfo: {
+              name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
+              email: order.email || customerInfo.email,
+              phone: customerInfo.mobileNumber || customerInfo.phone,
+              ...customerInfo
+            },
+            selectedJuices: subscriptionData.selectedJuices || [],
+            subscriptionDuration: subscriptionData.subscriptionDuration || 3,
+            basePrice: subscriptionData.basePrice || 120
+          };
+
+          console.log('Creating subscription with payload:', subscriptionPayload);
+
+          // Call the subscription creation API
+          const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
+          const apiUrl = process.env.SUBSCRIPTION_CREATE_API_URL || 'https://develixr.netlify.app/api/subscriptions/create';
+          
+          const subscriptionRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subscriptionPayload),
+          });
+
+          const subscriptionResult = await subscriptionRes.json();
+          console.log('Subscription creation result:', subscriptionResult);
+
+          if (!subscriptionResult.success) {
+            console.error('Failed to create subscription:', subscriptionResult.message);
+            // Continue with the webhook processing even if subscription creation fails
+          } else {
+            console.log('Subscription created successfully:', subscriptionResult.data.subscription.id);
+          }
+        } catch (subscriptionError) {
+          console.error('Error creating subscription in webhook:', subscriptionError);
+          // Continue with the webhook processing even if subscription creation fails
+        }
       }
       // Extract user email from all possible locations
       const userEmail =
@@ -143,39 +217,42 @@ exports.handler = async (event) => {
       // Extract order details from items array
       const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : {};
       const juiceName = firstItem.juiceName || firstItem.name || '';
-      const price = firstItem.price || '';
-      // Prepare payload for Next.js API
-      const emailPayload = {
-        orderId: order.id,
-        userEmail,
-        orderDetails: {
-          juiceName,
-          price,
-        },
-      };
-      console.log('Calling /api/send-order-email with payload:', emailPayload);
-      // Call Next.js API route to send email
-      const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
-      const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
-      const emailRes = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailPayload),
-      });
-      const emailResult = await emailRes.json();
-      console.log('Email API response:', emailResult);
-      if (!emailResult.success) {
-        throw new Error(emailResult.error || 'Email API failed');
-      }
-    } catch (err) {
-      console.error('Error sending order confirmation email:', err);
+      const price = firstItem.price || '';      // Only send email for successful payments
+      if (type === 'PAYMENT_SUCCESS_WEBHOOK') {
+        // Prepare payload for Next.js API
+        const emailPayload = {
+          orderId: order.id,
+          userEmail,
+          orderDetails: {
+            juiceName,
+            price,
+          },
+        };
+        console.log('Calling /api/send-order-email with payload:', emailPayload);
+        // Call Next.js API route to send email
+        const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
+        const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+        const emailRes = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(emailPayload),
+        });
+        const emailResult = await emailRes.json();
+        console.log('Email API response:', emailResult);
+        if (!emailResult.success) {
+          throw new Error(emailResult.error || 'Email API failed');
+        }
+      } else {
+        console.log('Payment failed - skipping email notification');
+      }    } catch (err) {
+      console.error('Error processing payment webhook:', err);
       return {
         statusCode: 500,
-        body: JSON.stringify({ success: false, message: 'Email send error' }),
+        body: JSON.stringify({ success: false, message: 'Webhook processing error' }),
       };
     }
   } else {
-    console.log('Webhook type did not match or missing order_id. Skipping email logic.');
+    console.log('Webhook type did not match or missing order_id. Skipping processing.');
   }
 
   return {

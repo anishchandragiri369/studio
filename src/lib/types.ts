@@ -1,4 +1,3 @@
-
 import type { z } from 'zod';
 import type { loginSchema, signUpSchema, forgotPasswordSchema, checkoutAddressSchema, editProfileSchema, addProductFormSchema } from '@/lib/zod-schemas';
 
@@ -95,4 +94,49 @@ export interface Order {
 
 // New Product Form Data Type (using addProductFormSchema)
 export type AddProductFormData = z.infer<typeof addProductFormSchema>;
+
+// Subscription Management Types
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  created_at: string;
+  updated_at: string;
+  next_delivery_date: string;
+  pause_date?: string;
+  pause_reason?: string;
+  reactivation_deadline?: string; // 3 months from pause date
+  delivery_frequency: 'weekly' | 'monthly';
+  selected_juices?: { juiceId: string; quantity: number }[];
+  delivery_address: CheckoutAddressFormData;
+  total_amount: number;
+  // New duration-based fields
+  subscription_duration: 2 | 3 | 4 | 6 | 12; // months
+  subscription_start_date: string;
+  subscription_end_date: string;
+  original_price: number;
+  discount_percentage: number;
+  discount_amount: number;
+  final_price: number;
+  renewal_notification_sent?: boolean;
+}
+
+// Subscription duration options with discount tiers
+export interface SubscriptionDurationOption {
+  months: 2 | 3 | 4 | 6 | 12;
+  discountPercentage: number;
+  discountType: 'bronze' | 'silver' | 'gold' | 'platinum';
+  label: string;
+}
+
+export interface SubscriptionDelivery {
+  id: string;
+  subscription_id: string;
+  delivery_date: string;
+  status: 'scheduled' | 'delivered' | 'skipped' | 'failed';
+  items: { juiceId: string; quantity: number }[];
+  created_at: string;
+  updated_at: string;
+}
 

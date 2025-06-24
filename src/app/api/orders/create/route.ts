@@ -10,10 +10,9 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-
   try {
     const body = await req.json();
-    const { orderAmount, orderItems, customerInfo, userId } = body;
+    const { orderAmount, orderItems, customerInfo, userId, subscriptionData } = body;
 
     // Validation
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
@@ -30,17 +29,16 @@ export async function POST(req: NextRequest) {
     
     if (!customerInfo.name || !customerInfo.email) {
       return NextResponse.json({ success: false, message: 'Customer name and email are required.' }, { status: 400 });
-    }
-
-    const orderToInsert = {
+    }    const orderToInsert = {
       user_id: userId,
+      email: customerInfo.email, // Add email field
       total_amount: orderAmount,
       items: orderItems,
       shipping_address: customerInfo, // <-- FIXED: use shipping_address
-      status: 'Payment Pending',
-    };
-    
-    const { data, error } = await supabase
+      status: 'payment_pending', // Use snake_case for consistency
+      order_type: subscriptionData ? 'subscription' : 'one_time', // Add order type
+      subscription_info: subscriptionData || null, // Store subscription details
+    };    const { data, error } = await supabase
       .from('orders')
       .insert([orderToInsert])
       .select('id')
@@ -61,7 +59,16 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: { id: data.id } });
+    // NOTE: Subscription creation is now handled ONLY after successful payment
+    // in the payment webhook, not here during order creation
+    
+    return NextResponse.json({ 
+      success: true, 
+      data: { 
+        id: data.id,
+        isSubscription: !!subscriptionData
+      } 
+    });
 
   } catch (error: any) {
     console.error('[API /orders/create] General error in POST handler:', error);

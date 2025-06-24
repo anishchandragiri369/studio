@@ -57,6 +57,24 @@ export async function POST(request: NextRequest) {
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid order amount.' }, { status: 400 });
     }
+    
+    // Add Cashfree sandbox amount validation
+    if (CASHFREE_API_MODE === "sandbox" && orderAmount > 10000) {
+      return NextResponse.json({ 
+        success: false, 
+        message: `Order amount (₹${orderAmount}) exceeds the maximum limit of ₹10,000 for sandbox payments. Please reduce the order amount.` 
+      }, { status: 400 });
+    }
+    
+    if (orderAmount > 100000) { // General production limit
+      return NextResponse.json({ 
+        success: false, 
+        message: `Order amount (₹${orderAmount}) exceeds the maximum limit of ₹1,00,000. Please contact support for large orders.` 
+      }, { status: 400 });
+    }
+    
+    console.log(`[Cashfree API] Processing order amount: ₹${orderAmount} in ${CASHFREE_API_MODE} mode`);
+    
     console.log("customerinfo",customerInfo.email)
     console.log("customerinfo",customerInfo.phone)
     if (!customerInfo || !customerInfo.email || !customerInfo.phone) {
@@ -103,9 +121,28 @@ export async function POST(request: NextRequest) {
     try {
       const cfOrder = await cashfree.PGCreateOrder(orderRequest);
       console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
-      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));
+      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));      if (cfOrder.data && cfOrder.data.payment_session_id) {
+        // Update the order record with Cashfree details
+        if (supabase) {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+              cashfree_order_id: cfOrder.data.order_id,
+              payment_session_id: cfOrder.data.payment_session_id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', internalOrderId);
 
-      if (cfOrder.data && cfOrder.data.payment_session_id) {
+          if (updateError) {
+            console.error("[Cashfree Create Order API] Failed to update order with Cashfree details:", updateError);
+            // Continue execution but log the error
+          } else {
+            console.log("[Cashfree Create Order API] Successfully updated order with Cashfree details");
+          }
+        } else {
+          console.error("[Cashfree Create Order API] Supabase client not available for updating order");
+        }
+
         // Order is already created in the orders/create API. Only send emails here if needed.
         // Send confirmation emails
         return NextResponse.json({

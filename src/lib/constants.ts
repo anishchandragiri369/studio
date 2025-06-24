@@ -1,4 +1,4 @@
-import type { Juice, SubscriptionPlan, Order } from './types';
+import type { Juice, SubscriptionPlan, Order, SubscriptionDurationOption } from './types';
 
 export const JUICES: Juice[] = [
   {
@@ -178,6 +178,43 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     maxJuices: 5,
   },
 ];
+
+// Subscription Duration Options with Discounts
+export const SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
+  {
+    months: 2,
+    discountPercentage: 0,
+    discountType: 'bronze',
+    label: '2 Months - No Discount'
+  },
+  {
+    months: 3,
+    discountPercentage: 5,
+    discountType: 'bronze',
+    label: '3 Months - 5% OFF'
+  },
+  {
+    months: 4,
+    discountPercentage: 8,
+    discountType: 'silver',
+    label: '4 Months - 8% OFF'
+  },
+  {
+    months: 6,
+    discountPercentage: 12,
+    discountType: 'gold',
+    label: '6 Months - 12% OFF'
+  },
+  {
+    months: 12,
+    discountPercentage: 20,
+    discountType: 'platinum',
+    label: '1 Year - 20% OFF'
+  }
+];
+
+// Days before subscription end to show renewal notification
+export const RENEWAL_NOTIFICATION_DAYS = 5;
 
 export const AVAILABLE_FLAVORS_FOR_AI: string[] = JUICES.map(j => j.flavor);
 export const AVAILABLE_JUICE_NAMES_FOR_AI: string[] = JUICES.map(j => j.name);

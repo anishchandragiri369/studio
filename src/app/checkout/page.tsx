@@ -24,6 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface SubscriptionOrderItem {
   id: string;
+  juiceId: string;
   name: string;
   quantity: number;
   image?: string;
@@ -58,6 +59,8 @@ function CheckoutPageContents() {
     planName: string;
     planPrice: number;
     planFrequency: string;
+    subscriptionDuration?: number;
+    basePrice?: number;
   } | null>(null); // Explicitly initialize as null
   const [subscriptionOrderItems, setSubscriptionOrderItems] = useState<SubscriptionOrderItem[]>([]);
   const [currentOrderTotal, setCurrentOrderTotal] = useState(0);
@@ -73,6 +76,13 @@ function CheckoutPageContents() {
     }
   });
 
+  // Auto-populate email field with authenticated user's email
+  useEffect(() => {
+    if (user?.email) {
+      setValue('email', user.email);
+    }
+  }, [user, setValue]);
+
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
@@ -82,11 +92,23 @@ function CheckoutPageContents() {
     const planPriceStr = searchParams.get('planPrice') as string | null;
     const planFrequency = searchParams.get('planFrequency') as string | null;
     const selectedJuicesStr = searchParams.get('selectedJuices');
+    const subscriptionDurationStr = searchParams.get('subscriptionDuration');
+    const basePriceStr = searchParams.get('basePrice');
 
     if (planId && planName && planPriceStr && planFrequency) {
       setIsSubscriptionCheckout(true);
       const planPrice = parseFloat(planPriceStr);
-      setSubscriptionDetails({ planId, planName, planPrice, planFrequency });
+      const subscriptionDuration = subscriptionDurationStr ? parseInt(subscriptionDurationStr) : 3;
+      const basePrice = basePriceStr ? parseFloat(basePriceStr) : 120;
+      
+      setSubscriptionDetails({ 
+        planId, 
+        planName, 
+        planPrice, 
+        planFrequency,
+        subscriptionDuration,
+        basePrice
+      });
       setCurrentOrderTotal(planPrice); // Shipping is 0 for subscriptions
 
       if (selectedJuicesStr) {
@@ -95,7 +117,14 @@ function CheckoutPageContents() {
           const items: SubscriptionOrderItem[] = Object.entries(parsedSelections)
             .map(([juiceId, quantity]) => {
               const juiceInfo = JUICES.find(j => j.id === juiceId);
-              return juiceInfo ? { id: juiceInfo.id, name: juiceInfo.name, quantity, image: juiceInfo.image, dataAiHint: juiceInfo.dataAiHint } : null;
+              return juiceInfo ? { 
+                id: juiceInfo.id, 
+                juiceId: juiceInfo.id,
+                name: juiceInfo.name, 
+                quantity, 
+                image: juiceInfo.image, 
+                dataAiHint: juiceInfo.dataAiHint 
+              } : null;
             })
             .filter(item => item !== null) as SubscriptionOrderItem[];
           setSubscriptionOrderItems(items);
@@ -229,6 +258,18 @@ function CheckoutPageContents() {
       if (!formData) {
         throw new Error("Please fill in all required shipping details");
       }
+      
+      // Add validation for order amount
+      if (currentOrderTotal > 10000) {
+        throw new Error(`Order amount (₹${currentOrderTotal}) exceeds the maximum limit of ₹10,000 for sandbox payments. Please reduce the order amount or contact support.`);
+      }
+      
+      if (currentOrderTotal < 1) {
+        throw new Error("Order amount must be at least ₹1.");
+      }
+      
+      console.log("Order validation passed. Current order total:", currentOrderTotal);
+      
       const orderPayload = {
         orderAmount: currentOrderTotal,
         orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
@@ -248,7 +289,20 @@ function CheckoutPageContents() {
             country: (formData as CheckoutAddressFormData).country,
           }
         },
-        userId: user?.id // <-- Pass the userId to backend
+        userId: user?.id, // <-- Pass the userId to backend
+        // Add subscription data if this is a subscription checkout
+        subscriptionData: isSubscriptionCheckout ? {
+          planId: subscriptionDetails?.planId,
+          planName: subscriptionDetails?.planName,
+          planPrice: subscriptionDetails?.planPrice,
+          planFrequency: subscriptionDetails?.planFrequency,
+          selectedJuices: subscriptionOrderItems.map(item => ({
+            juiceId: item.juiceId,
+            quantity: item.quantity
+          })),
+          subscriptionDuration: subscriptionDetails?.subscriptionDuration || 3,
+          basePrice: subscriptionDetails?.basePrice || 120
+        } : null
       };
       console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
       // const userId = user.id;
@@ -663,6 +717,29 @@ function CheckoutPageContents() {
                           <span>Total</span>
                           <span className="text-primary">₹{currentOrderTotal.toFixed(2)}</span>
                         </div>
+                        
+                        {/* Amount limit warning for subscriptions */}
+                        {currentOrderTotal > 8000 && (
+                          <Alert variant="destructive" className="mt-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Amount Warning</AlertTitle>
+                            <AlertDescription>
+                              Order amount (₹{currentOrderTotal.toFixed(2)}) is approaching the sandbox limit of ₹10,000. 
+                              Consider reducing the subscription duration or items.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        {currentOrderTotal > 10000 && (
+                          <Alert variant="destructive" className="mt-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Amount Exceeds Limit</AlertTitle>
+                            <AlertDescription>
+                              Order amount (₹{currentOrderTotal.toFixed(2)}) exceeds the maximum limit of ₹10,000 for test payments. 
+                              Please reduce the order amount to proceed.
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
                     </div>
                   ) : cartItems.length > 0 ? (

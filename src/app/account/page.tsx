@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit } from 'lucide-react';
+import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import type { Order } from '@/lib/types';
 import Image from 'next/image';
@@ -20,7 +20,7 @@ export default function AccountPage() {
   const { clearCart } = useCart();
   const router = useRouter();
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [errorFetchingOrders, setErrorFetchingOrders] = useState<string | null>(null);
 
@@ -43,11 +43,11 @@ export default function AccountPage() {
         return;
       }
       setLoadingOrders(true);
-      setErrorFetchingOrders(null);
-      const { data, error } = await supabase
+      setErrorFetchingOrders(null);      const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
+        .in('status', ['payment_success', 'delivered', 'shipped', 'processing']) // Only show successful/processed orders
         .order('created_at', { ascending: false });
       if (error) {
         setErrorFetchingOrders('Failed to fetch orders. Please try again.');
@@ -152,11 +152,15 @@ export default function AccountPage() {
                 <CardContent>
                   {/* Add more user details here if available, e.g., phone, address preferences */}
                   <p className="text-xs text-muted-foreground text-center">Member since: {new Date(user.created_at).toLocaleDateString()}</p>
-                </CardContent>
-                <CardFooter className="flex-col gap-3">
+                </CardContent>                <CardFooter className="flex-col gap-3">
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/account/edit-profile">
                         <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/my-subscriptions">
+                        <Calendar className="mr-2 h-4 w-4" /> My Subscriptions
                     </Link>
                   </Button>
                   <Button onClick={handleLogout} variant="destructive" className="w-full">
@@ -212,17 +216,16 @@ export default function AccountPage() {
                                   order.status === 'Pending' ? 'bg-gray-100 text-gray-700' :
                                   'bg-red-100 text-red-700'
                                 }`}>{order.status}</span>
-                              </div>
-                              <CardDescription className="text-xs">
-                                Date: {formatOrderDate(order.orderDate || order.created_at)}
+                              </div>                              <CardDescription className="text-xs">
+                                Date: {formatOrderDate((order as any).created_at || (order as any).orderDate)}
                                 <span className="mx-1">|</span>
-                                Total: Rs.{typeof order.total_amount === 'number' && order.total_amount > 0 ? order.total_amount.toFixed(2) : (typeof order.totalAmount === 'number' && order.totalAmount > 0 ? order.totalAmount.toFixed(2) : '—')}
+                                Total: Rs.{typeof (order as any).total_amount === 'number' && (order as any).total_amount > 0 ? (order as any).total_amount.toFixed(2) : (typeof (order as any).totalAmount === 'number' && (order as any).totalAmount > 0 ? (order as any).totalAmount.toFixed(2) : '—')}
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 pt-0">
                               <Separator className="my-2" />
                               <h4 className="text-sm font-medium mb-1">Items:</h4>
-                              {order.items.map((item, idx) => (
+                              {order.items.map((item: any, idx: number) => (
                                 <div key={item.juiceId || idx} className="flex items-center gap-3 text-sm">
                                   {item.image && (
                                     <Image
@@ -235,11 +238,10 @@ export default function AccountPage() {
                                       unoptimized={item.image.startsWith('https://placehold.co')}
                                       onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
                                     />
-                                  )}
-                                  <div className="flex-grow">
-                                    <span>{item.quantity}x {item.juiceName || item.name || 'Unknown Juice'}</span>
+                                  )}                                  <div className="flex-grow">
+                                    <span>{item.quantity}x {(item as any).juiceName || (item as any).name || 'Unknown Juice'}</span>
                                   </div>
-                                  <span className="text-muted-foreground">Rs.{typeof item.pricePerItem === 'number' && item.pricePerItem > 0 ? (item.quantity * item.pricePerItem).toFixed(2) : (typeof item.price === 'number' && item.price > 0 ? (item.quantity * item.price).toFixed(2) : '—')}</span>
+                                  <span className="text-muted-foreground">Rs.{typeof (item as any).pricePerItem === 'number' && (item as any).pricePerItem > 0 ? (item.quantity * (item as any).pricePerItem).toFixed(2) : (typeof (item as any).price === 'number' && (item as any).price > 0 ? (item.quantity * (item as any).price).toFixed(2) : '—')}</span>
                                 </div>
                               ))}
                               {order.shippingAddress && (
