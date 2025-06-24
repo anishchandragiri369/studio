@@ -9,3 +9,22 @@
   to = "/.netlify/functions/payment-confirm"
   status = 200
   force = true
+
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  external_node_modules = ["exceljs"]
+
+# Scheduled functions configuration
+[[plugins]]
+  package = "netlify-plugin-cron"
+
+  [plugins.inputs]
+    jobs = [
+      {
+        name = "daily-subscription-report",
+        cron = "0 18 * * *",
+        command = "curl -X POST https://develixr.netlify.app/.netlify/functions/daily-subscription-report-cron"
+      }
+    ]

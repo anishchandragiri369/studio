@@ -94,9 +94,7 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Failed to reactivate subscription.' },
         { status: 500 }
       );
-    }
-
-    // Create new delivery schedule
+    }    // Create new delivery schedule
     const { error: deliveryError } = await supabase
       .from('subscription_deliveries')
       .insert({
@@ -109,7 +107,45 @@ export async function POST(req: NextRequest) {
     if (deliveryError) {
       console.error('Error creating delivery schedule:', deliveryError);
       // Continue execution - this is not critical for reactivation
-    }    return NextResponse.json({
+    }    // Send reactivation confirmation email
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const apiUrl = process.env.SEND_SUBSCRIPTION_EMAIL_API_URL || 
+        `${req.nextUrl.origin}/api/send-subscription-email`;
+      
+      const emailPayload = {
+        type: 'reactivate',
+        subscriptionId: subscription.id,
+        userEmail: subscription.delivery_address?.email || 'user@example.com',
+        subscriptionDetails: {
+          planId: subscription.plan_id,
+          reactivationDate: now.toISOString(),
+          nextDeliveryDate: nextDelivery.toISOString(),
+          nextDeliveryFormatted: SubscriptionManager.formatDate(nextDelivery),
+          extendedEndDate: extendedEndDate.toISOString(),
+          pauseDurationDays: Math.round(pauseDurationMs / (1000 * 60 * 60 * 24))
+        }
+      };
+
+      console.log('Sending reactivation confirmation email with payload:', emailPayload);
+      const emailRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload),
+      });
+
+      const emailResult = await emailRes.json() as any;
+      console.log('Reactivation email API response:', emailResult);
+      
+      if (!emailResult.success) {
+        console.error('Reactivation email sending failed:', emailResult.errors || emailResult.error);
+      }
+    } catch (emailError) {
+      console.error('Error sending reactivation confirmation email:', emailError);
+      // Continue execution - email failure shouldn't block the reactivation operation
+    }
+
+    return NextResponse.json({
       success: true,
       message: 'Subscription reactivated successfully.',
       data: {

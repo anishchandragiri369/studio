@@ -70,9 +70,7 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Failed to pause subscription.' },
         { status: 500 }
       );
-    }
-
-    // Mark upcoming deliveries as skipped
+    }    // Mark upcoming deliveries as skipped
     const { error: deliveryUpdateError } = await supabase
       .from('subscription_deliveries')
       .update({ status: 'skipped' })
@@ -83,6 +81,41 @@ export async function POST(req: NextRequest) {
     if (deliveryUpdateError) {
       console.error('Error updating deliveries:', deliveryUpdateError);
       // Continue execution - this is not critical
+    }    // Send pause confirmation email
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const apiUrl = process.env.SEND_SUBSCRIPTION_EMAIL_API_URL || 
+        `${req.nextUrl.origin}/api/send-subscription-email`;
+      
+      const emailPayload = {
+        type: 'pause',
+        subscriptionId: subscription.id,
+        userEmail: subscription.delivery_address?.email || 'user@example.com',
+        subscriptionDetails: {
+          planId: subscription.plan_id,
+          pauseDate: pauseDate.toISOString(),
+          pauseReason: reason || 'User requested pause',
+          reactivationDeadline: reactivationDeadline.toISOString(),
+          canReactivateUntil: SubscriptionManager.formatDate(reactivationDeadline)
+        }
+      };
+
+      console.log('Sending pause confirmation email with payload:', emailPayload);
+      const emailRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload),
+      });
+
+      const emailResult = await emailRes.json() as any;
+      console.log('Pause email API response:', emailResult);
+      
+      if (!emailResult.success) {
+        console.error('Pause email sending failed:', emailResult.errors || emailResult.error);
+      }
+    } catch (emailError) {
+      console.error('Error sending pause confirmation email:', emailError);
+      // Continue execution - email failure shouldn't block the pause operation
     }
 
     return NextResponse.json({

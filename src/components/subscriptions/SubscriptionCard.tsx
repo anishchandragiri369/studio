@@ -66,12 +66,10 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         }),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      const result = await response.json();      if (result.success) {
         toast({
           title: "Subscription Paused",
-          description: `Your subscription has been paused. You can reactivate it until ${result.data.canReactivateUntil}.`,
+          description: `Your subscription has been paused. You can reactivate it until ${result.data.canReactivateUntil}. A confirmation email has been sent.`,
           variant: "default",
         });
         setShowPauseDialog(false);
@@ -121,10 +119,9 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         const extendedMessage = pauseDays > 0 
           ? ` Your subscription has been extended by ${pauseDays} day${pauseDays > 1 ? 's' : ''} to account for the pause period.`
           : '';
-        
-        toast({
+          toast({
           title: "Subscription Reactivated",
-          description: `Your subscription is now active. Next delivery: ${result.data.nextDeliveryFormatted}.${extendedMessage}`,
+          description: `Your subscription is now active. Next delivery: ${result.data.nextDeliveryFormatted}.${extendedMessage} A confirmation email has been sent.`,
           variant: "default",
         });
         setShowReactivateDialog(false);

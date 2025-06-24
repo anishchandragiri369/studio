@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit, Calendar } from 'lucide-react';
+import { LogOut, ShoppingBag, Mail, User, Loader2, AlertTriangle, Package, Edit, Calendar, FileSpreadsheet } from 'lucide-react';
 import Link from 'next/link';
 import type { Order } from '@/lib/types';
 import Image from 'next/image';
@@ -103,7 +103,6 @@ export default function AccountPage() {
       </div>
     );
   }
-
   const getInitials = (email: string) => {
     const parts = email.split('@')[0];
     const namePart = user.user_metadata?.full_name || parts;
@@ -116,6 +115,11 @@ export default function AccountPage() {
     }
     return parts.substring(0, 2).toUpperCase();
   };
+
+  // Check if user is admin
+  const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || 
+                  user?.user_metadata?.role === 'admin' ||
+                  ['admin@elixr.com', 'anishbobby@gmail.com'].includes(user?.email || '');
 
   return (
     <div className="min-h-screen relative">
@@ -157,12 +161,18 @@ export default function AccountPage() {
                     <Link href="/account/edit-profile">
                         <Edit className="mr-2 h-4 w-4" /> Edit Profile
                     </Link>
-                  </Button>
-                  <Button variant="outline" className="w-full" asChild>
+                  </Button>                  <Button variant="outline" className="w-full" asChild>
                     <Link href="/my-subscriptions">
                         <Calendar className="mr-2 h-4 w-4" /> My Subscriptions
                     </Link>
                   </Button>
+                  {isAdmin && (
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link href="/admin/reports">
+                          <FileSpreadsheet className="mr-2 h-4 w-4" /> Admin Reports
+                      </Link>
+                    </Button>
+                  )}
                   <Button onClick={handleLogout} variant="destructive" className="w-full">
                     <LogOut className="mr-2 h-4 w-4" /> Log Out
                   </Button>
