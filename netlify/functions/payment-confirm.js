@@ -227,7 +227,33 @@ exports.handler = async (event) => {
               console.error('Failed to create subscription:', subscriptionResult.message);
               // Continue with the webhook processing even if subscription creation fails
             } else {
-              console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);
+              console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);              console.log('DEBUG: About to enter email try block');
+              try {
+                console.log('DEBUG: Inside email try block, preparing to send subscription confirmation email...');
+                const emailApiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+                const emailPayload = {
+                  orderId: order.id,
+                  userEmail: order.email || order.customer_email || order.shipping_address?.email,
+                  orderDetails: {
+                    subscriptiondetails: subscriptionData.planName,
+                    price: subscriptionData.planPrice,
+                    // Add more details as needed
+                  }
+                };
+                console.log('DEBUG: Calling send-order-email API for subscription with payload:', emailPayload);
+                const emailRes = await fetch(emailApiUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(emailPayload),
+                });
+                const emailResult = await emailRes.json();
+                console.log('DEBUG: Subscription email API response:', emailResult);
+                if (!emailResult.success) {
+                  console.error('Subscription email sending failed:', emailResult.errors || emailResult.error);
+                }
+              } catch (emailError) {
+                console.error('DEBUG: Error calling send-order-email API for subscription:', emailError);
+              }
             }
           } catch (subscriptionError) {
             console.error('Error creating subscription in webhook:', subscriptionError);
