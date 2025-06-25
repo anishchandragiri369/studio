@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Elixr</string>
+    <string name="title_activity_main">Elixr</string>
+    <string name="package_name">com.elixr.app</string>
+    <string name="custom_url_scheme">com.elixr.app</string>
+</resources>
