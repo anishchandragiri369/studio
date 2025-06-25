@@ -62,12 +62,19 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
 
   const handleJuiceQuantityChange = (juiceId: string, change: number) => {
     setSelectedJuices(prev => {
-      const newQuantity = (prev[juiceId] || 0) + change;
+      const currentTotal = Object.values(prev).reduce((sum, count) => sum + count, 0);
+      const currentJuiceCount = prev[juiceId] || 0;
+      const newQuantity = currentJuiceCount + change;
+      // Prevent going below 0
       if (newQuantity <= 0) {
         const { [juiceId]: removed, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [juiceId]: Math.min(newQuantity, 3) }; // Max 3 of each juice
+      // Prevent exceeding 1 of a single juice
+      if (newQuantity > 1) return prev;
+      // Prevent exceeding 5 juices in total
+      if (change > 0 && currentTotal >= 5) return prev;
+      return { ...prev, [juiceId]: newQuantity };
     });
   };
 
@@ -177,7 +184,7 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
                       variant="outline"
                       size="sm"
                       onClick={() => handleJuiceQuantityChange(juice.id, 1)}
-                      disabled={selectedJuices[juice.id] >= 3}
+                      disabled={selectedJuices[juice.id] >= 1 || (selectedJuiceCount >= 5)}
                       className="h-8 w-8 p-0"
                     >
                       <Plus className="w-3 h-3" />

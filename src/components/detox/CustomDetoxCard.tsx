@@ -20,12 +20,12 @@ export default function CustomDetoxCard({ detoxPlan }: CustomDetoxCardProps) {
   return (
     <>
       <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
-        <div className="relative h-64 overflow-hidden">
+        <div className="relative h-64 overflow-hidden bg-white flex items-center justify-center">
           <Image
             src={detoxPlan.image}
             alt={detoxPlan.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-contain group-hover:scale-105 transition-transform duration-300 object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           

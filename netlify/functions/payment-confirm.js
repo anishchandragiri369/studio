@@ -32,11 +32,6 @@ function verifyWebhookSignature(signature, rawBody, timestamp, clientSecret) {
       .update(signingString)
       .digest('base64');
     // Debug logs
-    console.log('Received signature:', signature);
-    console.log('Timestamp:', timestamp);
-    console.log('Client secret present:', !!clientSecret);
-    console.log('Raw body:', rawBody);
-    console.log('Computed signature:', generatedSignature);
     return generatedSignature === signature;
   } catch (error) {
     console.error('Signature verification error:', error);
@@ -44,39 +39,16 @@ function verifyWebhookSignature(signature, rawBody, timestamp, clientSecret) {
   }
 }
 
-// Simple in-memory rate limiter
-const rateLimitWindowMs = 60 * 1000; // 1 minute
-const maxRequestsPerWindow = 30;
-const ipRequestCounts = {};
-
 exports.handler = async (event) => {
   console.log('Webhook POST handler invoked');
 
   try {
-    console.log('=== DEBUG WEBHOOK START ===');
-    console.log('Event method:', event.httpMethod);
-    console.log('Event headers:', JSON.stringify(event.headers, null, 2));
-    console.log('Event body length:', event.body?.length || 0);
-    
-    // Test basic dependencies step by step
-    console.log('Testing crypto...');
+
     const crypto = require('crypto');
-    console.log('Crypto loaded successfully');
-    
-    console.log('Testing nodemailer...');
+
     const nodemailer = require('nodemailer');
-    console.log('Nodemailer loaded successfully');
-    
-    console.log('Testing supabase...');
+
     const { createClient } = require('@supabase/supabase-js');
-    console.log('Supabase loaded successfully');
-    
-    // Test environment variables
-    console.log('Environment variables check:');
-    console.log('SUPABASE_URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('SUPABASE_KEY present:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-    console.log('CASHFREE_SECRET present:', !!process.env.CASHFREE_SECRET_KEY);
-    console.log('GMAIL_USER present:', !!process.env.GMAIL_USER);
     
     // Test Supabase client creation
     console.log('Creating Supabase client...');
