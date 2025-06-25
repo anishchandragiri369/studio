@@ -78,8 +78,20 @@ export const JUICES: Juice[] = [
     tags: ['tangy', 'refreshing', 'vitamin c', 'Immunity Booster', 'Daily Wellness', 'Energy Kick'],
     availability: 'In Stock',
     stockQuantity: 40,
+  },  // New Daily Detox Plans
+  {
+    id: 'dtx0',
+    name: '1-Day Custom Detox',
+    flavor: 'Customizable - Choose your own juices and fruit bowls',
+    price: 899.00, // Base price for the plan
+    image: '/images/juice-7.jpeg',
+    dataAiHint: 'custom detox',
+    description: 'Design your perfect 1-day detox experience. Select a minimum of 5 juices and 2 fruit bowls from our fresh collection.',
+    category: 'Detox Plans',
+    tags: ['customizable', '1-day plan', 'personalized detox', 'Detoxify', 'Daily Wellness'],
+    availability: 'In Stock',
+    stockQuantity: 50, // Represents number of plans available
   },
-  // New Daily Detox Plans
   {
     id: 'dtx1',
     name: '3-Day Green Cleanse',

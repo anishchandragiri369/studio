@@ -71,8 +71,8 @@ export default function HomePage() {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-headline font-bold mb-6 leading-tight">
-              <span className="gradient-text-warm">Taste the</span><br />
-              <span className="gradient-text">Freshness</span>
+              <span className="gradient-text">Taste the Freshness</span><br />
+              {/* <span className="gradient-text">Freshness</span> */}
             </h1>
             
             <p className="text-xl md:text-2xl text-black/80 max-w-3xl mx-auto mb-8 leading-relaxed font-medium drop-shadow-md">
