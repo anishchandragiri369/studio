@@ -333,7 +333,7 @@ export default function HomePage() {
       </section>
 
       {/* Instagram Feed */}
-      <section className="py-16 bg-gradient-to-br from-muted/20 to-background">
+      <section className="py-8 bg-gradient-to-br from-muted/20 to-background">
         <div className="container mx-auto px-4">          <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
               background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",

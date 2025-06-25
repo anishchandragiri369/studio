@@ -9,16 +9,12 @@ import { Download, FileSpreadsheet, Mail, Clock, Users, AlertTriangle, CheckCirc
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminReportsPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [lastReportTime, setLastReportTime] = useState<string | null>(null);
-  // Check if user is admin (you can customize this logic)
-  const isAdmin = user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL || 
-                  user?.user_metadata?.role === 'admin' ||
-                  ['admin@elixr.com', 'anishbobby@gmail.com', 'anishchandragiri@gmail.com'].includes(user?.email || '');
   const handleDownloadReport = async () => {
     setIsGenerating(true);
     try {

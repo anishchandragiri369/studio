@@ -10,9 +10,8 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-  try {
-    const body = await req.json();
-    const { orderAmount, orderItems, customerInfo, userId, subscriptionData } = body;
+  try {    const body = await req.json();
+    const { orderAmount, originalAmount, appliedCoupon, appliedReferral, orderItems, customerInfo, userId, subscriptionData } = body;
 
     // Validation
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
@@ -33,12 +32,17 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       email: customerInfo.email, // Add email field
       total_amount: orderAmount,
+      original_amount: originalAmount || orderAmount,
+      coupon_code: appliedCoupon?.code || null,
+      discount_amount: appliedCoupon?.discountAmount || 0,
+      referral_code: appliedReferral?.code || null,
+      referrer_id: appliedReferral?.referrerId || null,
       items: orderItems,
       shipping_address: customerInfo, // <-- FIXED: use shipping_address
       status: 'payment_pending', // Use snake_case for consistency
       order_type: subscriptionData ? 'subscription' : 'one_time', // Add order type
       subscription_info: subscriptionData || null, // Store subscription details
-    };    const { data, error } = await supabase
+    };const { data, error } = await supabase
       .from('orders')
       .insert([orderToInsert])
       .select('id')
@@ -48,27 +52,53 @@ export async function POST(req: NextRequest) {
       console.error('[API /orders/create] Error inserting order into Supabase:', error);
       console.error('[API /orders/create] Error details:', {
         message: error.message,
+        code: error.code,
         details: error.details,
         hint: error.hint,
-        code: error.code
       });
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Failed to create order record in database.',
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Database error'
-      }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'Failed to create order in database.' },
+        { status: 500 }
+      );
     }
 
-    // NOTE: Subscription creation is now handled ONLY after successful payment
-    // in the payment webhook, not here during order creation
-    
-    return NextResponse.json({ 
-      success: true, 
-      data: { 
-        id: data.id,
-        isSubscription: !!subscriptionData
-      } 
-    });
+    const orderId = data.id;
+
+    // Process coupon usage if coupon was applied
+    if (appliedCoupon && userId) {
+      try {
+        const { error: couponError } = await supabase
+          .from('coupon_usage')
+          .insert([{
+            user_id: userId,
+            coupon_code: appliedCoupon.code,
+            order_id: orderId,
+            discount_amount: appliedCoupon.discountAmount,
+            used_at: new Date().toISOString()
+          }]);
+
+        if (couponError) {
+          console.error('Error recording coupon usage:', couponError);
+        }
+      } catch (couponError) {
+        console.error('Error processing coupon usage:', couponError);
+      }
+    }
+
+    // Initialize user rewards if not exists
+    if (userId) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/rewards/initialize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        });
+      } catch (rewardError) {
+        console.error('Error initializing user rewards:', rewardError);
+      }
+    }
+
+    return NextResponse.json({ success: true, data: { id: orderId } });
 
   } catch (error: any) {
     console.error('[API /orders/create] General error in POST handler:', error);

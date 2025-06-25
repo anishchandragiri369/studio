@@ -13,7 +13,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
 
 // Define a constant for the admin email for easy modification
-const ADMIN_EMAILS = ['admin@elixr.com', 'anishchandragiri@gmail.com'];
+const ADMIN_EMAILS = ['admin@elixr.com', 'anishchandragiri@gmail.com', 'keerthy.chandragiri@gmail.com'];
 
 interface AuthContextType {
   user: User | null;

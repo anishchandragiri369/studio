@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabaseClient';
+import RewardsDisplay from '@/components/account/RewardsDisplay';
 
 export default function AccountPage() {
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -134,9 +135,7 @@ export default function AccountPage() {
               My Account
             </h1>
             <p className="text-lg text-muted-foreground">Welcome back, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}!</p>
-          </section>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          </section>          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {/* Account Details Card */}
             <div className="md:col-span-1 space-y-6">
               <Card className="shadow-lg">
@@ -177,6 +176,9 @@ export default function AccountPage() {
                   </Button>
                 </CardFooter>
               </Card>
+              
+              {/* Rewards Display */}
+              <RewardsDisplay />
             </div>
 
             {/* Order History Card */}

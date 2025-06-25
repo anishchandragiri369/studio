@@ -21,6 +21,9 @@ import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
 import { load } from "@cashfreepayments/cashfree-js";
 import { useAuth } from '@/context/AuthContext';
+import CouponInput from '@/components/checkout/CouponInputWithDropdown';
+import ReferralInput from '@/components/checkout/ReferralInput';
+import { validateCoupon, type Coupon } from '@/lib/coupons';
 
 
 interface SubscriptionOrderItem {
@@ -53,7 +56,7 @@ function CheckoutPageContents() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { cartItems, getCartTotal, clearCart } = useCart();
-  const { user, loading: isAuthLoading } = useAuth(); // Enable user context
+  const { user, loading: isAuthLoading, isAdmin } = useAuth(); // Enable user context and admin status
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
     planId: string;
@@ -69,6 +72,15 @@ function CheckoutPageContents() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    coupon: Coupon;
+    discountAmount: number;
+  } | null>(null);
+  const [originalOrderTotal, setOriginalOrderTotal] = useState(0);
+  const [appliedReferral, setAppliedReferral] = useState<{
+    code: string;
+    referrerId: string;
+  } | null>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -83,6 +95,26 @@ function CheckoutPageContents() {
       setValue('email', user.email);
     }
   }, [user, setValue]);
+
+  // Coupon handlers
+  const handleCouponApply = (coupon: Coupon, discountAmount: number) => {
+    setAppliedCoupon({ coupon, discountAmount });
+    setCurrentOrderTotal(originalOrderTotal - discountAmount);
+  };
+
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null);
+    setCurrentOrderTotal(originalOrderTotal);
+  };
+
+  // Referral handlers
+  const handleReferralApply = (referralCode: string, referrerId: string) => {
+    setAppliedReferral({ code: referralCode, referrerId });
+  };
+
+  const handleReferralRemove = () => {
+    setAppliedReferral(null);
+  };
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -110,6 +142,7 @@ function CheckoutPageContents() {
         subscriptionDuration,
         basePrice
       });
+      setOriginalOrderTotal(planPrice);
       setCurrentOrderTotal(planPrice); // Shipping is 0 for subscriptions
 
       if (selectedJuicesStr) {
@@ -144,7 +177,9 @@ function CheckoutPageContents() {
       setIsSubscriptionCheckout(false);
       const cartTotal = getCartTotal();
       const shippingCost = cartTotal > 0 ? 5.00 : 0;
-      setCurrentOrderTotal(cartTotal + shippingCost);
+      const totalWithShipping = cartTotal + shippingCost;
+      setOriginalOrderTotal(totalWithShipping);
+      setCurrentOrderTotal(totalWithShipping);
       setSubscriptionDetails(null);
       setSubscriptionOrderItems([]);
     }
@@ -273,6 +308,16 @@ function CheckoutPageContents() {
       
       const orderPayload = {
         orderAmount: currentOrderTotal,
+        originalAmount: originalOrderTotal,
+        appliedCoupon: appliedCoupon ? {
+          code: appliedCoupon.coupon.code,
+          discountAmount: appliedCoupon.discountAmount,
+          discountType: appliedCoupon.coupon.discountType
+        } : null,
+        appliedReferral: appliedReferral ? {
+          code: appliedReferral.code,
+          referrerId: appliedReferral.referrerId
+        } : null,
         orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
           ...item,
           juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name // Ensure juiceName is always present
@@ -704,6 +749,29 @@ function CheckoutPageContents() {
                       )}
                       
                       <Separator className="my-4" />
+                      
+                      {/* Coupon Input for Subscriptions */}
+                      <CouponInput
+                        orderTotal={originalOrderTotal}
+                        subscriptionType={subscriptionDetails.planFrequency as 'monthly' | 'weekly'}
+                        userId={user?.id}
+                        isAdmin={isAdmin}
+                        onCouponApply={handleCouponApply}
+                        onCouponRemove={handleCouponRemove}
+                        appliedCoupon={appliedCoupon}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      {/* Referral Input for Subscriptions */}
+                      <ReferralInput
+                        onReferralApply={handleReferralApply}
+                        onReferralRemove={handleReferralRemove}
+                        appliedReferral={appliedReferral}
+                        userId={user?.id}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      <Separator className="my-4" />
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Subscription Price</span>
@@ -713,6 +781,12 @@ function CheckoutPageContents() {
                           <span className="text-muted-foreground">Delivery</span>
                           <span className="font-medium text-green-600">FREE</span>
                         </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Coupon ({appliedCoupon.coupon.code})</span>
+                            <span className="font-medium text-green-600">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
                         <Separator />
                         <div className="flex justify-between text-lg font-bold">
                           <span>Total</span>
@@ -755,7 +829,7 @@ function CheckoutPageContents() {
                                     width={48} 
                                     height={48} 
                                     className="rounded-lg object-contain border border-border/50"
-                                    data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
+                                    data-ai-hint={item.name.toLowerCase()}
                                     unoptimized={item.image.startsWith('https://placehold.co')}
                                     onError={(e) => e.currentTarget.src = 'https://placehold.co/48x48.png'}
                                   />
@@ -770,6 +844,29 @@ function CheckoutPageContents() {
                       </div>
                       
                       <Separator className="my-4" />
+                      
+                      {/* Coupon Input for Cart Items */}
+                      <CouponInput
+                        orderTotal={originalOrderTotal}
+                        subscriptionType={null}
+                        userId={user?.id}
+                        isAdmin={isAdmin}
+                        onCouponApply={handleCouponApply}
+                        onCouponRemove={handleCouponRemove}
+                        appliedCoupon={appliedCoupon}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      {/* Referral Input for Cart Items */}
+                      <ReferralInput
+                        onReferralApply={handleReferralApply}
+                        onReferralRemove={handleReferralRemove}
+                        appliedReferral={appliedReferral}
+                        userId={user?.id}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      <Separator className="my-4" />
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Subtotal</span>
@@ -778,9 +875,15 @@ function CheckoutPageContents() {
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Delivery Charges</span>
                           <span className="font-medium">
-                            {(currentOrderTotal - getCartTotal()) > 0 ? `₹${(currentOrderTotal - getCartTotal()).toFixed(2)}` : 'FREE'}
+                            {(originalOrderTotal - getCartTotal()) > 0 ? `₹${(originalOrderTotal - getCartTotal()).toFixed(2)}` : 'FREE'}
                           </span>
                         </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Coupon ({appliedCoupon.coupon.code})</span>
+                            <span className="font-medium text-green-600">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
                         <Separator />
                         <div className="flex justify-between text-lg font-bold">
                           <span>Total</span>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -211,9 +211,25 @@ const Navbar = () => {
                         <Settings className="mr-2 h-4 w-4" />
                         <span>My Account</span>
                       </Link>
-                    </DropdownMenuItem>
-                    {isAdmin && (
+                    </DropdownMenuItem>                    {isAdmin && (
                       <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="cursor-pointer">
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>Admin Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>                        <DropdownMenuItem asChild>
+                          <Link href="/admin/analytics" className="cursor-pointer">
+                            <BarChart className="mr-2 h-4 w-4" />
+                            <span>Analytics</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/coupons" className="cursor-pointer">
+                            <Ticket className="mr-2 h-4 w-4" />
+                            <span>Coupons</span>
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/add-product" className="cursor-pointer">
                             <PackagePlus className="mr-2 h-4 w-4" />
@@ -268,29 +284,118 @@ const Navbar = () => {
                 <SheetHeader className="mb-6 text-left">
                   <SheetClose asChild><Logo /></SheetClose>
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-4">
-                  {navLinks.map(link => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
+                </SheetHeader>                <nav className="flex flex-col gap-4">
+                  {/* Categories Section for Mobile */}
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground mb-2">Categories</h3>
+                    <div className="pl-3 space-y-2">
+                      {TRADITIONAL_JUICE_CATEGORIES.map(category => (
+                        <SheetClose asChild key={category}>
+                          <Link
+                            href={`/menu?category=${encodeURIComponent(category)}`}
+                            className="block text-sm text-foreground/70 hover:text-primary transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            {category}
+                          </Link>
+                        </SheetClose>
+                      ))}
+                      <SheetClose asChild>
+                        <Link
+                          href="/menu"
+                          className="block text-sm font-medium text-primary transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          View All Products
+                        </Link>
+                      </SheetClose>
+                    </div>
+                  </div>
+
                   <hr className="my-2"/>
-                  {!authLoading && isSupabaseConfigured && ( // Added missing !authLoading check here too
+
+                  {/* Navigation Links */}
+                  {navLinks.map(link => 
+                    link.label === 'Subscriptions' && 'subLinks' in link ? (
+                      <div key={link.href}>
+                        <h3 className="text-base font-semibold text-foreground mb-2">{link.label}</h3>
+                        <div className="pl-3 space-y-2">
+                          {link.subLinks?.map(subLink => (
+                            <SheetClose asChild key={subLink.href}>
+                              <Link
+                                href={subLink.href}
+                                className={`block text-sm transition-colors hover:text-primary ${pathname === subLink.href ? 'text-primary font-medium' : 'text-foreground/70'}`}
+                                onClick={() => setIsMenuOpen(false)}
+                              >
+                                {subLink.label}
+                              </Link>
+                            </SheetClose>
+                          ))}
+                        </div>
+                      </div>
+                    ) : link.label === 'Contact Us' ? (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
+                    ) : (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
+                    )
+                  )}
+                  
+                  <hr className="my-2"/>
+                  
+                  {/* User Section */}
+                  {!authLoading && isSupabaseConfigured && ( 
                     user ? (
                       <>
+                         {/* Admin Section - Only for Admin Users */}
                          {isAdmin && (
-                           <SheetClose asChild>
-                             <Link href="/admin/add-product" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
-                               <PackagePlus className="mr-2 h-5 w-5" /> Add Product
-                             </Link>
-                           </SheetClose>
+                           <>
+                             <div>
+                               <h3 className="text-base font-semibold text-foreground mb-2">Admin</h3>
+                               <div className="pl-3 space-y-2">
+                                 <SheetClose asChild>
+                                   <Link href="/admin" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Shield className="mr-2 h-4 w-4" /> Dashboard
+                                   </Link>
+                                 </SheetClose>                                 <SheetClose asChild>
+                                   <Link href="/admin/analytics" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <BarChart className="mr-2 h-4 w-4" /> Analytics
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/coupons" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Ticket className="mr-2 h-4 w-4" /> Coupons
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/add-product" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <PackagePlus className="mr-2 h-4 w-4" /> Add Product
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/manage-stock" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Settings className="mr-2 h-4 w-4" /> Manage Stock
+                                   </Link>
+                                 </SheetClose>
+                               </div>
+                             </div>
+                             <hr className="my-2"/>
+                           </>
                          )}
                         <SheetClose asChild>
                             <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
@@ -316,8 +421,8 @@ const Navbar = () => {
                             </Link>
                           </SheetClose>
                       </>
-                     ) // Closing parenthesis for user ternary
-                  )} {/* Closing parenthesis for !authLoading && isSupabaseConfigured */}
+                     ) 
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
