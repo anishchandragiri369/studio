@@ -1,6 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
+// Required for static export
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 export async function GET(req: NextRequest) {
   if (!supabase) {
     return NextResponse.json(
