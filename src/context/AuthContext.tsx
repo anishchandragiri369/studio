@@ -1,4 +1,3 @@
-
 "use client";
 
 import { 
@@ -11,9 +10,6 @@ import {
 import type { User, AuthError as SupabaseAuthError, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
-
-// Define a constant for the admin email for easy modification
-const ADMIN_EMAILS = ['admin@elixr.com', 'anishchandragiri@gmail.com', 'keerthy.chandragiri@gmail.com'];
 
 interface AuthContextType {
   user: User | null;
@@ -55,13 +51,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error) {
           console.error('[AuthContext] Error getting initial session:', error);
           setUser(null);
-          setIsAdmin(false);
-        } else if (session?.user) {
+          setIsAdmin(false);        } else if (session?.user) {
           console.log('[AuthContext] Initial session found for user:', session.user.email);
           setUser(session.user);
-          setIsAdmin(session.user.email ? ADMIN_EMAILS.includes(session.user.email) : false);
+          // Query the 'admins' table for this email
+          const { data: adminData, error: adminError } = await supabase!
+            .from('admins')
+            .select('email')
+            .eq('email', session.user.email)
+            .single();
+          setIsAdmin(!!adminData && !adminError);
         } else {
-          console.log('[AuthContext] No initial session found');
           setUser(null);
           setIsAdmin(false);
         }
@@ -80,10 +80,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('[AuthContext] Auth state changed:', event, session?.user?.email || 'no user');
       
       const currentUser = session?.user || null;
-      setUser(currentUser);
-      
-      if (currentUser && currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
-        setIsAdmin(true);
+      setUser(currentUser);      if (currentUser && currentUser.email) {
+        // Query the 'admins' table for this email
+        const { data: adminData, error: adminError } = await supabase!
+          .from('admins')
+          .select('email')
+          .eq('email', currentUser.email)
+          .single();
+        setIsAdmin(!!adminData && !adminError);
       } else {
         setIsAdmin(false);
       }
@@ -117,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isActuallyConfiguredAndAuthReady, loading]);
 
-  const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
+  const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
     try {
@@ -135,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logIn = async (credentials: LoginFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
+  const logIn = async (credentials: LoginFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
 
     try {
