@@ -287,8 +287,16 @@ const Navbar = () => {
                 </SheetHeader>                <nav className="flex flex-col gap-4">
                   {/* Categories Section for Mobile */}
                   <div>
-                    <h3 className="text-base font-semibold text-foreground mb-2">Categories</h3>
-                    <div className="pl-3 space-y-2">
+                    <SheetClose asChild>
+                      <Link
+                        href="/menu"
+                        className={`text-lg font-semibold text-foreground mb-2 block transition-colors hover:text-primary ${pathname === '/menu' ? 'text-primary' : ''}`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Categories
+                      </Link>
+                    </SheetClose>
+                    <div className="pl-3 space-y-2 mt-2">
                       {TRADITIONAL_JUICE_CATEGORIES.map(category => (
                         <SheetClose asChild key={category}>
                           <Link
@@ -317,22 +325,15 @@ const Navbar = () => {
                   {/* Navigation Links */}
                   {navLinks.map(link => 
                     link.label === 'Subscriptions' && 'subLinks' in link ? (
-                      <div key={link.href}>
-                        <h3 className="text-base font-semibold text-foreground mb-2">{link.label}</h3>
-                        <div className="pl-3 space-y-2">
-                          {link.subLinks?.map(subLink => (
-                            <SheetClose asChild key={subLink.href}>
-                              <Link
-                                href={subLink.href}
-                                className={`block text-sm transition-colors hover:text-primary ${pathname === subLink.href ? 'text-primary font-medium' : 'text-foreground/70'}`}
-                                onClick={() => setIsMenuOpen(false)}
-                              >
-                                {subLink.label}
-                              </Link>
-                            </SheetClose>
-                          ))}
-                        </div>
-                      </div>
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href="/subscriptions"
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname.startsWith('/subscriptions') ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Subscriptions
+                        </Link>
+                      </SheetClose>
                     ) : link.label === 'Contact Us' ? (
                       <SheetClose asChild key={link.href}>
                         <Link
