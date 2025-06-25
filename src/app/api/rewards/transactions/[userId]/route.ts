@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   if (!supabase) {
     return NextResponse.json(
@@ -13,7 +13,7 @@ export async function GET(
   }
 
   try {
-    const userId = params.userId;
+    const { userId } = await params;
 
     if (!userId) {
       return NextResponse.json(
