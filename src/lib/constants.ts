@@ -149,10 +149,10 @@ export const JUICES: Juice[] = [
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    id: 'sub1',
+    id: 'weekly',
     name: 'Weekly Kickstarter',
     frequency: 'weekly',
-    pricePerDelivery: 29.99,
+    pricePerDelivery: 69.00,
     description: 'Get a fresh batch of curated or custom-selected juices delivered to your doorstep every week. Perfect for starting your week right!',
     defaultJuices: [
       { juiceId: '1', quantity: 1 },
@@ -164,10 +164,10 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     maxJuices: 5,
   },
   {
-    id: 'sub2',
+    id: 'monthly',
     name: 'Monthly Wellness Pack',
     frequency: 'monthly',
-    pricePerDelivery: 109.99,
+    pricePerDelivery: 2599.00,
     description: 'A comprehensive selection of curated or custom-selected juices delivered monthly. Ideal for maintaining a healthy lifestyle.',
      defaultJuices: [
       { juiceId: '1', quantity: 4 },
@@ -283,8 +283,8 @@ export const NAV_LINKS = [
     href: '/subscriptions', // Base href for highlighting
     basePath: '/subscriptions', // Base path for highlighting
     subLinks: [
-      { href: '/subscriptions?frequency=weekly', label: 'Weekly Plans' },
-      { href: '/subscriptions?frequency=monthly', label: 'Monthly Plans' },
+      { href: '/subscriptions/subscribe?plan=weekly', label: 'Weekly Plans' },
+      { href: '/subscriptions/subscribe?plan=monthly', label: 'Monthly Plans' },
       { href: '/subscriptions', label: 'View All Plans' },
     ]
   },

@@ -10,10 +10,28 @@ import SubscriptionOptionCard from '@/components/subscriptions/SubscriptionOptio
 import CategoryScroller from '@/components/categories/CategoryScroller';
 import { Card, CardContent } from '@/components/ui/card';
 
+// Instagram posts data
+const instagramPosts = [
+  { type: 'image', image: '/images/insta1.jpg', link: 'https://instagram.com/p/abc123' },
+  { type: 'video', video: '/videos/instavid1.mp4', link: 'https://instagram.com/p/xyz789' },
+  { type: 'image', image: '/images/insta2.jpg', link: 'https://instagram.com/p/def456' },
+  { type: 'video', video: '/videos/instavid2.mp4', link: 'https://instagram.com/p/uvw456' },
+  { image: '/images/insta3.jpg', link: 'https://instagram.com/p/ghi789' },
+  { image: '/images/insta4.jpg', link: 'https://instagram.com/p/jkl012' },
+  { image: '/images/insta5.jpg', link: 'https://instagram.com/p/mno345' },
+  { image: '/images/insta6.jpg', link: 'https://instagram.com/p/pqr678' },
+  { image: '/images/insta7.jpg', link: 'https://instagram.com/p/stu901' },
+  { image: '/images/insta8.jpg', link: 'https://instagram.com/p/vwx234' },
+  { image: '/images/insta9.jpg', link: 'https://instagram.com/p/yz1234' },
+  { image: '/images/insta10.jpg', link: 'https://instagram.com/p/abc567' },
+  { image: '/images/insta11.jpg', link: 'https://instagram.com/p/def890' },
+  { image: '/images/insta12.jpg', link: 'https://instagram.com/p/ghi345' },
+];
+
 export default function HomePage() {
   const featuredJuices = JUICES.slice(0, 8);
-  const weeklyKickstarterPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'sub1');
-  const monthlyWellnessPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'sub2');
+  const weeklyKickstarterPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'weekly');
+  const monthlyWellnessPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -147,7 +165,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>      {/* Categories Section */}
-      <section className="py-16 bg-gradient-to-br from-background to-muted/30">
+      <section className="py-5 bg-gradient-to-br from-background to-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-block pb-4 w-full">
@@ -169,11 +187,11 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-16 bg-background">
+      <section className="py-4 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4">
-              Zero Sugar Fruit Juice From ₹110
+            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
+              Zero Sugar Fruit Juice From ₹120
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Our most popular cold-pressed juices, crafted with love and delivered fresh
@@ -203,61 +221,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Quality Features */}
-      <section className="py-16 bg-gradient-to-br from-muted/30 to-background">        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
-              background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text"
-            }}>
-              High Standard Quality And Taste
-            </h2>
-            <p className="text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
-              We follow hygienic and natural processes to maintain freshness and flavor 
-              without adding artificial additives to get that natural fruit drink feeling.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Leaf className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Rich Protein</h3>
-                <p className="text-muted-foreground">
-                  Packed with natural proteins from fresh fruits and vegetables
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Body Care</h3>
-                <p className="text-muted-foreground">
-                  Nourish your body with essential vitamins and minerals
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">0% Trans Fat</h3>
-                <p className="text-muted-foreground">
-                  Pure, natural ingredients with no artificial additives
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Subscription Plans */}
       {(weeklyKickstarterPlan || monthlyWellnessPlan) && (
         <section className="py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
-          <div className="container mx-auto px-4">            <div className="text-center mb-12">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
                 background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
                 WebkitBackgroundClip: "text",
@@ -275,12 +243,12 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {weeklyKickstarterPlan && (
                 <div className="animate-fade-in">
-                  <SubscriptionOptionCard plan={weeklyKickstarterPlan} isFeatured />
+                  <SubscriptionOptionCard plan={weeklyKickstarterPlan} />
                 </div>
               )}
               {monthlyWellnessPlan && (
                 <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                  <SubscriptionOptionCard plan={monthlyWellnessPlan} />
+                  <SubscriptionOptionCard plan={monthlyWellnessPlan} isFeatured />
                 </div>
               )}
             </div>
@@ -296,6 +264,54 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Quality Features */}
+      <section className="py-16 bg-gradient-to-br from-muted/30 to-background">        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
+              background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text"
+            }}>
+              High Standard Quality And Taste
+            </h2>
+            <p className="text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
+              We follow hygienic and natural processes to maintain freshness and flavor 
+              without adding artificial additives to get that natural fruit drink feeling.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="glass-card text-center p-8">
+              <CardContent className="pt-6">
+                <Leaf className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Rich Protein</h3>
+                <p className="text-muted-foreground">
+                  Packed with natural proteins from fresh fruits and vegetables
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card text-center p-8">
+              <CardContent className="pt-6">
+                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Body Care</h3>
+                <p className="text-muted-foreground">
+                  Nourish your body with essential vitamins and minerals
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card text-center p-8">
+              <CardContent className="pt-6">
+                <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">0% Trans Fat</h3>
+                <p className="text-muted-foreground">
+                  Pure, natural ingredients with no artificial additives
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       {/* AI Recommendations Section */}
       <section className="py-16 bg-background">
@@ -333,22 +349,38 @@ export default function HomePage() {
               target="_blank" rel="noopener noreferrer"
             >
               <Instagram className="w-5 h-5 mr-2" />
-              @elixr_detox_sips
+              @elixr_healthy_sips
             </Link>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {/* Placeholder for Instagram feed - you would replace these with actual Instagram posts */}
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl glass-card animate-fade-in"
+            {instagramPosts.map((post, i) => (
+              <a
+                key={i}
+                href={post.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl glass-card animate-fade-in overflow-hidden"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
-                <div className="w-full h-full flex items-center justify-center">
-                  <Instagram className="w-8 h-8 text-primary/50" />
-                </div>
-              </div>
+                {post.type === 'image' && post.image ? (
+                  <Image
+                    src={post.image}
+                    alt={`Instagram post ${i + 1}`}
+                    fill
+                    className="object-cover w-full h-full"
+                  />
+                ) : post.type === 'video' && post.video ? (
+                  <video
+                    src={post.video}
+                    className="object-cover w-full h-full"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : null}
+              </a>
             ))}
           </div>
           
@@ -359,6 +391,28 @@ export default function HomePage() {
                 Follow Us on Instagram
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Our Subscriptions */}
+      <section className="py-8 bg-background border-t border-border/30">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <h3 className="text-2xl font-bold text-center mb-4">Why Choose Our Subscriptions?</h3>
+          <p className="text-center text-muted-foreground mb-6">Experience the convenience and benefits of regular juice delivery</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div>
+              <h4 className="font-semibold mb-2">Never Run Out</h4>
+              <p className="text-sm text-muted-foreground">Automatic deliveries ensure you always have fresh juices on hand</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">Health Benefits</h4>
+              <p className="text-sm text-muted-foreground">Consistent nutrition with carefully planned juice combinations</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">Save Money</h4>
+              <p className="text-sm text-muted-foreground">Special subscription pricing with exclusive member discounts</p>
+            </div>
           </div>
         </div>
       </section>

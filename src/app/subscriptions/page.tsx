@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import SubscriptionOptionCard from '@/components/subscriptions/SubscriptionOptionCard';
 import AISubscriptionRecommender from '@/components/subscriptions/AISubscriptionRecommender';
@@ -18,6 +19,7 @@ import Link from 'next/link';
 
 export default function SubscriptionsPage() {
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'weekly' | 'monthly'>('all');
+  const router = useRouter();
 
   useEffect(() => {
     const title = frequencyFilter === 'weekly' ? 'Weekly Subscriptions - Elixr' :
@@ -25,16 +27,46 @@ export default function SubscriptionsPage() {
                   'Juice Subscriptions - Elixr';
     document.title = title;
   }, [frequencyFilter]);
-
   const filteredPlans = SUBSCRIPTION_PLANS.filter(plan => {
     if (frequencyFilter === 'all') return true;
     return plan.frequency === frequencyFilter;
   });
 
+  // Debug: log filtered plans
+  console.log('Current filter:', frequencyFilter);
+  console.log('All plans:', SUBSCRIPTION_PLANS);
+  console.log('Filtered plans:', filteredPlans);  // Navigate to specific plan or filter
+  const handlePlanNavigation = (filter: 'all' | 'weekly' | 'monthly') => {
+    console.log('Setting filter to:', filter);
+    if (filter === 'weekly') {
+      // Navigate to the first weekly plan
+      const weeklyPlan = SUBSCRIPTION_PLANS.find(plan => plan.frequency === 'weekly');
+      if (weeklyPlan) {
+        console.log('Navigating to weekly plan:', weeklyPlan.id);
+        router.push(`/subscriptions/subscribe?plan=${weeklyPlan.id}`);
+        return;
+      }
+    } else if (filter === 'monthly') {
+      // Navigate to the first monthly plan  
+      const monthlyPlan = SUBSCRIPTION_PLANS.find(plan => plan.frequency === 'monthly');
+      if (monthlyPlan) {
+        console.log('Navigating to monthly plan:', monthlyPlan.id);
+        router.push(`/subscriptions/subscribe?plan=${monthlyPlan.id}`);
+        return;
+      }
+    }
+    
+    // For 'all' or fallback, just filter on current page
+    setFrequencyFilter(filter);
+    setTimeout(() => {
+      document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-10 overflow-hidden"> {/* Reduced from py-20 */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-background"></div>
           <Image
@@ -88,54 +120,8 @@ export default function SubscriptionsPage() {
         </div>
       </section>
 
-      {/* Why Subscribe Section */}
-      <section className="py-16 bg-gradient-to-br from-muted/30 to-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4">
-              Why Choose Our Subscriptions?
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Experience the convenience and benefits of regular juice delivery
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="glass-card text-center p-6 border-0">
-              <CardContent className="pt-6">
-                <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Never Run Out</h3>
-                <p className="text-muted-foreground">
-                  Automatic deliveries ensure you always have fresh juices on hand
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card text-center p-6 border-0">
-              <CardContent className="pt-6">
-                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Health Benefits</h3>
-                <p className="text-muted-foreground">
-                  Consistent nutrition with carefully planned juice combinations
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card text-center p-6 border-0">
-              <CardContent className="pt-6">
-                <Star className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Save Money</h3>
-                <p className="text-muted-foreground">
-                  Special subscription pricing with exclusive member discounts
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Plans Section */}
-      <section className="py-16 bg-background">
+      <section id="plans-section" className="py-8 bg-background"> {/* Reduced from py-16 */}
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
@@ -155,15 +141,23 @@ export default function SubscriptionsPage() {
                   Filter: <span className="capitalize ml-1">{frequencyFilter}</span>
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-card border-0">
-                <DropdownMenuItem onClick={() => setFrequencyFilter('all')}>
+              </DropdownMenuTrigger>              <DropdownMenuContent className="glass-card border-0">
+                <DropdownMenuItem onClick={e => {
+                  e.preventDefault();
+                  handlePlanNavigation('all');
+                }}>
                   All Plans
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFrequencyFilter('weekly')}>
+                <DropdownMenuItem onClick={e => {
+                  e.preventDefault();
+                  handlePlanNavigation('weekly');
+                }}>
                   Weekly Plans
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFrequencyFilter('monthly')}>
+                <DropdownMenuItem onClick={e => {
+                  e.preventDefault();
+                  handlePlanNavigation('monthly');
+                }}>
                   Monthly Plans
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -198,7 +192,7 @@ export default function SubscriptionsPage() {
       </section>
 
       {/* AI Recommendation Section */}
-      <section className="py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
+      <section className="py-8 bg-gradient-to-br from-primary/5 via-accent/5 to-background"> {/* Reduced from py-16 */}
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4">
@@ -212,8 +206,51 @@ export default function SubscriptionsPage() {
         </div>
       </section>
 
+      {/* Why Subscribe Section (moved to bottom) */}
+      <section className="py-8 bg-gradient-to-br from-muted/30 to-background"> {/* Reduced from py-16 */}
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4">
+              Why Choose Our Subscriptions?
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Experience the convenience and benefits of regular juice delivery
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="glass-card text-center p-6 border-0">
+              <CardContent className="pt-6">
+                <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Never Run Out</h3>
+                <p className="text-muted-foreground">
+                  Automatic deliveries ensure you always have fresh juices on hand
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card text-center p-6 border-0">
+              <CardContent className="pt-6">
+                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Health Benefits</h3>
+                <p className="text-muted-foreground">
+                  Consistent nutrition with carefully planned juice combinations
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card text-center p-6 border-0">
+              <CardContent className="pt-6">
+                <Star className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Save Money</h3>
+                <p className="text-muted-foreground">
+                  Special subscription pricing with exclusive member discounts
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-primary to-accent text-white">
+      <section className="py-8 bg-gradient-to-r from-primary to-accent text-white"> {/* Reduced from py-16 */}
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-headline font-bold mb-6">
