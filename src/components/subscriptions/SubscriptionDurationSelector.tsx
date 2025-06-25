@@ -56,7 +56,9 @@ export default function SubscriptionDurationSelector({
   const [showCustomSelector, setShowCustomSelector] = useState(false);
   
   // For sandbox testing, reduce prices to avoid hitting the ₹10,000 limit
-  const adjustedBasePrice = process.env.NODE_ENV === 'development' ? Math.min(basePrice, 50) : basePrice;
+  // const adjustedBasePrice = process.env.NODE_ENV === 'development' ? Math.min(basePrice, 50) : basePrice;
+  // Use original price for production; uncomment above for test/dev
+  const adjustedBasePrice = basePrice;
   
   const durationOptions = SubscriptionManager.getDurationOptions(frequency);  const handleSelection = (value: string) => {
     if (value === 'custom') {
@@ -129,12 +131,14 @@ export default function SubscriptionDurationSelector({
                       </div>
                       
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>{frequency === 'weekly' ? 'Weekly' : 'Monthly'} Rate: ₹{adjustedBasePrice.toFixed(2)}</p>
+                        <p>{frequency === 'weekly' ? 'Weekly' : 'Monthly'} Rate: ₹{basePrice.toFixed(2)}</p>
+                        {/*
                         {adjustedBasePrice !== basePrice && (
                           <p className="text-xs text-blue-600">
                             ⓘ Price reduced for testing (Original: ₹{basePrice.toFixed(2)})
                           </p>
                         )}
+                        */}
                         {pricing.discountPercentage > 0 ? (
                           <>
                             <p>Original Total: <span className="line-through">₹{pricing.originalPrice.toFixed(2)}</span></p>
