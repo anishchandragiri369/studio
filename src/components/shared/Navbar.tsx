@@ -43,12 +43,27 @@ const Navbar = () => {
   }, [authLoading, isSupabaseConfigured, pathname, isAdmin, user, router]);
   
   const itemCount = mounted ? getItemCount() : 0;
-
   const handleLogout = async () => {
-    setIsMenuOpen(false); 
-    await logOut();
-    clearCart(); // Clear cart and show toast upon explicit logout
-    router.push('/');
+    console.log('[Navbar] Starting logout process...');
+    setIsMenuOpen(false);
+    
+    try {
+      await logOut();
+      clearCart(); // Clear cart and show toast upon explicit logout
+      
+      // Force a hard redirect to home page to ensure clean state
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      } else {
+        router.push('/');
+      }
+      
+      console.log('[Navbar] Logout completed successfully');
+    } catch (error) {
+      console.error('[Navbar] Error during logout:', error);
+      // Even if logout fails, redirect to home
+      router.push('/');
+    }
   };
 
   const navLinks = (user || !isSupabaseConfigured)
@@ -57,7 +72,7 @@ const Navbar = () => {
   return (
     <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Logo />        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <Logo />        <nav className="hidden md:flex items-center gap-3 text-sm font-medium">
           {/* Categories Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70">
@@ -96,11 +111,11 @@ const Navbar = () => {
                     {link.label}
                   </Link>
                   <a
-                    href="https://instagram.com/elixr_healthy_sips" // TODO: replace with your real Instagram URL
+                    href="https://instagram.com/elixr_healthy_sips"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"
-                    className="ml-1 flex items-center justify-center"
+                    className="flex items-center justify-center"
                     style={{ lineHeight: 0 }}
                   >
                     <svg

@@ -157,9 +157,8 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
               src={displayImage}
               alt={juice.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={cn(
-                  "transition-transform duration-500 group-hover:scale-110 object-cover",
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"              className={cn(
+                  "transition-transform duration-500 group-hover:scale-110 object-contain",
                   isEffectivelyOutOfStock && "grayscale"
               )}
               data-ai-hint={displayDataAiHint}

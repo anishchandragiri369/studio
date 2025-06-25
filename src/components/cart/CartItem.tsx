@@ -32,7 +32,7 @@ const CartItem = ({ item }: CartItemProps) => {
           alt={item.name}
           width={80}
           height={80}
-          className="rounded-md object-cover border"
+          className="rounded-md object-contain border"
           data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
         />
       </Link>

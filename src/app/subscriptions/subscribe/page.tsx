@@ -200,7 +200,7 @@ function SubscribePageContents() {
                         alt={juice.name} 
                         width={80} 
                         height={80} 
-                        className="rounded-lg object-cover shadow-md" 
+                        className="rounded-lg object-contain shadow-md" 
                         data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()}
                       />
                       <p className="font-medium text-sm mt-1">{juice.name}</p>

@@ -689,7 +689,7 @@ function CheckoutPageContents() {
                                     alt={item.name} 
                                     width={40} 
                                     height={40} 
-                                    className="rounded-lg object-cover border border-border/50"
+                                    className="rounded-lg object-contain border border-border/50"
                                     data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
                                     unoptimized={item.image.startsWith('https://placehold.co')}
                                     onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
@@ -753,7 +753,7 @@ function CheckoutPageContents() {
                                     alt={item.name} 
                                     width={48} 
                                     height={48} 
-                                    className="rounded-lg object-cover border border-border/50"
+                                    className="rounded-lg object-contain border border-border/50"
                                     data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
                                     unoptimized={item.image.startsWith('https://placehold.co')}
                                     onError={(e) => e.currentTarget.src = 'https://placehold.co/48x48.png'}

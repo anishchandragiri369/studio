@@ -450,7 +450,7 @@ function OrderCard({ order }: { order: any }) { // Using any to handle database 
                 alt={item.juiceName || item.name || 'Order item image'}
                 width={40}
                 height={40}
-                className="rounded object-cover border"
+                className="rounded object-contain border"
                 data-ai-hint={(item.juiceName ? item.juiceName.toLowerCase().split(" ").slice(0,2).join(" ") : '')}
                 unoptimized={item.image.startsWith('https://placehold.co')}
                 onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}

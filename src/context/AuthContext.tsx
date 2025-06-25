@@ -39,7 +39,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
-
   useEffect(() => {
     if (!isActuallyConfiguredAndAuthReady) {
       console.warn("AuthContext: Supabase Auth is not available or not properly configured. Authentication features will be disabled.");
@@ -49,21 +48,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, session) => {
+    // Get initial session on load
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase!.auth.getSession();
+        if (error) {
+          console.error('[AuthContext] Error getting initial session:', error);
+          setUser(null);
+          setIsAdmin(false);
+        } else if (session?.user) {
+          console.log('[AuthContext] Initial session found for user:', session.user.email);
+          setUser(session.user);
+          setIsAdmin(session.user.email ? ADMIN_EMAILS.includes(session.user.email) : false);
+        } else {
+          console.log('[AuthContext] No initial session found');
+          setUser(null);
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('[AuthContext] Error checking initial session:', error);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthContext] Auth state changed:', event, session?.user?.email || 'no user');
+      
       const currentUser = session?.user || null;
       setUser(currentUser);
+      
       if (currentUser && currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
       }
-      setLoading(false);
+      
+      // If the event is SIGNED_OUT, ensure complete cleanup
+      if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] Processing SIGNED_OUT event');
+        setUser(null);
+        setIsAdmin(false);
+        
+        // Additional cleanup for signed out state
+        if (typeof window !== 'undefined') {
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        }
+      }
+      
+      if (!loading) {
+        setLoading(false);
+      }
     });
     
     return () => {
       subscription?.unsubscribe();
     };
-  }, [isActuallyConfiguredAndAuthReady]);
+  }, [isActuallyConfiguredAndAuthReady, loading]);
 
   const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
@@ -98,20 +150,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { data: null, error: { name: 'LoginUnexpectedError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
     }
   };
-
-  const logOut = async (): Promise<void> => {
-    if (!isActuallyConfiguredAndAuthReady) {
+  const logOut = async (): Promise<void> => {    if (!isActuallyConfiguredAndAuthReady) {
       setUser(null);
       setIsAdmin(false);
+      // Clear any remaining localStorage items
+      if (typeof window !== 'undefined') {
+        // Clear localStorage items that might contain auth data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        sessionStorage.clear();
+      }
       return Promise.resolve();
     }
+    
     try {
+      console.log('[AuthContext] Starting logout process...');
+      
+      // Sign out from Supabase
       const { error } = await supabase!.auth.signOut();
+        // Clear local state immediately
       setUser(null);
       setIsAdmin(false);
-      if (error) throw error;
+      
+      // Clear any remaining session data from browser storage
+      if (typeof window !== 'undefined') {
+        // Clear localStorage items that might contain auth data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('supabase') || key.includes('auth'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Clear sessionStorage completely
+        sessionStorage.clear();
+        
+        // Clear any cookies that might contain session data
+        document.cookie.split(";").forEach((c) => {
+          const eqPos = c.indexOf("=");
+          const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+          if (name.trim().includes('supabase') || name.trim().includes('auth')) {
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+          }
+        });
+      }
+      
+      console.log('[AuthContext] Logout completed successfully');
+      
+      if (error) {
+        console.warn('[AuthContext] Supabase signOut error (but continuing with cleanup):', error);
+      }
     } catch (error) {
-      console.error("AuthContext: Error signing out: ", error);
+      console.error('[AuthContext] Error during logout:', error);
+      // Even if there's an error, clear local state
+      setUser(null);
+      setIsAdmin(false);
     }
   };
 
