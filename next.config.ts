@@ -4,10 +4,6 @@ import type {NextConfig} from 'next';
 // Simple, explicit build mode detection - ONLY enable export for mobile builds
 const isMobileBuild = process.env.MOBILE_BUILD === 'true';
 
-console.log('🔧 Next.js Config:');
-console.log('  process.env.MOBILE_BUILD:', process.env.MOBILE_BUILD);
-console.log('  isMobileBuild:', isMobileBuild);
-
 const nextConfig: NextConfig = {
   // Only set output export if explicitly building for mobile
   ...(isMobileBuild ? { output: 'export' } : {}),
@@ -44,7 +40,5 @@ const nextConfig: NextConfig = {
     } : {}),
   },
 };
-
-console.log('  Final config will have output export:', !!nextConfig.output);
 
 export default nextConfig;
