@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -15,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { useToast } from "@/hooks/use-toast";
+import { JUICE_IMAGE_EXAMPLES } from '@/lib/constants';
 
 interface JuiceCardProps {
   juice: Juice;
@@ -24,7 +24,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   const { addToCart } = useCart();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0); // Start at 0
   const [currentStock, setCurrentStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [editedStock, setEditedStock] = useState<number>(juice.stock_quantity ?? juice.stockQuantity ?? 0);
   const [availabilityStatus, setAvailabilityStatus] = useState<'In Stock' | 'Low Stock' | 'Out of Stock'>('In Stock');
@@ -47,17 +47,17 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   }, [currentStock]);
 
   const handleAddToCart = () => {
-    if (availabilityStatus === 'Out of Stock' || currentStock < quantity) {
+    if (quantity <= 0 || availabilityStatus === 'Out of Stock' || currentStock < quantity) {
       toast({
         title: "Cannot Add to Cart",
-        description: "This item is out of stock or has insufficient quantity.",
+        description: quantity <= 0 ? "Please select at least 1 item to add to cart." : "This item is out of stock or has insufficient quantity.",
         variant: "destructive",
       });
       return;
     }
     const imageToUse = juice.image_url || juice.image;
     addToCart({ ...juice, image: imageToUse }, quantity);
-    setQuantity(1);
+    setQuantity(0);
      toast({ // Added toast on successful add to cart
         title: "Added to Cart!",
         description: `${quantity} x ${juice.name} added.`,
@@ -65,7 +65,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
-  const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+  const decrementQuantity = () => setQuantity(prev => Math.max(0, prev - 1)); // Allow going back to 0
 
   const handleStockInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -136,19 +136,20 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
     }
   };
   
-  const displayImage = juice.image_url || juice.image;
+  // Pick a fallback image from the examples if no image is provided
+  const fallbackJuiceImage = JUICE_IMAGE_EXAMPLES[Math.floor(Math.random() * JUICE_IMAGE_EXAMPLES.length)];
+  const displayImage = juice.image_url || juice.image || fallbackJuiceImage;
   const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0,2).join(" ");
-
   return (
     <Card className={cn(
-        "flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg bg-card group", // Added group for hover effects on link
+        "glass-card border-0 shadow-soft hover:shadow-glass-lg transition-all duration-300 rounded-xl overflow-hidden group flex flex-col", 
         isEffectivelyOutOfStock && !isAdmin && "opacity-70"
       )}>
       <CardHeader className="p-0">
         <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
           <div
             className={cn(
-              "relative w-full",
+              "relative w-full overflow-hidden",
               (juice.category === 'Fruit Bowls' || juice.category === 'Detox Plans') ? "aspect-[4/3]" : "h-48 md:h-56"
             )}
           >
@@ -156,18 +157,38 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
               src={displayImage}
               alt={juice.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className={cn(
-                  "transition-transform duration-300 group-hover:scale-105 object-cover",
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"              className={cn(
+                  "transition-transform duration-500 group-hover:scale-110 object-contain",
                   isEffectivelyOutOfStock && "grayscale"
               )}
               data-ai-hint={displayDataAiHint}
               unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}
               onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400.png'}
             />
+            
+            {/* Status Badge */}
+            <div className="absolute top-3 right-3 z-10">
+              <span className={cn(
+                "px-2 py-1 rounded-full text-xs font-medium glass border backdrop-blur-sm",
+                availabilityStatus === 'In Stock' 
+                  ? "text-green-700 border-green-200 bg-green-50/90" 
+                  : availabilityStatus === 'Low Stock'
+                  ? "text-orange-700 border-orange-200 bg-orange-50/90"
+                  : "text-red-700 border-red-200 bg-red-50/90"
+              )}>
+                {availabilityStatus}
+              </span>
+            </div>
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
             {isEffectivelyOutOfStock && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <PackageX className="h-16 w-16 text-white/70" />
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                <div className="text-center text-white">
+                  <PackageX className="h-12 w-12 mx-auto mb-2 opacity-70" />
+                  <span className="text-sm font-medium">Out of Stock</span>
+                </div>
               </div>
             )}
           </div>
@@ -175,7 +196,7 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <Link href={`/juices/${juice.id}`} aria-label={`View details for ${juice.name}`}>
-          <CardTitle className="font-headline text-xl mb-1 text-primary group-hover:text-accent transition-colors">{juice.name}</CardTitle>
+          <CardTitle className="font-headline text-xl mb-2 gradient-text group-hover:text-primary transition-colors">{juice.name}</CardTitle>
         </Link>
         <CardDescription className="text-sm text-muted-foreground mb-2">{juice.flavor}</CardDescription>
         <p className="text-xs text-foreground/80 mb-3 min-h-[3em] line-clamp-3">{juice.description}</p>
@@ -226,11 +247,11 @@ const JuiceCard = ({ juice }: JuiceCardProps) => {
             <Button
               onClick={handleAddToCart}
               className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isEffectivelyOutOfStock || quantity > currentStock}
-              aria-disabled={isEffectivelyOutOfStock || quantity > currentStock}
+              disabled={isEffectivelyOutOfStock || quantity > currentStock || quantity <= 0}
+              aria-disabled={isEffectivelyOutOfStock || quantity > currentStock || quantity <= 0}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
-              {isEffectivelyOutOfStock ? 'Out of Stock' : (quantity > currentStock ? 'Not Enough Stock' : 'Add to Cart')}
+              {isEffectivelyOutOfStock ? 'Out of Stock' : (quantity > currentStock ? 'Not Enough Stock' : (quantity <= 0 ? 'Add to Cart' : 'Add to Cart'))}
             </Button>
           </div>
         )}

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
-import { NAV_LINKS as DEFAULT_NAV_LINKS } from '@/lib/constants';
+import { NAV_LINKS as DEFAULT_NAV_LINKS, TRADITIONAL_JUICE_CATEGORIES } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -43,25 +43,102 @@ const Navbar = () => {
   }, [authLoading, isSupabaseConfigured, pathname, isAdmin, user, router]);
   
   const itemCount = mounted ? getItemCount() : 0;
-
   const handleLogout = async () => {
-    setIsMenuOpen(false); 
-    await logOut();
-    clearCart(); // Clear cart and show toast upon explicit logout
-    router.push('/');
+    console.log('[Navbar] Starting logout process...');
+    setIsMenuOpen(false);
+    
+    try {
+      await logOut();
+      clearCart(); // Clear cart and show toast upon explicit logout
+      
+      // Force a hard redirect to home page to ensure clean state
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      } else {
+        router.push('/');
+      }
+      
+      console.log('[Navbar] Logout completed successfully');
+    } catch (error) {
+      console.error('[Navbar] Error during logout:', error);
+      // Even if logout fails, redirect to home
+      router.push('/');
+    }
   };
 
   const navLinks = (user || !isSupabaseConfigured)
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Logo />
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <Logo />        <nav className="hidden md:flex items-center gap-3 text-sm font-medium">
+          {/* Categories Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70">
+              Categories
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Shop by Category</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {TRADITIONAL_JUICE_CATEGORIES.map(category => (
+                <DropdownMenuItem key={category} asChild>
+                  <Link href={`/menu?category=${encodeURIComponent(category)}`} className="cursor-pointer">
+                    {category}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/menu" className="cursor-pointer font-medium">
+                  View All Products
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           {navLinks.map(link => (
-            link.label === 'Subscriptions' && 'subLinks' in link ? (
+            link.label === 'Contact Us' ? (
+              <React.Fragment key={link.href}>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={link.href}
+                    className={`transition-colors hover:text-primary ${
+                      pathname === link.href ? "text-primary font-semibold" : "text-foreground/70"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                  <a
+                    href="https://instagram.com/elixr_healthy_sips"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="flex items-center justify-center"
+                    style={{ lineHeight: 0 }}
+                  >
+                    <svg
+                      width="36" height="36" viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8"
+                    >
+                      <defs>
+                        <linearGradient id="ig-gradient" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#f58529" />
+                          <stop offset="50%" stopColor="#dd2a7b" />
+                          <stop offset="100%" stopColor="#515bd4" />
+                        </linearGradient>
+                      </defs>
+                      <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig-gradient)" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#fff"/>
+                      <circle cx="17.5" cy="6.5" r="1.5" fill="#fff"/>
+                    </svg>
+                  </a>
+                </div>
+              </React.Fragment>
+            ) : link.label === 'Subscriptions' && 'subLinks' in link ? (
               <DropdownMenu key={link.href}>
                 <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}>
                   {link.label}
@@ -84,11 +161,8 @@ const Navbar = () => {
                 key={link.href}
                 href={link.href}
                 className={`transition-colors hover:text-primary ${
-                  // Highlight if the current path exactly matches the link href
                   pathname === link.href ||
-                  // Or if it's a base path match (for subscriptions dropdown)
                   ('basePath' in link && link.basePath && pathname.startsWith(link.basePath)) ||
-                  // Or if it's a sub-link within a dropdown that matches the current path
                   ('subLinks' in link && link.subLinks?.some(subLink => pathname === subLink.href))
                     ? "text-primary font-semibold"
                     : "text-foreground/70"
@@ -137,9 +211,25 @@ const Navbar = () => {
                         <Settings className="mr-2 h-4 w-4" />
                         <span>My Account</span>
                       </Link>
-                    </DropdownMenuItem>
-                    {isAdmin && (
+                    </DropdownMenuItem>                    {isAdmin && (
                       <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="cursor-pointer">
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>Admin Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>                        <DropdownMenuItem asChild>
+                          <Link href="/admin/analytics" className="cursor-pointer">
+                            <BarChart className="mr-2 h-4 w-4" />
+                            <span>Analytics</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/coupons" className="cursor-pointer">
+                            <Ticket className="mr-2 h-4 w-4" />
+                            <span>Coupons</span>
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/add-product" className="cursor-pointer">
                             <PackagePlus className="mr-2 h-4 w-4" />
@@ -194,29 +284,93 @@ const Navbar = () => {
                 <SheetHeader className="mb-6 text-left">
                   <SheetClose asChild><Logo /></SheetClose>
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-4">
-                  {navLinks.map(link => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
+                </SheetHeader>                <nav className="flex flex-col gap-4">
+                  {/* Categories Link for Mobile */}
+                  <SheetClose asChild>
+                    <Link
+                      href="/categories"
+                      className={`text-lg font-medium transition-colors hover:text-primary ${pathname === '/categories' ? 'text-primary' : 'text-foreground/80'}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                  </SheetClose>
+
+                  {/* Navigation Links */}
+                  {navLinks.map(link => 
+                    link.label === 'Subscriptions' && 'subLinks' in link ? (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href="/subscriptions"
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname.startsWith('/subscriptions') ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Subscriptions
+                        </Link>
+                      </SheetClose>
+                    ) : link.label === 'Contact Us' ? (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
+                    ) : (
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className={`text-lg font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-foreground/80'}`}
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
+                    )
+                  )}
+                  
                   <hr className="my-2"/>
-                  {!authLoading && isSupabaseConfigured && ( // Added missing !authLoading check here too
+                  
+                  {/* User Section */}
+                  {!authLoading && isSupabaseConfigured && ( 
                     user ? (
                       <>
+                         {/* Admin Section - Only for Admin Users */}
                          {isAdmin && (
-                           <SheetClose asChild>
-                             <Link href="/admin/add-product" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
-                               <PackagePlus className="mr-2 h-5 w-5" /> Add Product
-                             </Link>
-                           </SheetClose>
+                           <>
+                             <div>
+                               <h3 className="text-base font-semibold text-foreground mb-2">Admin</h3>
+                               <div className="pl-3 space-y-2">
+                                 <SheetClose asChild>
+                                   <Link href="/admin" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Shield className="mr-2 h-4 w-4" /> Dashboard
+                                   </Link>
+                                 </SheetClose>                                 <SheetClose asChild>
+                                   <Link href="/admin/analytics" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <BarChart className="mr-2 h-4 w-4" /> Analytics
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/coupons" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Ticket className="mr-2 h-4 w-4" /> Coupons
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/add-product" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <PackagePlus className="mr-2 h-4 w-4" /> Add Product
+                                   </Link>
+                                 </SheetClose>
+                                 <SheetClose asChild>
+                                   <Link href="/admin/manage-stock" className="block text-sm text-foreground/70 hover:text-primary flex items-center transition-colors" onClick={() => setIsMenuOpen(false)}>
+                                     <Settings className="mr-2 h-4 w-4" /> Manage Stock
+                                   </Link>
+                                 </SheetClose>
+                               </div>
+                             </div>
+                             <hr className="my-2"/>
+                           </>
                          )}
                         <SheetClose asChild>
                             <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
@@ -242,8 +396,8 @@ const Navbar = () => {
                             </Link>
                           </SheetClose>
                       </>
-                     ) // Closing parenthesis for user ternary
-                  )} {/* Closing parenthesis for !authLoading && isSupabaseConfigured */}
+                     ) 
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>

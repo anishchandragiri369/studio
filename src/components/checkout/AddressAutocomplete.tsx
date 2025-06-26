@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useRef, useState } from 'react';
@@ -15,6 +14,9 @@ interface AddressAutocompleteProps {
     state: string;
     zipCode: string;
     country: string;
+    lat?: number;
+    lng?: number;
+    formattedAddress?: string;
   }) => void;
   apiKey: string | undefined;
 }
@@ -58,6 +60,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
         });
         
         const addressLine1 = `${streetNumber} ${route}`.trim();
+        const typesToIgnoreInName = ['establishment', 'point_of_interest'];
+        let lat = place.geometry?.location?.lat();
+        let lng = place.geometry?.location?.lng();
 
         onPlaceSelected({
           addressLine1: addressLine1 || (place.name && !typesToIgnoreInName.some(t => place.types?.includes(t))) ? place.name || "" : "",
@@ -65,6 +70,9 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
           state,
           zipCode: postalCode,
           country,
+          lat,
+          lng,
+          formattedAddress: place.formatted_address || ""
         });
         setInputValue(place.formatted_address || ""); // Update input with formatted address
       } else {
@@ -126,7 +134,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
         onPlaceChanged={handlePlaceChanged}
         options={{
           types: ['address'],
-          componentRestrictions: { country: ['in'] }, // Example: Restrict to India
+          // Remove or adjust componentRestrictions for global search
         }}
       >
         <Input
@@ -137,12 +145,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
           className="w-full"
         />
       </Autocomplete>
-       <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
-          <MapPin className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-          <AlertDescription>
-            Selecting an address will attempt to auto-fill the fields below.
-          </AlertDescription>
-       </Alert>
+      <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
+        <MapPin className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
+        <AlertDescription>
+          Selecting an address will attempt to auto-fill the fields below and update the map.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };

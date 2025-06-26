@@ -1,5 +1,4 @@
-
-import type { Juice, SubscriptionPlan, Order } from './types';
+import type { Juice, SubscriptionPlan, Order, SubscriptionDurationOption } from './types';
 
 export const JUICES: Juice[] = [
   {
@@ -7,7 +6,7 @@ export const JUICES: Juice[] = [
     name: 'Rejoice',
     flavor: 'pomogranate, grape, strawberry, dragon',
     price: 120.00,
-    image: '/images/fruit-bowl-custom.jpg', // User updated this
+    image: '/images/juice-1.jpeg',
     dataAiHint: 'pomogranate grape juice',
     description: 'A vibrant blend of sweet pomogranate, grapes, and a spicy kick of ginger. Perfect to start your day.',
     category: 'Fruit Blast',
@@ -20,7 +19,7 @@ export const JUICES: Juice[] = [
     name: 'Green Vitality',
     flavor: 'Kale, Spinach, Apple, Lemon',
     price: 120.00,
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-2.jpeg',
     dataAiHint: 'green smoothie',
     description: 'Packed with leafy greens, crisp apple, and zesty lemon for a refreshing and nutritious boost.',
     category: 'Green Power',
@@ -33,7 +32,7 @@ export const JUICES: Juice[] = [
     name: 'Berry Bliss',
     flavor: 'Strawberry, Blueberry, Raspberry, Banana',
     price: 120.00,
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-3.jpeg',
     dataAiHint: 'berry smoothie',
     description: 'A delightful mix of sweet berries and creamy banana, rich in antioxidants.',
     category: 'Fruit Blast',
@@ -46,7 +45,7 @@ export const JUICES: Juice[] = [
     name: 'Tropical Escape',
     flavor: 'Pineapple, Mango, Coconut Water',
     price: 120.00,
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-4.jpeg',
     dataAiHint: 'tropical drink',
     description: 'Experience a taste of the tropics with this exotic blend of pineapple, mango, and hydrating coconut water.',
     category: 'Exotic Flavors',
@@ -59,7 +58,7 @@ export const JUICES: Juice[] = [
     name: 'Beet Boost',
     flavor: 'Beetroot, Apple, Carrot, Lemon',
     price: 120.00,
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-5.jpeg',
     dataAiHint: 'beet juice',
     description: 'An earthy and energizing juice featuring beetroot, balanced with sweet apple and carrot.',
     category: 'Veggie Fusion',
@@ -72,21 +71,33 @@ export const JUICES: Juice[] = [
     name: 'Citrus Zing',
     flavor: 'Grapefruit, Orange, Lemon, Lime',
     price: 120.00,
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-6.jpeg',
     dataAiHint: 'citrus juice',
     description: 'A zesty and invigorating explosion of citrus fruits, perfect for a pick-me-up.',
     category: 'Fruit Blast',
     tags: ['tangy', 'refreshing', 'vitamin c', 'Immunity Booster', 'Daily Wellness', 'Energy Kick'],
     availability: 'In Stock',
     stockQuantity: 40,
+  },  // New Daily Detox Plans
+  {
+    id: 'dtx0',
+    name: '1-Day Custom Detox',
+    flavor: 'Customizable - Choose your own juices and fruit bowls',
+    price: 899.00, // Base price for the plan
+    image: '/images/juice-7.jpeg',
+    dataAiHint: 'custom detox',
+    description: 'Design your perfect 1-day detox experience. Select a minimum of 5 juices and 2 fruit bowls from our fresh collection.',
+    category: 'Detox Plans',
+    tags: ['customizable', '1-day plan', 'personalized detox', 'Detoxify', 'Daily Wellness'],
+    availability: 'In Stock',
+    stockQuantity: 50, // Represents number of plans available
   },
-  // New Daily Detox Plans
   {
     id: 'dtx1',
     name: '3-Day Green Cleanse',
     flavor: 'Spinach, Kale, Cucumber, Apple, Lemon',
     price: 120.00, // Price for the whole plan
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-7.jpeg',
     dataAiHint: 'green detox',
     description: 'A 3-day supply of potent green juices designed to reset your system. Includes a variety of 5 green juices per day.',
     category: 'Detox Plans',
@@ -99,7 +110,7 @@ export const JUICES: Juice[] = [
     name: '7-Day Rainbow Detox',
     flavor: 'Variety of fruit & vegetable juices',
     price: 99.99, // Price for the whole plan
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/juice-8.jpeg',
     dataAiHint: 'colorful juices',
     description: 'A comprehensive 7-day detox program featuring a rainbow of juices to nourish and cleanse. Includes 6 diverse juices daily.',
     category: 'Detox Plans',
@@ -113,7 +124,7 @@ export const JUICES: Juice[] = [
     name: 'Morning Berry Bowl',
     flavor: 'Strawberries, Blueberries, Granola, Chia Seeds',
     price: 120.00,
-    image: '/images/fruit-bowl-custom.jpg', 
+    image: '/images/juice-9.jpeg',
     dataAiHint: 'kiwi carrot',
     description: 'A refreshing bowl of mixed berries, crunchy homemade granola, and nutritious chia seeds. Perfect for a light breakfast.',
     category: 'Fruit Bowls',
@@ -126,7 +137,7 @@ export const JUICES: Juice[] = [
     name: 'Tropical Sunshine Bowl',
     flavor: 'Mango, Pineapple, Kiwi, Coconut Flakes',
     price: 120.00,
-    image: 'https://placehold.co/720x1280.png', 
+    image: '/images/fruit-bowl-custom.jpg',
     dataAiHint: 'mango pineapple',
     description: 'An exotic mix of fresh mango, pineapple, kiwi, topped with toasted coconut flakes. A taste of paradise!',
     category: 'Fruit Bowls',
@@ -138,10 +149,10 @@ export const JUICES: Juice[] = [
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    id: 'sub1',
+    id: 'weekly',
     name: 'Weekly Kickstarter',
     frequency: 'weekly',
-    pricePerDelivery: 29.99,
+    pricePerDelivery: 69.00,
     description: 'Get a fresh batch of curated or custom-selected juices delivered to your doorstep every week. Perfect for starting your week right!',
     defaultJuices: [
       { juiceId: '1', quantity: 1 },
@@ -153,10 +164,10 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     maxJuices: 5,
   },
   {
-    id: 'sub2',
+    id: 'monthly',
     name: 'Monthly Wellness Pack',
     frequency: 'monthly',
-    pricePerDelivery: 109.99,
+    pricePerDelivery: 2599.00,
     description: 'A comprehensive selection of curated or custom-selected juices delivered monthly. Ideal for maintaining a healthy lifestyle.',
      defaultJuices: [
       { juiceId: '1', quantity: 4 },
@@ -179,6 +190,70 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     maxJuices: 5,
   },
 ];
+
+// Subscription Duration Options with Discounts - Monthly
+export const SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
+  {
+    months: 1,
+    discountPercentage: 0,
+    discountType: 'bronze',
+    label: '1 Month - No Discount'
+  },
+  {
+    months: 3,
+    discountPercentage: 5,
+    discountType: 'bronze',
+    label: '3 Months - 5% OFF'
+  },
+  {
+    months: 6,
+    discountPercentage: 12,
+    discountType: 'gold',
+    label: '6 Months - 12% OFF'
+  },
+  {
+    months: 12,
+    discountPercentage: 20,
+    discountType: 'platinum',
+    label: '1 Year - 20% OFF'
+  }
+];
+
+// Subscription Duration Options for Weekly subscriptions (in weeks)
+export const WEEKLY_SUBSCRIPTION_DURATION_OPTIONS: SubscriptionDurationOption[] = [
+  {
+    months: 1, // Represents 1 week for weekly subscriptions
+    discountPercentage: 0,
+    discountType: 'bronze',
+    label: '1 Week - No Discount',
+    weeks: 1
+  },
+  {
+    months: 2, // Represents 2 weeks for weekly subscriptions
+    discountPercentage: 5,
+    discountType: 'bronze',
+    label: '2 Weeks - 5% OFF',
+    weeks: 2
+  },
+  {
+    months: 3, // Represents 3 weeks for weekly subscriptions
+    discountPercentage: 10,
+    discountType: 'silver',
+    label: '3 Weeks - 10% OFF',
+    weeks: 3
+  }
+];
+
+// Custom month selector options (1-11 months)
+export const CUSTOM_MONTH_OPTIONS = Array.from({ length: 11 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1} Month${i + 1 > 1 ? 's' : ''}`,
+  discountPercentage: 0, // No discount for custom selections
+  discountType: 'bronze' as const
+}));
+
+// Days before subscription end to show renewal notification
+export const RENEWAL_NOTIFICATION_DAYS = 5;
 
 export const AVAILABLE_FLAVORS_FOR_AI: string[] = JUICES.map(j => j.flavor);
 export const AVAILABLE_JUICE_NAMES_FOR_AI: string[] = JUICES.map(j => j.name);
@@ -208,8 +283,8 @@ export const NAV_LINKS = [
     href: '/subscriptions', // Base href for highlighting
     basePath: '/subscriptions', // Base path for highlighting
     subLinks: [
-      { href: '/subscriptions?frequency=weekly', label: 'Weekly Plans' },
-      { href: '/subscriptions?frequency=monthly', label: 'Monthly Plans' },
+      { href: '/subscriptions/subscribe?plan=weekly', label: 'Weekly Plans' },
+      { href: '/subscriptions/subscribe?plan=monthly', label: 'Monthly Plans' },
       { href: '/subscriptions', label: 'View All Plans' },
     ]
   },
@@ -234,63 +309,63 @@ export const HOME_CATEGORIES: HomeCategory[] = [
   {
     id: 'immunity-booster',
     name: 'Immunity Booster',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-1.jpeg',
     dataAiHint: 'citrus fruits',
     href: '/menu?category=Immunity%20Booster',
   },
   {
     id: 'skin-glow',
     name: 'Skin Glow',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-2.jpeg',
     dataAiHint: 'berries avocado',
     href: '/menu?category=Skin%20Glow',
   },
   {
     id: 'radiant-health',
     name: 'Radiant Health',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-3.jpeg',
     dataAiHint: 'green vegetables',
     href: '/menu?category=Radiant%20Health',
   },
   {
     id: 'energy-kick',
     name: 'Energy Kick',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-4.jpeg',
     dataAiHint: 'tropical fruits',
     href: '/menu?category=Energy%20Kick',
   },
   {
     id: 'detoxify',
     name: 'Detoxify',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-1.jpeg',
     dataAiHint: 'lemon cucumber',
     href: '/menu?category=Detoxify',
   },
   {
     id: 'workout-fuel',
     name: 'Workout Fuel',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-2.jpeg',
     dataAiHint: 'banana oats',
     href: '/menu?category=Workout%20Fuel',
   },
   {
     id: 'daily-wellness',
     name: 'Daily Wellness',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-3.jpeg',
     dataAiHint: 'apple carrot',
     href: '/menu?category=Daily%20Wellness',
   },
   {
     id: 'kids-friendly',
     name: 'Kids Friendly',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-4.jpeg',
     dataAiHint: 'strawberry banana',
     href: '/menu?category=Kids%20Friendly',
   },
   {
     id: 'seasonal-specials',
     name: 'Seasonal Specials',
-    image: 'https://placehold.co/300x200.png',
+    image: '/images/category-1.jpeg',
     dataAiHint: 'watermelon mint',
     href: '/menu?category=Seasonal%20Specials',
   },
@@ -336,4 +411,23 @@ export const MOCK_USER_ORDERS: Order[] = [
       { juiceId: '6', juiceName: 'Citrus Zing', quantity: 1, pricePerItem: 120.00, image: JUICES.find(j => j.id === '6')?.image },
     ],
   },
+];
+
+export const JUICE_IMAGE_EXAMPLES = [
+  '/images/juice-1.jpeg',
+  '/images/juice-2.jpeg',
+  '/images/juice-3.jpeg',
+  '/images/juice-4.jpeg',
+  '/images/juice-5.jpeg',
+  '/images/juice-6.jpeg',
+  '/images/juice-7.jpeg',
+  '/images/juice-8.jpeg',
+  '/images/juice-9.jpeg',
+];
+
+export const CATEGORY_IMAGE_EXAMPLES = [
+  '/images/category-1.jpeg',
+  '/images/category-2.jpeg',
+  '/images/category-3.jpeg',
+  '/images/category-4.jpeg',
 ];

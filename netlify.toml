@@ -1,0 +1,23 @@
+[[redirects]]
+  from = "/api/webhook/payment-confirm"
+  to = "/.netlify/functions/payment-confirm"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/webhook/payment-confirm/*"
+  to = "/.netlify/functions/payment-confirm"
+  status = 200
+  force = true
+
+[build]
+  functions = "netlify/functions"
+  command = "npm run build"
+
+[functions]
+  external_node_modules = ["exceljs", "nodemailer"]
+
+# Scheduled function configuration
+# This function will run daily at 6 PM (18:00 UTC)
+[functions."daily-subscription-report-cron"]
+  schedule = "0 18 * * *"

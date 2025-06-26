@@ -176,7 +176,7 @@ export default function JuiceDetailPage() {
             alt={juice.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-            className={cn("object-cover", isEffectivelyOutOfStock && "grayscale")}
+            className={cn("object-contain", isEffectivelyOutOfStock && "grayscale")}
             priority={true}
             data-ai-hint={displayDataAiHint}
             unoptimized={displayImage.startsWith('https://placehold.co') || displayImage.startsWith('/')}

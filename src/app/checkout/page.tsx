@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet, Loader2, ShoppingBag } from 'lucide-react';
+import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet, Loader2, ShoppingBag, Clock, Sparkles } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,15 +15,20 @@ import type { CheckoutAddressFormData, Juice as JuiceType } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import AddressAutocomplete from '@/components/checkout/AddressAutocomplete';
+import GoogleMapPicker from '@/components/checkout/GoogleMapPicker';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
 import { load } from "@cashfreepayments/cashfree-js";
 import { useAuth } from '@/context/AuthContext';
+import CouponInput from '@/components/checkout/CouponInputWithDropdown';
+import ReferralInput from '@/components/checkout/ReferralInput';
+import { validateCoupon, type Coupon } from '@/lib/coupons';
+
 
 interface SubscriptionOrderItem {
   id: string;
+  juiceId: string;
   name: string;
   quantity: number;
   image?: string;
@@ -51,19 +56,31 @@ function CheckoutPageContents() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { cartItems, getCartTotal, clearCart } = useCart();
-  const { user, loading: isAuthLoading } = useAuth(); // Enable user context
+  const { user, loading: isAuthLoading, isAdmin } = useAuth(); // Enable user context and admin status
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
     planId: string;
     planName: string;
     planPrice: number;
     planFrequency: string;
+    subscriptionDuration?: number;
+    basePrice?: number;
   } | null>(null); // Explicitly initialize as null
   const [subscriptionOrderItems, setSubscriptionOrderItems] = useState<SubscriptionOrderItem[]>([]);
   const [currentOrderTotal, setCurrentOrderTotal] = useState(0);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    coupon: Coupon;
+    discountAmount: number;
+  } | null>(null);
+  const [originalOrderTotal, setOriginalOrderTotal] = useState(0);
+  const [appliedReferral, setAppliedReferral] = useState<{
+    code: string;
+    referrerId: string;
+  } | null>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -71,6 +88,33 @@ function CheckoutPageContents() {
       country: 'India',
     }
   });
+
+  // Auto-populate email field with authenticated user's email
+  useEffect(() => {
+    if (user?.email) {
+      setValue('email', user.email);
+    }
+  }, [user, setValue]);
+
+  // Coupon handlers
+  const handleCouponApply = (coupon: Coupon, discountAmount: number) => {
+    setAppliedCoupon({ coupon, discountAmount });
+    setCurrentOrderTotal(originalOrderTotal - discountAmount);
+  };
+
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null);
+    setCurrentOrderTotal(originalOrderTotal);
+  };
+
+  // Referral handlers
+  const handleReferralApply = (referralCode: string, referrerId: string) => {
+    setAppliedReferral({ code: referralCode, referrerId });
+  };
+
+  const handleReferralRemove = () => {
+    setAppliedReferral(null);
+  };
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -81,11 +125,24 @@ function CheckoutPageContents() {
     const planPriceStr = searchParams.get('planPrice') as string | null;
     const planFrequency = searchParams.get('planFrequency') as string | null;
     const selectedJuicesStr = searchParams.get('selectedJuices');
+    const subscriptionDurationStr = searchParams.get('subscriptionDuration');
+    const basePriceStr = searchParams.get('basePrice');
 
     if (planId && planName && planPriceStr && planFrequency) {
       setIsSubscriptionCheckout(true);
       const planPrice = parseFloat(planPriceStr);
-      setSubscriptionDetails({ planId, planName, planPrice, planFrequency });
+      const subscriptionDuration = subscriptionDurationStr ? parseInt(subscriptionDurationStr) : 3;
+      const basePrice = basePriceStr ? parseFloat(basePriceStr) : 120;
+      
+      setSubscriptionDetails({ 
+        planId, 
+        planName, 
+        planPrice, 
+        planFrequency,
+        subscriptionDuration,
+        basePrice
+      });
+      setOriginalOrderTotal(planPrice);
       setCurrentOrderTotal(planPrice); // Shipping is 0 for subscriptions
 
       if (selectedJuicesStr) {
@@ -94,7 +151,14 @@ function CheckoutPageContents() {
           const items: SubscriptionOrderItem[] = Object.entries(parsedSelections)
             .map(([juiceId, quantity]) => {
               const juiceInfo = JUICES.find(j => j.id === juiceId);
-              return juiceInfo ? { id: juiceInfo.id, name: juiceInfo.name, quantity, image: juiceInfo.image, dataAiHint: juiceInfo.dataAiHint } : null;
+              return juiceInfo ? { 
+                id: juiceInfo.id, 
+                juiceId: juiceInfo.id,
+                name: juiceInfo.name, 
+                quantity, 
+                image: juiceInfo.image, 
+                dataAiHint: juiceInfo.dataAiHint 
+              } : null;
             })
             .filter(item => item !== null) as SubscriptionOrderItem[];
           setSubscriptionOrderItems(items);
@@ -113,7 +177,9 @@ function CheckoutPageContents() {
       setIsSubscriptionCheckout(false);
       const cartTotal = getCartTotal();
       const shippingCost = cartTotal > 0 ? 5.00 : 0;
-      setCurrentOrderTotal(cartTotal + shippingCost);
+      const totalWithShipping = cartTotal + shippingCost;
+      setOriginalOrderTotal(totalWithShipping);
+      setCurrentOrderTotal(totalWithShipping);
       setSubscriptionDetails(null);
       setSubscriptionOrderItems([]);
     }
@@ -168,30 +234,25 @@ function CheckoutPageContents() {
   
   // Function to create a checkout session using the Cashfree SDK instance
   async function createCheckout(cashfree: any, paymentSessionId: string, returnUrl: string) {
-    console.log("Creating checkout session...")
     let checkoutOptions = {
       paymentSessionId: paymentSessionId,
       returnUrl: returnUrl,
     };
     try {
-      cashfree.checkout(checkoutOptions).then((result: any) => {;
+      cashfree.checkout(checkoutOptions).then((result: any) => {
       if (result.error) {
+        // Only log error to console, no secrets or sensitive data
         console.error("Checkout error:", result.error.message);
-        console.log("There is some payment error, Check for Payment Status");
-        console.log(result.error);
-      } if (result.redirect) {
-        console.log("Redirection initiated");
-      }
+      } 
+      // No debug logs or secrets
       if(result.paymentDetails){
-        // This will be called whenever the payment is completed irrespective of transaction status
-        console.log("Payment has been completed, Check for Payment Status");
-        console.log(result.paymentDetails.paymentMessage);
+        // Payment completed, no logs
+      }
+    });
+    } catch (error) {
+      console.error("Error during checkout:", error);
     }
-  });
-  } catch (error) {
-    console.error("Error during checkout:", error);
   }
-}
 
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
@@ -233,8 +294,30 @@ function CheckoutPageContents() {
       if (!formData) {
         throw new Error("Please fill in all required shipping details");
       }
+      
+      // Add validation for order amount
+      if (currentOrderTotal > 10000) {
+        throw new Error(`Order amount (₹${currentOrderTotal}) exceeds the maximum limit of ₹10,000 for sandbox payments. Please reduce the order amount or contact support.`);
+      }
+      
+      if (currentOrderTotal < 1) {
+        throw new Error("Order amount must be at least ₹1.");
+      }
+      
+      console.log("Order validation passed. Current order total:", currentOrderTotal);
+      
       const orderPayload = {
         orderAmount: currentOrderTotal,
+        originalAmount: originalOrderTotal,
+        appliedCoupon: appliedCoupon ? {
+          code: appliedCoupon.coupon.code,
+          discountAmount: appliedCoupon.discountAmount,
+          discountType: appliedCoupon.coupon.discountType
+        } : null,
+        appliedReferral: appliedReferral ? {
+          code: appliedReferral.code,
+          referrerId: appliedReferral.referrerId
+        } : null,
         orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
           ...item,
           juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name // Ensure juiceName is always present
@@ -252,12 +335,24 @@ function CheckoutPageContents() {
             country: (formData as CheckoutAddressFormData).country,
           }
         },
-        userId: user?.id // <-- Pass the userId to backend
+        userId: user?.id, // <-- Pass the userId to backend
+        // Add subscription data if this is a subscription checkout
+        subscriptionData: isSubscriptionCheckout ? {
+          planId: subscriptionDetails?.planId,
+          planName: subscriptionDetails?.planName,
+          planPrice: subscriptionDetails?.planPrice,
+          planFrequency: subscriptionDetails?.planFrequency,
+          selectedJuices: subscriptionOrderItems.map(item => ({
+            juiceId: item.juiceId,
+            quantity: item.quantity
+          })),
+          subscriptionDuration: subscriptionDetails?.subscriptionDuration || 3,
+          basePrice: subscriptionDetails?.basePrice || 120
+        } : null
       };
       console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
       // const userId = user.id;
       // 1. Create order in your backend
-      console.log("Calling /api/orders/create...");
       const orderCreationResponse = await fetch('/api/orders/create', {
         method: 'POST',
         headers:
@@ -270,19 +365,14 @@ function CheckoutPageContents() {
       });
       
       const orderCreationResult = await orderCreationResponse.json();
-      console.log("Order creation result:", orderCreationResult);
-      console.log("Order creation response:", orderCreationResponse);
-      console.log("Order creation data:", orderCreationResult.Data);
 
       if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
         throw new Error(orderCreationResult.message || "Failed to create internal order.");
       }
 
       const internalOrderId = orderCreationResult.data.id;
-      console.log("Internal Order ID received:", internalOrderId);
 
       // 2. Use the internalOrderId to create a Cashfree order session
-      console.log("Calling /api/cashfree/create-order...");
       const cashfreeOrderPayload = {
         orderAmount: currentOrderTotal,
         internalOrderId: internalOrderId,
@@ -301,15 +391,10 @@ function CheckoutPageContents() {
       });
 
       const cashfreeOrderResult = await cashfreeOrderResponse.json();
-      console.log("Cashfree order session creation result:", cashfreeOrderResult);
 
       if (cashfreeOrderResponse.ok && cashfreeOrderResult.success && cashfreeOrderResult.data?.orderToken) {
-        console.log("initiateadk", initializeSDK())
-        console.log(" statement", window.Cashfree);
-        console.log("in if statement", window.Cashfree.checkout);
          // Now that the SDK is loaded and order created, initiate checkout
          if (cashfreeInstance  && typeof cashfreeInstance .checkout === 'function') {
-          console.log("in if statement for creat checkout")
              createCheckout(cashfreeInstance , cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
          } else {
              throw new Error("Cashfree SDK not available for checkout.");
@@ -335,299 +420,512 @@ function CheckoutPageContents() {
     state: string;
     zipCode: string;
     country: string;
+    lat?: number;
+    lng?: number;
   }) => {
     setValue('addressLine1', placeDetails.addressLine1, { shouldValidate: true });
     setValue('city', placeDetails.city, { shouldValidate: true });
     setValue('state', placeDetails.state, { shouldValidate: true });
     setValue('zipCode', placeDetails.zipCode, { shouldValidate: true });
     setValue('country', placeDetails.country || 'India', { shouldValidate: true });
+    if (placeDetails.lat && placeDetails.lng) {
+      setSelectedLocation({ lat: placeDetails.lat, lng: placeDetails.lng });
+    }
   };
 
   const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
 
   return (
-    <div className="min-h-screen relative">
-      <div className="absolute inset-0 z-0">
-        <Image src="/images/fruit-bowl-custom.jpg" alt="Checkout background" fill className="object-cover opacity-50 blur pointer-events-none select-none" priority />
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-orange-50/80 to-yellow-100/80 mix-blend-multiply" />
-      </div>
-      <div className="relative z-10">
-        <div className="container mx-auto px-4 py-12">
-          <Button variant="outline" asChild className="mb-8">
-            <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
-            </Link>
-          </Button>
-
-      <section className="text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
-          Checkout
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-          You&apos;re almost there! Please provide your shipping details and complete your purchase.
-        </p>
-      </section>
-
-      {isLoadingSummary ? (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <>
+      <div className="min-h-screen relative">
+        {/* Enhanced Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-green-50 to-blue-50"></div>
+          <Image src="/images/fruit-bowl-custom.jpg" alt="Checkout background" fill className="object-cover opacity-20 mix-blend-multiply pointer-events-none select-none" priority />
+          {/* Floating elements for visual appeal - More bubbles */}
+          <div className="absolute top-20 right-10 w-16 h-16 bg-primary/10 rounded-full opacity-40 animate-float"></div>
+          <div className="absolute bottom-32 left-16 w-12 h-12 bg-accent/10 rounded-full opacity-30 animate-float" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-32 left-20 w-14 h-14 bg-secondary/10 rounded-full opacity-35 animate-float" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute bottom-16 right-24 w-10 h-10 bg-primary/15 rounded-full opacity-25 animate-float" style={{ animationDelay: '3s' }}></div>
+          <div className="absolute top-40 right-32 w-18 h-18 bg-accent/12 rounded-full opacity-30 animate-float" style={{ animationDelay: '4s' }}></div>
+          <div className="absolute bottom-40 left-8 w-8 h-8 bg-secondary/8 rounded-full opacity-20 animate-float" style={{ animationDelay: '5s' }}></div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Shipping & Payment</CardTitle>
-                <CardDescription>Please enter your shipping address and payment details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">Shipping Address</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <AddressAutocomplete 
-                        apiKey={googleMapsApiKey} 
-                        onPlaceSelected={handlePlaceSelected} 
-                      />
-                       {!googleMapsApiKey && (
-                          <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">
-                            <AlertTriangle className="h-4 w-4 !left-3 !top-3.5 text-primary/70" />
-                             <AlertTitle className="text-sm font-semibold">Address Autocomplete Not Configured</AlertTitle>
-                            <AlertDescription>
-                             To enable Google Maps address search, set the `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in your .env file and restart the server.
-                             You can still enter your address manually below.
-                            </AlertDescription>
-                         </Alert>
-                       )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="firstName">First Name *</Label>
-                          <Input id="firstName" {...register("firstName")} placeholder="John" />
-                          {errors.firstName && <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" {...register("lastName")} placeholder="Doe" />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email Address *</Label>
-                        <Input id="email" type="email" {...register("email")} placeholder="you@example.com" />
-                        {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
-                      </div>
-                      <div>
-                        <Label htmlFor="mobileNumber">Mobile Number</Label>
-                        <Input id="mobileNumber" type="tel" {...register("mobileNumber")} placeholder="+91 98765 43210" />
-                      </div> 
-                      <div>
-                        <Label htmlFor="addressLine1">Address Line 1 *</Label>
-                        <Input id="addressLine1" {...register("addressLine1")} placeholder="123 Juice Street" />
-                        {errors.addressLine1 && <p className="text-sm text-destructive mt-1">{errors.addressLine1.message}</p>}
-                      </div>
-                      <div>
-                        <Label htmlFor="addressLine2">Address Line 2 (Apartment, Suite, etc.)</Label>
-                        <Input id="addressLine2" {...register("addressLine2")} placeholder="Apt 4B" />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="city">City *</Label>
-                          <Input id="city" {...register("city")} placeholder="Flavor Town" />
-                          {errors.city && <p className="text-sm text-destructive mt-1">{errors.city.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="state">State / Province *</Label>
-                          <Input id="state" {...register("state")} placeholder="California" />
-                          {errors.state && <p className="text-sm text-destructive mt-1">{errors.state.message}</p>}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="zipCode">ZIP / Postal Code *</Label>
-                          <Input id="zipCode" {...register("zipCode")} placeholder="90210" />
-                          {errors.zipCode && <p className="text-sm text-destructive mt-1">{errors.zipCode.message}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="country">Country *</Label>
-                          <Input id="country" {...register("country")} />
-                          {errors.country && <p className="text-sm text-destructive mt-1">{errors.country.message}</p>}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <div className="relative z-10">
+          <div className="container mx-auto px-4 py-8">
+            <Button variant="outline" asChild className="mb-6 glass-card border-0 btn-hover-lift">
+              <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to {isSubscriptionCheckout ? "Subscription Details" : "Cart"}
+              </Link>
+            </Button>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl font-headline">Payment Method</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pb-0">
-                       {isCheckoutDisabled && (
-                           <Alert variant="default" className="text-center">
-                               <ShoppingBag className="mx-auto h-6 w-6 mb-2 text-muted-foreground" />
-                               <AlertTitle>No items to checkout</AlertTitle>
-                               <AlertDescription>
-                                   {isSubscriptionCheckout ? "Subscription details are missing." : "Your cart is empty."} Please add items or select a subscription to proceed.
-                                   {isSubscriptionCheckout && !subscriptionDetails && " You might need to go back and select a plan."}
-                               </AlertDescription>
-                                {!isSubscriptionCheckout && (
-                                    <Button asChild variant="link" className="mt-2 text-primary">
-                                        <Link href="/menu">Browse Juices</Link>
- 
-                                    </Button>
-                                )}
-                           </Alert>
-                       )}
-                      <div className="p-4 border rounded-lg bg-muted/30">
-                        <h4 className="font-semibold mb-1">Credit/Debit Card</h4>
-                        <p className="text-sm text-muted-foreground">Secure card payment form would be here (e.g., Stripe Elements).</p>
-                      </div>
-                      <div className="p-4 border rounded-lg bg-muted/30">
-                        <h4 className="font-semibold mb-1">Cashfree</h4>
-                        <p className="text-sm text-muted-foreground">Securely pay using Cashfree Payment Gateway.</p>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="mt-2 w-full border-primary text-primary hover:bg-primary/10"
-                          onClick={handleCashfreePayment}
-                          disabled={isProcessingPayment || isCheckoutDisabled}
-                        >
-                          {isProcessingPayment ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Wallet className="mr-2 h-4 w-4" />
-                          )}
-                           Pay with Cashfree (Conceptual)
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                 
-                  
-                  <Button 
-                    type="submit"
-                    size="lg" 
-                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3 mt-6"
-                    disabled={isCheckoutDisabled}
-                  >
-                    <CreditCard className="mr-2 h-5 w-5" /> Proceed to Payment
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+        <section className="text-center mb-8">
+          <h1 className="text-4xl md:text-6xl font-headline font-bold gradient-text mb-4">
+            Checkout
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            You&apos;re almost there! Complete your order and get fresh juices delivered to your door.
+          </p>
+        </section>
+
+        {isLoadingSummary ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="glass-card rounded-2xl p-8 flex flex-col items-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-muted-foreground">Loading your order...</p>
+            </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Card className="glass-card border-0 shadow-glass-lg animate-fade-in">
+                <CardHeader className="pb-6">
+                  <CardTitle className="font-headline text-3xl gradient-text">Shipping & Payment</CardTitle>
+                  <CardDescription className="text-base">
+                    Please enter your shipping address and complete your payment.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
+                    <Card className="glass border-0 shadow-soft">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="font-headline text-xl flex items-center gap-2">
+                          <MapPin className="w-5 h-5 text-primary" />
+                          Delivery Address
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="rounded-xl overflow-hidden border border-border/50">
+                          <GoogleMapPicker 
+                            location={selectedLocation} 
+                            mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID} 
+                            onPlaceSelected={handlePlaceSelected} 
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
+                            <Input 
+                              id="firstName" 
+                              {...register("firstName")} 
+                              placeholder="John" 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                            {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                            <Input 
+                              id="lastName" 
+                              {...register("lastName")} 
+                              placeholder="Doe" 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="email" className="text-sm font-medium">Email Address *</Label>
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            {...register("email")} 
+                            placeholder="you@example.com" 
+                            className="glass border-border/50 focus:border-primary/50 transition-all"
+                          />
+                          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="mobileNumber" className="text-sm font-medium">Mobile Number</Label>
+                          <Input 
+                            id="mobileNumber" 
+                            type="tel" 
+                            {...register("mobileNumber")} 
+                            placeholder="+91 98765 43210" 
+                            className="glass border-border/50 focus:border-primary/50 transition-all"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="addressLine1" className="text-sm font-medium">Address Line 1 *</Label>
+                          <Input 
+                            id="addressLine1" 
+                            {...register("addressLine1")} 
+                            placeholder="123 Juice Street" 
+                            className="glass border-border/50 focus:border-primary/50 transition-all"
+                          />
+                          {errors.addressLine1 && <p className="text-sm text-destructive">{errors.addressLine1.message}</p>}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="addressLine2" className="text-sm font-medium">Address Line 2 (Optional)</Label>
+                          <Input 
+                            id="addressLine2" 
+                            {...register("addressLine2")} 
+                            placeholder="Apartment, Suite, etc." 
+                            className="glass border-border/50 focus:border-primary/50 transition-all"
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city" className="text-sm font-medium">City *</Label>
+                            <Input 
+                              id="city" 
+                              {...register("city")} 
+                              placeholder="Your City" 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                            {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="state" className="text-sm font-medium">State / Province *</Label>
+                            <Input 
+                              id="state" 
+                              {...register("state")} 
+                              placeholder="Your State" 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                            {errors.state && <p className="text-sm text-destructive">{errors.state.message}</p>}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="zipCode" className="text-sm font-medium">ZIP / Postal Code *</Label>
+                            <Input 
+                              id="zipCode" 
+                              {...register("zipCode")} 
+                              placeholder="123456" 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                            {errors.zipCode && <p className="text-sm text-destructive">{errors.zipCode.message}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="country" className="text-sm font-medium">Country *</Label>
+                            <Input 
+                              id="country" 
+                              {...register("country")} 
+                              className="glass border-border/50 focus:border-primary/50 transition-all"
+                            />
+                            {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-          <div className="md:col-span-1">
-            <Card className="shadow-lg sticky top-24">
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Your Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-
-                {isSubscriptionCheckout && subscriptionDetails ? (
-                  <>
-                    <h3 className="font-semibold text-primary">{subscriptionDetails.planName}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">{subscriptionDetails.planFrequency} Delivery</p>
-                    {subscriptionOrderItems.length > 0 && (
-                       <>
-                        <Separator className="my-2" />
-                        <h4 className="text-sm font-medium mb-1">Selected Juices:</h4>
-                        {subscriptionOrderItems.map(item => (
-                          <div key={item.id} className="flex items-center gap-2 text-xs">
-                            {item.image && (
-                              <Image 
-                                src={item.image} 
-                                alt={item.name} 
-                                width={32} 
-                                height={32} 
-                                className="rounded-sm object-cover border"
-                                data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
-                                unoptimized={item.image.startsWith('https://placehold.co')}
-                                onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
-                              />
+                    <Card className="glass border-0 shadow-soft">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-xl font-headline flex items-center gap-2">
+                          <Wallet className="w-5 h-5 text-primary" />
+                          Payment Method
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                         {isCheckoutDisabled && (
+                             <Alert variant="default" className="glass border-orange-200 bg-orange-50/50">
+                                 <ShoppingBag className="h-5 w-5 text-orange-600" />
+                                 <AlertTitle className="text-orange-800">No items to checkout</AlertTitle>
+                                 <AlertDescription className="text-orange-700">
+                                     {isSubscriptionCheckout ? "Subscription details are missing." : "Your cart is empty."} Please add items or select a subscription to proceed.
+                                 </AlertDescription>
+                                  {!isSubscriptionCheckout && (
+                                      <Button asChild variant="link" className="mt-3 text-primary p-0 h-auto">
+                                          <Link href="/menu">Browse Our Juices →</Link>
+                                      </Button>
+                                  )}
+                             </Alert>
+                         )}
+                        
+                        <div className="glass-card p-6 rounded-xl border border-primary/20">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-orange-500 flex items-center justify-center">
+                              <Wallet className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-lg">Cashfree Payment</h4>
+                              <p className="text-sm text-muted-foreground">Secure payment gateway with multiple options</p>
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            type="button" 
+                            size="lg"
+                            className="w-full bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white rounded-xl py-4 text-lg font-medium btn-hover-lift shadow-soft-lg"
+                            onClick={handleCashfreePayment}
+                            disabled={isProcessingPayment || isCheckoutDisabled}
+                          >
+                            {isProcessingPayment ? (
+                              <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <Wallet className="mr-2 h-5 w-5" />
+                                Pay Securely
+                              </>
                             )}
-                            <span className="flex-grow">{item.quantity}x {item.name}</span>
+                          </Button>
+                          
+                          <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <ShoppingBag className="w-3 h-3" />
+                              Secure
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <CreditCard className="w-3 h-3" />
+                              Encrypted
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Wallet className="w-3 h-3" />
+                              Protected
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                   
+                    
+                    <Button 
+                      type="submit"
+                      size="lg" 
+                      className="w-full bg-gradient-to-r from-accent to-green-500 hover:from-accent/90 hover:to-green-500/90 text-white text-lg py-4 rounded-xl font-medium btn-hover-lift shadow-soft-lg mt-8"
+                      disabled={isCheckoutDisabled}
+                    >
+                      <CreditCard className="mr-2 h-5 w-5" /> 
+                      Complete Order
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-1">
+              <Card className="glass-card border-0 shadow-glass-lg sticky top-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                <CardHeader className="pb-4">
+                  <CardTitle className="font-headline text-2xl gradient-text">Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+
+                  {isSubscriptionCheckout && subscriptionDetails ? (
+                    <div className="space-y-4">
+                      <div className="glass p-4 rounded-xl border border-primary/20">
+                        <h3 className="font-semibold text-lg text-primary mb-2">{subscriptionDetails.planName}</h3>
+                        <p className="text-sm text-muted-foreground capitalize flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          {subscriptionDetails.planFrequency} Delivery
+                        </p>
+                      </div>
+                      
+                      {subscriptionOrderItems.length > 0 && (
+                         <div className="space-y-3">
+                          <h4 className="text-sm font-medium flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-accent" />
+                            Selected Juices:
+                          </h4>
+                          <div className="space-y-2">
+                            {subscriptionOrderItems.map(item => (
+                              <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg glass">
+                                {item.image && (
+                                  <Image 
+                                    src={item.image} 
+                                    alt={item.name} 
+                                    width={40} 
+                                    height={40} 
+                                    className="rounded-lg object-contain border border-border/50"
+                                    data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
+                                    unoptimized={item.image.startsWith('https://placehold.co')}
+                                    onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
+                                  />
+                                )}
+                                <span className="flex-grow text-sm">{item.quantity}x {item.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                         </div>
+                      )}
+                      
+                      <Separator className="my-4" />
+                      
+                      {/* Coupon Input for Subscriptions */}
+                      <CouponInput
+                        orderTotal={originalOrderTotal}
+                        subscriptionType={subscriptionDetails.planFrequency as 'monthly' | 'weekly'}
+                        userId={user?.id}
+                        isAdmin={isAdmin}
+                        onCouponApply={handleCouponApply}
+                        onCouponRemove={handleCouponRemove}
+                        appliedCoupon={appliedCoupon}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      {/* Referral Input for Subscriptions */}
+                      <ReferralInput
+                        onReferralApply={handleReferralApply}
+                        onReferralRemove={handleReferralRemove}
+                        appliedReferral={appliedReferral}
+                        userId={user?.id}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      <Separator className="my-4" />
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Subscription Price</span>
+                          <span className="font-medium">₹{subscriptionDetails.planPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Delivery</span>
+                          <span className="font-medium text-green-600">FREE</span>
+                        </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Coupon ({appliedCoupon.coupon.code})</span>
+                            <span className="font-medium text-green-600">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <Separator />
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Total</span>
+                          <span className="text-primary">₹{currentOrderTotal.toFixed(2)}</span>
+                        </div>
+                        
+                        {/* Amount limit warning for subscriptions */}
+                        {currentOrderTotal > 8000 && (
+                          <Alert variant="destructive" className="mt-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Amount Warning</AlertTitle>
+                            <AlertDescription>
+                              Order amount (₹{currentOrderTotal.toFixed(2)}) is approaching the sandbox limit of ₹10,000. 
+                              Consider reducing the subscription duration or items.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        {currentOrderTotal > 10000 && (
+                          <Alert variant="destructive" className="mt-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Amount Exceeds Limit</AlertTitle>
+                            <AlertDescription>
+                              Order amount (₹{currentOrderTotal.toFixed(2)}) exceeds the maximum limit of ₹10,000 for test payments. 
+                              Please reduce the order amount to proceed.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </div>
+                  ) : cartItems.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        {cartItems.map(item => (
+                          <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl glass">
+                             {item.image && (
+                                <Image 
+                                    src={item.image} 
+                                    alt={item.name} 
+                                    width={48} 
+                                    height={48} 
+                                    className="rounded-lg object-contain border border-border/50"
+                                    data-ai-hint={item.name.toLowerCase()}
+                                    unoptimized={item.image.startsWith('https://placehold.co')}
+                                    onError={(e) => e.currentTarget.src = 'https://placehold.co/48x48.png'}
+                                  />
+                             )}
+                            <div className="flex-grow">
+                              <p className="font-medium text-sm">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                            </div>
+                            <span className="font-semibold text-primary">₹{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
-                       </>
-                    )}
-                     <Separator className="my-2" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-semibold text-accent">Rs.0.00</span>
-                    </div>
-                     <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
-                      <span>Total</span>
-                      <span>Rs.{currentOrderTotal.toFixed(2)}</span>
-                    </div>
-
-                  </>
-                ) : cartItems.length > 0 ? (
-                  <>
-                    {cartItems.map(item => (
-                      <div key={item.id} className="flex items-center gap-2 text-xs">
-                         {item.image && (
-                            <Image 
-                                src={item.image} 
-                                alt={item.name} 
-                                width={32} 
-                                height={32} 
-                                className="rounded-sm object-cover border"
-                                data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
-                                unoptimized={item.image.startsWith('https://placehold.co')}
-                                onError={(e) => e.currentTarget.src = 'https://placehold.co/32x32.png'}
-                              />
-                         )}
-                        <span className="flex-grow">{item.quantity}x {item.name}</span>
-                        <span className="font-semibold text-accent">Rs.{(item.price * item.quantity).toFixed(2)}</span>
                       </div>
-                    ))}
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-semibold">
-                      <span>Subtotal</span>
-                      <span className="text-accent">Rs.{getCartTotal().toFixed(2)}</span>
+                      
+                      <Separator className="my-4" />
+                      
+                      {/* Coupon Input for Cart Items */}
+                      <CouponInput
+                        orderTotal={originalOrderTotal}
+                        subscriptionType={null}
+                        userId={user?.id}
+                        isAdmin={isAdmin}
+                        onCouponApply={handleCouponApply}
+                        onCouponRemove={handleCouponRemove}
+                        appliedCoupon={appliedCoupon}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      {/* Referral Input for Cart Items */}
+                      <ReferralInput
+                        onReferralApply={handleReferralApply}
+                        onReferralRemove={handleReferralRemove}
+                        appliedReferral={appliedReferral}
+                        userId={user?.id}
+                        disabled={isProcessingPayment}
+                      />
+                      
+                      <Separator className="my-4" />
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="font-medium">₹{getCartTotal().toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Delivery Charges</span>
+                          <span className="font-medium">
+                            {(originalOrderTotal - getCartTotal()) > 0 ? `₹${(originalOrderTotal - getCartTotal()).toFixed(2)}` : 'FREE'}
+                          </span>
+                        </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Coupon ({appliedCoupon.coupon.code})</span>
+                            <span className="font-medium text-green-600">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <Separator />
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Total</span>
+                          <span className="text-primary">₹{currentOrderTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-semibold text-accent">Rs.{(currentOrderTotal - getCartTotal()).toFixed(2)}</span>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="glass-card p-6 rounded-xl">
+                        <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                        <h3 className="font-semibold text-lg mb-2">Your cart is empty</h3>
+                        <p className="text-muted-foreground mb-4">Add some delicious juices to get started!</p>
+                        <Button asChild className="bg-gradient-to-r from-primary to-accent text-white btn-hover-lift">
+                            <Link href="/menu">Browse Our Juices</Link>
+                        </Button>
+                      </div>
                     </div>
-                    <div className="border-t pt-3 mt-3 flex justify-between text-lg font-bold text-primary">
-                      <span>Total</span>
-                      <span>Rs.{currentOrderTotal.toFixed(2)}</span>
-                    </div>
-
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Your cart is empty.</p>
-                    <Button asChild variant="link" className="mt-2 text-primary">
-                        <Link href="/menu">Browse Our Juices</Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
           </div>
         </div>
-      )}
-        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Loading checkout...</p>
-      </div>
-    }>
-      <CheckoutPageContents />
-    </Suspense>
+    <>
+      <Suspense fallback={
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-muted-foreground">Loading checkout...</p>
+        </div>
+      }>
+        <CheckoutPageContents />
+      </Suspense>
+    </>
   );
 }
-

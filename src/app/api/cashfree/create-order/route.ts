@@ -2,20 +2,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { Cashfree , CFEnvironment } from "cashfree-pg";
 import type { CreateOrderRequest } from "cashfree-pg";
+import { supabase } from '@/lib/supabaseClient';
+import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 
 // Load environment variables
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const CASHFREE_API_MODE = process.env.CASHFREE_API_MODE as "sandbox" | "production" | undefined || "sandbox"; // Default to sandbox
 const API_VERSION = "2023-08-01"; // Or your desired API version
-
-// More explicit logging for environment variables right at module load time
-console.log("------------------------------------------------------");
-console.log("[Cashfree API Init - Module Load] SERVER_SIDE_ENV_CHECK:");
-console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_APP_ID: ${CASHFREE_APP_ID ? `'${CASHFREE_APP_ID}' (Present)` : 'MISSING or EMPTY'}`);
-console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_SECRET_KEY: ${CASHFREE_SECRET_KEY ? 'Present (Secret - value not logged)' : 'MISSING or EMPTY'}`);
-console.log(`[Cashfree API Init - Module Load] process.env.CASHFREE_API_MODE: ${CASHFREE_API_MODE}`);
-console.log("------------------------------------------------------");
 
 const cashfree = new Cashfree(
   CASHFREE_API_MODE === "production" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
@@ -62,6 +57,24 @@ export async function POST(request: NextRequest) {
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
       return NextResponse.json({ success: false, message: 'Invalid order amount.' }, { status: 400 });
     }
+    
+    // Add Cashfree sandbox amount validation
+    if (CASHFREE_API_MODE === "sandbox" && orderAmount > 10000) {
+      return NextResponse.json({ 
+        success: false, 
+        message: `Order amount (₹${orderAmount}) exceeds the maximum limit of ₹10,000 for sandbox payments. Please reduce the order amount.` 
+      }, { status: 400 });
+    }
+    
+    if (orderAmount > 100000) { // General production limit
+      return NextResponse.json({ 
+        success: false, 
+        message: `Order amount (₹${orderAmount}) exceeds the maximum limit of ₹1,00,000. Please contact support for large orders.` 
+      }, { status: 400 });
+    }
+    
+    console.log(`[Cashfree API] Processing order amount: ₹${orderAmount} in ${CASHFREE_API_MODE} mode`);
+    
     console.log("customerinfo",customerInfo.email)
     console.log("customerinfo",customerInfo.phone)
     if (!customerInfo || !customerInfo.email || !customerInfo.phone) {
@@ -75,8 +88,12 @@ export async function POST(request: NextRequest) {
     const cashfreeOrderId = `elixr_${internalOrderId}`; // Prefixing to ensure uniqueness and identification
 
     // Construct return and notify URLs including the internalOrderId
-    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/order-success?order_id=${internalOrderId}`;
-    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
+    // const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/order-success?order_id=${internalOrderId}`;
+    // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
+    // const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.exlir.in'}/order-success?order_id=${internalOrderId}`;
+    // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.elixr.in'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
+    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/order-success?order_id=${internalOrderId}`;
+    const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/.netlify/functions/payment-confirm?order_id=${internalOrderId}`;
     const customer_id = `${customerInfo.name?.substring(0, 4) || ""}_${customerInfo.phoneNumber?.replace(/\D/g, '').substring(0, 5) || ""}`;
 
     const orderRequest: CreateOrderRequest = {
@@ -104,22 +121,38 @@ export async function POST(request: NextRequest) {
     try {
       const cfOrder = await cashfree.PGCreateOrder(orderRequest);
       console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Status:", cfOrder.status);
-      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));
+      console.log("[Cashfree Create Order API] Cashfree SDK PGCreateOrder Response Data:", JSON.stringify(cfOrder.data, null, 2));      if (cfOrder.data && cfOrder.data.payment_session_id) {
+        // Update the order record with Cashfree details
+        if (supabase) {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+              cashfree_order_id: cfOrder.data.order_id,
+              payment_session_id: cfOrder.data.payment_session_id,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', internalOrderId);
 
-      if (cfOrder.data && cfOrder.data.payment_session_id) {
-        // Optionally update the order in Supabase with Cashfree order details here
-        // if you need to store cashfree_order_id or status immediately.
-        // A more robust approach is handling status updates via the webhook.
+          if (updateError) {
+            console.error("[Cashfree Create Order API] Failed to update order with Cashfree details:", updateError);
+            // Continue execution but log the error
+          } else {
+            console.log("[Cashfree Create Order API] Successfully updated order with Cashfree details");
+          }
+        } else {
+          console.error("[Cashfree Create Order API] Supabase client not available for updating order");
+        }
 
+        // Order is already created in the orders/create API. Only send emails here if needed.
+        // Send confirmation emails
         return NextResponse.json({
           success: true,
           message: 'Order created successfully with Cashfree.',
           data: {
-            // Return relevant data to the frontend
-            cashfreeOrderId: cfOrder.data.order_id, // Return Cashfree's ID
+            cashfreeOrderId: cfOrder.data.order_id,
             paymentSessionId: cfOrder.data.payment_session_id,
             orderToken: cfOrder.data.payment_session_id,
-            internalOrderId: internalOrderId, // Pass internalOrderId back
+            internalOrderId: internalOrderId,
             rawResponse: cfOrder.data,
           },
         });

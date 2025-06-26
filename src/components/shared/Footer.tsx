@@ -12,21 +12,26 @@ const Footer = () => {
             <Logo />
             <p className="mt-2 text-sm text-center md:text-left">Freshly pressed juices, delivered to you.</p>
           </div>
-          
-          <nav className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 text-sm">
+            <nav className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 text-sm">
             <Link href="/menu" className="hover:text-primary transition-colors">Menu</Link>
             <Link href="/subscriptions" className="hover:text-primary transition-colors">Subscriptions</Link>
             <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
-            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link> {/* Example additional link */}
+            <Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
           </nav>
 
           <div className="flex justify-center md:justify-end items-center gap-4">
             <Link href="#" aria-label="Facebook" className="hover:text-primary transition-colors">
               <Facebook className="h-5 w-5" />
             </Link>
-            <Link href="#" aria-label="Instagram" className="hover:text-primary transition-colors">
+            <a
+              href="https://instagram.com/elixr_healthy_sips"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="hover:text-primary transition-colors"
+            >
               <Instagram className="h-5 w-5" />
-            </Link>
+            </a>
             <Link href="#" aria-label="Twitter" className="hover:text-primary transition-colors">
               <Twitter className="h-5 w-5" />
             </Link>

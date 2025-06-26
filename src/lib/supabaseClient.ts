@@ -42,15 +42,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
     );
     // isEffectivelyConfigured remains false, supabaseInstance remains null
   }
-
   if (isValidUrlFormat) {
     try {
       supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-      console.log("SupabaseClientInit: Supabase client initialized successfully with URL:", supabaseUrl);
       isEffectivelyConfigured = true;
     } catch (error) { // This catch is for other errors from createClient itself
       console.error("SupabaseClientInit: Error initializing Supabase client (even with a seemingly valid URL format):", error);
-      console.error("SupabaseClientInit: The configuration that failed was URL:", supabaseUrl, "Anon Key:", supabaseAnonKey ? 'Present (not logged for security)' : 'Missing');
       supabaseInstance = null;
       isEffectivelyConfigured = false;
     }

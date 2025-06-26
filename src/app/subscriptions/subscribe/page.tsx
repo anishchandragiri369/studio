@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Suspense, useState, useEffect } from 'react';
@@ -10,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { SUBSCRIPTION_PLANS, JUICES } from '@/lib/constants';
+import SubscriptionDurationSelector from '@/components/subscriptions/SubscriptionDurationSelector';
+import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { SubscriptionPlan, Juice } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 
@@ -20,10 +21,10 @@ function SubscribePageContents() {
   const router = useRouter(); // Initialize useRouter
   const planId = searchParams.get('plan');
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
-
   const [customSelections, setCustomSelections] = useState<CustomSelections>({});
   const [totalSelectedJuices, setTotalSelectedJuices] = useState(0);
-
+  const [selectedDuration, setSelectedDuration] = useState<1 | 2 | 3 | 4 | 6 | 12>(selectedPlan?.frequency === 'weekly' ? 2 : 3);
+  const [selectedPricing, setSelectedPricing] = useState<any>(null);
   useEffect(() => {
     if (selectedPlan && selectedPlan.isCustomizable && selectedPlan.defaultJuices) {
       const initialSelections: CustomSelections = {};
@@ -37,8 +38,16 @@ function SubscribePageContents() {
     } else {
       setCustomSelections({});
       setTotalSelectedJuices(0);
+    }    // Initialize pricing when plan loads
+    if (selectedPlan) {
+      const initialPricing = SubscriptionManager.calculateSubscriptionPricing(
+        selectedPlan.pricePerDelivery, 
+        selectedDuration,
+        selectedPlan.frequency
+      );
+      setSelectedPricing(initialPricing);
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, selectedDuration]);
   
   useEffect(() => {
     const currentTotal = Object.values(customSelections).reduce((sum, qty) => sum + qty, 0);
@@ -68,22 +77,59 @@ function SubscribePageContents() {
       return updatedSelections;
     });
   };
-
   const canAddMore = selectedPlan?.maxJuices ? totalSelectedJuices < selectedPlan.maxJuices : true;
-
+  const handleDurationSelect = (duration: 1 | 2 | 3 | 4 | 6 | 12, pricing: any) => {
+    setSelectedDuration(duration);
+    setSelectedPricing(pricing);
+  };
   const handleProceedToCheckout = () => {
-    if (!selectedPlan) return;
+    console.log('Proceed to checkout clicked');
+    console.log('selectedPlan:', selectedPlan);
+    console.log('selectedPricing:', selectedPricing);
+    console.log('selectedDuration:', selectedDuration);
+    
+    if (!selectedPlan) {
+      console.error('No selected plan');
+      return;
+    }
+      if (!selectedPricing) {
+      console.error('No selected pricing - initializing now');      // Try to initialize pricing if it's missing
+      const pricing = SubscriptionManager.calculateSubscriptionPricing(
+        selectedPlan.pricePerDelivery, 
+        selectedDuration,
+        selectedPlan.frequency
+      );
+      setSelectedPricing(pricing);
+      
+      // Use the calculated pricing for navigation
+      const queryParams = new URLSearchParams();
+      queryParams.append('planId', selectedPlan.id);
+      queryParams.append('planName', selectedPlan.name);
+      queryParams.append('planPrice', pricing.finalPrice.toString());
+      queryParams.append('planFrequency', selectedPlan.frequency);
+      queryParams.append('subscriptionDuration', selectedDuration.toString());
+      queryParams.append('basePrice', selectedPlan.pricePerDelivery.toString());
+
+      if (selectedPlan.isCustomizable && Object.keys(customSelections).length > 0) {
+        queryParams.append('selectedJuices', JSON.stringify(customSelections));
+      }
+
+      router.push(`/checkout?${queryParams.toString()}`);
+      return;
+    }
 
     const queryParams = new URLSearchParams();
     queryParams.append('planId', selectedPlan.id);
     queryParams.append('planName', selectedPlan.name);
-    queryParams.append('planPrice', selectedPlan.pricePerDelivery.toString());
+    queryParams.append('planPrice', selectedPricing.finalPrice.toString()); // Use final price with discount
     queryParams.append('planFrequency', selectedPlan.frequency);
+    queryParams.append('subscriptionDuration', selectedDuration.toString());
+    queryParams.append('basePrice', selectedPlan.pricePerDelivery.toString());
 
     if (selectedPlan.isCustomizable && Object.keys(customSelections).length > 0) {
       queryParams.append('selectedJuices', JSON.stringify(customSelections));
     }
-    
+
     router.push(`/checkout?${queryParams.toString()}`);
   };
 
@@ -125,7 +171,15 @@ function SubscribePageContents() {
                     })}
                   </ul>
                 </div>
-              )}
+              )}            </div>
+
+            {/* Duration Selector */}            <div className="space-y-4">
+              <SubscriptionDurationSelector
+                basePrice={selectedPlan.pricePerDelivery}
+                frequency={selectedPlan.frequency}
+                selectedDuration={selectedDuration}
+                onDurationSelect={handleDurationSelect}
+              />
             </div>
 
             {selectedPlan.isCustomizable && (
@@ -146,7 +200,7 @@ function SubscribePageContents() {
                         alt={juice.name} 
                         width={80} 
                         height={80} 
-                        className="rounded-lg object-cover shadow-md" 
+                        className="rounded-lg object-contain shadow-md" 
                         data-ai-hint={juice.dataAiHint || juice.name.toLowerCase()}
                       />
                       <p className="font-medium text-sm mt-1">{juice.name}</p>
@@ -199,15 +253,33 @@ function SubscribePageContents() {
               <h3 className="text-lg font-semibold mb-2">Next Steps</h3>
               <p className="text-muted-foreground mb-4">
                 Confirm your selections and proceed to checkout.
-              </p>
-              <Button 
+              </p>              <Button 
                 onClick={handleProceedToCheckout}
                 size="lg" 
                 className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                disabled={selectedPlan.isCustomizable && selectedPlan.maxJuices && totalSelectedJuices > selectedPlan.maxJuices}
+                disabled={
+                  !selectedPricing || 
+                  (selectedPlan.isCustomizable && selectedPlan.maxJuices ? totalSelectedJuices > selectedPlan.maxJuices : false)
+                }
               >
-                <ShoppingCart className="mr-2 h-5 w-5" /> Proceed to Checkout
+                <ShoppingCart className="mr-2 h-5 w-5" /> 
+                {!selectedPricing ? 'Loading...' : 'Proceed to Checkout'}
               </Button>
+              {!selectedPricing && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Calculating pricing...
+                </p>
+              )}
+              {selectedPricing && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Total: ₹{selectedPricing.finalPrice?.toFixed(2)} 
+                  {selectedPricing.discountAmount > 0 && (
+                    <span className="text-green-600 ml-2">
+                      (Save ₹{selectedPricing.discountAmount.toFixed(2)})
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
