@@ -1,14 +1,16 @@
 
 import type {NextConfig} from 'next';
 
-// Detect build mode from environment
-const isMobileBuild = process.env.MOBILE_BUILD === 'true' || process.env.BUILD_TARGET === 'mobile';
-const isStaticExport = isMobileBuild || process.env.STATIC_EXPORT === 'true';
+// Simple, explicit build mode detection - ONLY enable export for mobile builds
+const isMobileBuild = process.env.MOBILE_BUILD === 'true';
+
+console.log('🔧 Next.js Config:');
+console.log('  process.env.MOBILE_BUILD:', process.env.MOBILE_BUILD);
+console.log('  isMobileBuild:', isMobileBuild);
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  // Conditionally enable static export for mobile builds
-  ...(isStaticExport && { output: 'export' }),
+  // Only set output export if explicitly building for mobile
+  ...(isMobileBuild ? { output: 'export' } : {}),
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -35,12 +37,14 @@ const nextConfig: NextConfig = {
       },
     ],
     unoptimized: true,
-    // Only use custom loader for static export builds
-    ...(isStaticExport && {
+    // Only use custom loader for mobile builds
+    ...(isMobileBuild ? {
       loader: 'custom',
       loaderFile: './src/lib/imageLoader.ts',
-    }),
+    } : {}),
   },
 };
+
+console.log('  Final config will have output export:', !!nextConfig.output);
 
 export default nextConfig;
