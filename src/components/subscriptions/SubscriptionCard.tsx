@@ -14,6 +14,7 @@ import { Calendar, Clock, Pause, Play, AlertTriangle, CheckCircle, Package, Crow
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import SubscriptionRenewalDialog from './SubscriptionRenewalDialog';
 import DeliverySchedule from './DeliverySchedule';
+import { apiPost } from '@/lib/apiUtils';
 import type { UserSubscription } from '@/lib/types';
 
 interface SubscriptionCardProps {
@@ -59,7 +60,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
 
     setIsPausing(true);
     try {
-      const response = await fetch('/api/subscriptions/pause', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/pause`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -107,7 +108,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
 
     setIsReactivating(true);
     try {
-      const response = await fetch('/api/subscriptions/reactivate', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/reactivate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -240,6 +241,28 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 <Calendar className="h-4 w-4 text-blue-500" />
                 <span>Next delivery: {SubscriptionManager.formatDate(subscription.next_delivery_date)}</span>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const result = await apiPost('/api/subscriptions/regenerate-schedule', {});
+                    if (result.success) {
+                      toast({
+                        title: "Schedule Regenerated",
+                        description: `Updated ${result.data.processedCount} subscriptions with daily deliveries`,
+                        variant: "default",
+                      });
+                      onUpdate();
+                    }
+                  } catch (error) {
+                    console.error('Error regenerating schedule:', error);
+                  }
+                }}
+                className="text-xs"
+              >
+                Regen Daily
+              </Button>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

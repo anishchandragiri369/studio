@@ -63,7 +63,7 @@ export default function RewardsDisplay() {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`/api/rewards/user/${user.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/user/${user.id}`);
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -85,7 +85,7 @@ export default function RewardsDisplay() {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`/api/rewards/transactions/${user.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/transactions/${user.id}`);
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -143,7 +143,7 @@ export default function RewardsDisplay() {
 
     setRedeemLoading(true);
     try {
-      const response = await fetch('/api/rewards/redeem', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

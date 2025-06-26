@@ -1,9 +1,14 @@
 
 import type {NextConfig} from 'next';
 
+// Detect build mode from environment
+const isMobileBuild = process.env.MOBILE_BUILD === 'true' || process.env.BUILD_TARGET === 'mobile';
+const isStaticExport = isMobileBuild || process.env.STATIC_EXPORT === 'true';
+
 const nextConfig: NextConfig = {
   /* config options here */
-  // output: 'export', // Required for Capacitor static export
+  // Conditionally enable static export for mobile builds
+  ...(isStaticExport && { output: 'export' }),
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -18,8 +23,23 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '**', // Allow all HTTPS domains
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
     ],
-    unoptimized: true, // Required for static export if not using a custom loader
+    unoptimized: true,
+    // Only use custom loader for static export builds
+    ...(isStaticExport && {
+      loader: 'custom',
+      loaderFile: './src/lib/imageLoader.ts',
+    }),
   },
 };
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { CartItem, Juice } from '@/lib/types';
@@ -23,7 +22,7 @@ const CART_STORAGE_KEY = 'elixrCart';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const { user, authLoading } = useAuth(); // Removed isAdmin as it wasn't used
+  const { user, loading } = useAuth(); // Use 'loading' instead of 'authLoading'
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,10 +38,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   // Effect to clear cart when authentication state is resolved and no user is logged in
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!loading && !user) {
       clearCart(false); // Clear cart without toast if user logs out or session ends
     }
-  }, [user, authLoading, saveCartToLocalStorage]); // Added saveCartToLocalStorage to dependencies of clearCart called here
+  }, [user, loading, saveCartToLocalStorage]); // Update dependencies to use 'loading'
 
   const addToCart = (juice: Juice, quantityToAdd: number = 1) => {
     setCartItems(prevItems => {

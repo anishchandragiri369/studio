@@ -39,14 +39,14 @@ export default function RewardsDisplay({ userId }: RewardsDisplayProps) {
       setLoading(true);
       
       // Initialize rewards if needed
-      await fetch('/api/rewards/initialize', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
       });
 
       // Fetch current rewards
-      const response = await fetch(`/api/rewards/user/${userId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/user/${userId}`);
       const result = await response.json();
       
       if (result.success && result.data) {

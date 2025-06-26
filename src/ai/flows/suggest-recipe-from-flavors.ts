@@ -1,4 +1,6 @@
-'use server';
+// This file contains AI flow functions for static export compatibility.
+// Server Actions ('use server') are not supported in static export.
+
 /**
  * @fileOverview This file defines a Genkit flow for suggesting juice recipes based on user-specified flavors.
  *
@@ -7,42 +9,23 @@
  * - SuggestRecipeFromFlavorsOutput - The return type for the suggestRecipeFromFlavors function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const SuggestRecipeFromFlavorsInputSchema = z.object({
-  flavors: z.array(z.string()).describe('A list of juice flavors to combine in a recipe.'),
-});
-export type SuggestRecipeFromFlavorsInput = z.infer<typeof SuggestRecipeFromFlavorsInputSchema>;
-
-const SuggestRecipeFromFlavorsOutputSchema = z.object({
-  recipeName: z.string().describe('The name of the suggested juice recipe.'),
-  ingredients: z.string().describe('A list of ingredients and their ratios for the recipe.'),
-  instructions: z.string().describe('Instructions on how to prepare the juice recipe.'),
-});
-export type SuggestRecipeFromFlavorsOutput = z.infer<typeof SuggestRecipeFromFlavorsOutputSchema>;
-
-export async function suggestRecipeFromFlavors(input: SuggestRecipeFromFlavorsInput): Promise<SuggestRecipeFromFlavorsOutput> {
-  return suggestRecipeFromFlavorsFlow(input);
+export interface SuggestRecipeFromFlavorsInput {
+  flavors: string[];
 }
 
-const prompt = ai.definePrompt({
-  name: 'suggestRecipeFromFlavorsPrompt',
-  input: {schema: SuggestRecipeFromFlavorsInputSchema},
-  output: {schema: SuggestRecipeFromFlavorsOutputSchema},
-  prompt: `You are an expert mixologist specializing in creating unique and delicious juice recipes. Given a list of juice flavors, create a novel juice recipe with a descriptive name, a list of ingredients and their ratios, and instructions on how to prepare the juice.
+export interface SuggestRecipeFromFlavorsOutput {
+  recipeName: string;
+  ingredients: string;
+  instructions: string;
+}
 
-Flavors: {{flavors}}`,
-});
-
-const suggestRecipeFromFlavorsFlow = ai.defineFlow(
-  {
-    name: 'suggestRecipeFromFlavorsFlow',
-    inputSchema: SuggestRecipeFromFlavorsInputSchema,
-    outputSchema: SuggestRecipeFromFlavorsOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+// Placeholder function for static export compatibility
+export async function suggestRecipeFromFlavors(input: SuggestRecipeFromFlavorsInput): Promise<SuggestRecipeFromFlavorsOutput> {
+  // This would normally use AI to generate recipe suggestions
+  // For static export, return mock data or empty results
+  return {
+    recipeName: "Tropical Fusion",
+    ingredients: "2 cups pineapple juice, 1 cup mango juice, 1/2 cup orange juice",
+    instructions: "Combine all ingredients in a pitcher. Stir well and serve over ice."
+  };
+}

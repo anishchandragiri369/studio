@@ -1,6 +1,6 @@
 // This is an AI-powered code! Please review and test carefully.
-
-'use server';
+// This file contains AI flow functions for static export compatibility.
+// Server Actions ('use server') are not supported in static export.
 
 /**
  * @fileOverview Recommends personalized juice combinations based on user preferences and order history.
@@ -10,66 +10,30 @@
  * - RecommendJuiceCombinationsOutput - The return type for the recommendJuiceCombinations function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+export interface RecommendJuiceCombinationsInput {
+  pastOrders: string;
+  preferences?: string;
+}
 
-const RecommendJuiceCombinationsInputSchema = z.object({
-  pastOrders: z
-    .string()
-    .describe(
-      'A stringified JSON array of the user historical juice orders, including juice names and quantities.'
-    ),
-  preferences: z
-    .string()
-    .optional()
-    .describe(
-      'A stringified JSON object of the user preferences, including favorite flavors, dietary restrictions, and health goals.'
-    ),
-});
+export interface RecommendJuiceCombinationsOutput {
+  recommendations: string;
+}
 
-export type RecommendJuiceCombinationsInput = z.infer<
-  typeof RecommendJuiceCombinationsInputSchema
->;
-
-const RecommendJuiceCombinationsOutputSchema = z.object({
-  recommendations: z
-    .string()
-    .describe(
-      'A stringified JSON array of juice combination recommendations, including juice names and quantities.  Each element of the array represents one recommended juice combination.'
-    ),
-});
-
-export type RecommendJuiceCombinationsOutput = z.infer<
-  typeof RecommendJuiceCombinationsOutputSchema
->;
-
+// Placeholder function for static export compatibility
 export async function recommendJuiceCombinations(
   input: RecommendJuiceCombinationsInput
 ): Promise<RecommendJuiceCombinationsOutput> {
-  return recommendJuiceCombinationsFlow(input);
+  // This would normally use AI to generate recommendations
+  // For static export, return mock data or empty results
+  return {
+    recommendations: JSON.stringify([
+      {
+        name: "Tropical Boost",
+        description: "A refreshing blend of tropical fruits",
+        ingredients: ["Pineapple", "Mango", "Orange"],
+        healthBenefits: ["Vitamin C", "Antioxidants"],
+        matchScore: 0.9
+      }
+    ])
+  };
 }
-
-const prompt = ai.definePrompt({
-  name: 'recommendJuiceCombinationsPrompt',
-  input: {schema: RecommendJuiceCombinationsInputSchema},
-  output: {schema: RecommendJuiceCombinationsOutputSchema},
-  prompt: `You are a personal juice recommender. Analyze the customer's past orders and preferences to provide personalized juice combination suggestions. Return a JSON array of juice combinations.
-
-Past Orders: {{{pastOrders}}}
-Preferences: {{{preferences}}}
-
-Based on this data, what juice combinations would you recommend? Please format your response as a JSON array.
-`,
-});
-
-const recommendJuiceCombinationsFlow = ai.defineFlow(
-  {
-    name: 'recommendJuiceCombinationsFlow',
-    inputSchema: RecommendJuiceCombinationsInputSchema,
-    outputSchema: RecommendJuiceCombinationsOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

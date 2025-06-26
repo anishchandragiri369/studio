@@ -1,32 +1,41 @@
-
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.elixr.app',
   appName: 'Elixr',
-  webDir: 'out', // Corresponds to Next.js static export directory
+  webDir: 'out', // Use Next.js static export output
   server: {
-    androidScheme: 'https', // Recommended for Android
-    // For local development with live reload, you might temporarily set:
-    // hostname: 'localhost:9002', // Your Next.js dev server
-    // androidScheme: 'http',
-    // iosScheme: 'http',
-    // But for production builds, use the static webDir.
+    androidScheme: 'https',
+    // For development with live reload:
+    // url: 'http://192.168.29.232:9002',
+    cleartext: true
+    // For production, comment out the url above and use webDir
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: true,
-      backgroundColor: "#ffffffff", // Example: white
-      // androidSplashResourceName: "splash",
-      // iosSplashResourceName: "Splash",
+      backgroundColor: "#ffffff",
+      androidSplashResourceName: "splash",
       showSpinner: true,
       androidSpinnerStyle: "large",
-      iosSpinnerStyle: "large",
-      spinnerColor: "#F2994A", // Your primary color
+      spinnerColor: "#F2994A",
       splashFullScreen: true,
       splashImmersive: true,
     },
+    StatusBar: {
+      style: 'LIGHT',
+      backgroundColor: '#ffffff',
+      overlaysWebView: false, // Prevent status bar from overlaying the web view
+    },
+    Keyboard: {
+      resizeOnFullScreen: true,
+    },
+    App: {
+      disallowOverscroll: true,
+    },
+    Haptics: {},
+    Network: {},
   },
 };
 

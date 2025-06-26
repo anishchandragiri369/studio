@@ -75,8 +75,8 @@ export default function AnalyticsDashboard() {
     setLoading(true);
     try {
       const [couponResponse, referralResponse] = await Promise.all([
-        fetch(`/api/analytics/coupons?days=${dateRange}`),
-        fetch(`/api/analytics/referrals?days=${dateRange}`)
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/analytics/coupons?days=${dateRange}`),
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/analytics/referrals?days=${dateRange}`)
       ]);
 
       if (couponResponse.ok) {
