@@ -157,7 +157,8 @@ export default function MySubscriptionsPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Subscription Management Rules</AlertTitle>
               <AlertDescription>
-                • You may pause your subscription at any time with 24 hours notice before next delivery.<br />
+                • You may pause your subscription with <strong>24 hours notice</strong> before the next delivery.<br />
+                • If your next delivery is within 24 hours, you cannot pause until after the delivery.<br />
                 • Subscription can be reactivated within 3 months from pause date.<br />
                 • After 3 months, paused subscriptions will expire and cannot be reactivated.
               </AlertDescription>

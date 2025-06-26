@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -239,31 +240,6 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 <Calendar className="h-4 w-4 text-blue-500" />
                 <span>Next delivery: {SubscriptionManager.formatDate(subscription.next_delivery_date)}</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/subscriptions/regenerate-schedule', {
-                      method: 'POST'
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                      toast({
-                        title: "Schedule Regenerated",
-                        description: `Updated ${result.data.processedCount} subscriptions with daily deliveries`,
-                        variant: "default",
-                      });
-                      onUpdate();
-                    }
-                  } catch (error) {
-                    console.error('Error regenerating schedule:', error);
-                  }
-                }}
-                className="text-xs"
-              >
-                Regen Daily
-              </Button>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -346,19 +322,32 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         )}
       </CardContent>
 
-      <CardFooter className="flex gap-2">
+      <CardFooter className="flex flex-col gap-3">
         {subscription.status === 'active' && (
-          <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={!canPause}
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Pause Subscription
-              </Button>
-            </DialogTrigger>
+          <div className="w-full space-y-2">
+            <div className="flex gap-2">
+              <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+                <DialogTrigger asChild>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled={!canPause}
+                        >
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause Subscription
+                        </Button>
+                      </TooltipTrigger>
+                      {!canPause && (
+                        <TooltipContent>
+                          <p>{SubscriptionManager.canPauseSubscription(subscription.next_delivery_date).reason}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Pause Subscription</DialogTitle>
@@ -404,6 +393,31 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
               </DialogFooter>
             </DialogContent>
           </Dialog>
+            </div>
+
+            {/* Show message when pause is disabled */}
+            {!canPause && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle className="text-sm">Cannot Pause Right Now</AlertTitle>
+                <AlertDescription className="text-xs">
+                  {(() => {
+                    const now = new Date();
+                    const deliveryDate = new Date(subscription.next_delivery_date);
+                    const hoursUntilDelivery = (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+                    
+                    if (hoursUntilDelivery <= 0) {
+                      return "Your delivery is overdue or happening today. You can pause after the delivery.";
+                    } else if (hoursUntilDelivery < 24) {
+                      const nextPauseTime = new Date(deliveryDate.getTime() + 24 * 60 * 60 * 1000);
+                      return `Next delivery is in ${Math.round(hoursUntilDelivery)} hour${Math.round(hoursUntilDelivery) !== 1 ? 's' : ''}. You can pause after ${nextPauseTime.toLocaleDateString()} at ${nextPauseTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`;
+                    }
+                    return "Pause is currently unavailable.";
+                  })()}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         )}
 
         {subscription.status === 'paused' && (

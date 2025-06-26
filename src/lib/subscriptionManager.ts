@@ -13,10 +13,18 @@ export class SubscriptionManager {
     const hoursUntilDelivery = (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     
     if (hoursUntilDelivery < 24) {
-      return {
-        canPause: false,
-        reason: `Cannot pause subscription. Next delivery is in ${Math.round(hoursUntilDelivery)} hours. Minimum 24 hours notice required.`
-      };
+      const hoursRemaining = Math.round(hoursUntilDelivery);
+      if (hoursRemaining <= 0) {
+        return {
+          canPause: false,
+          reason: `Cannot pause subscription. Next delivery is overdue or happening today. You can pause after the delivery.`
+        };
+      } else {
+        return {
+          canPause: false,
+          reason: `Cannot pause subscription. Next delivery is in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}. Minimum 24 hours notice required.`
+        };
+      }
     }
     
     return { canPause: true };
