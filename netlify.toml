@@ -12,7 +12,12 @@
 
 [build]
   functions = "netlify/functions"
-  command = "npm run build"
+  command = "npm run build:server"
+
+[build.environment]
+  MOBILE_BUILD = "false"
+  NEXT_PUBLIC_BUILD_MODE = "server"
+  NODE_VERSION = "18"
 
 [functions]
   external_node_modules = ["exceljs", "nodemailer"]

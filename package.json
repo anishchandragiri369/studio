@@ -25,7 +25,8 @@
     "mobile:dev:android": "npx cap run android --livereload",
     "mobile:dev:ios": "npx cap run ios --livereload",
     "mobile:build": "npm run build:static && npx cap sync",
-    "mobile:apk": "npm run mobile:build && npx cap run android"
+    "mobile:apk": "npm run mobile:build && npx cap run android",
+    "apk:build": "node scripts/build-apk.js"
   },
   "dependencies": {
     "@capacitor/app": "^7.0.1",
