@@ -285,42 +285,16 @@ const Navbar = () => {
                   <SheetClose asChild><Logo /></SheetClose>
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 </SheetHeader>                <nav className="flex flex-col gap-4">
-                  {/* Categories Section for Mobile */}
-                  <div>
-                    <SheetClose asChild>
-                      <Link
-                        href="/menu"
-                        className={`text-lg font-semibold text-foreground mb-2 block transition-colors hover:text-primary ${pathname === '/menu' ? 'text-primary' : ''}`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Categories
-                      </Link>
-                    </SheetClose>
-                    <div className="pl-3 space-y-2 mt-2">
-                      {TRADITIONAL_JUICE_CATEGORIES.map(category => (
-                        <SheetClose asChild key={category}>
-                          <Link
-                            href={`/menu?category=${encodeURIComponent(category)}`}
-                            className="block text-sm text-foreground/70 hover:text-primary transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            {category}
-                          </Link>
-                        </SheetClose>
-                      ))}
-                      <SheetClose asChild>
-                        <Link
-                          href="/menu"
-                          className="block text-sm font-medium text-primary transition-colors"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          View All Products
-                        </Link>
-                      </SheetClose>
-                    </div>
-                  </div>
-
-                  <hr className="my-2"/>
+                  {/* Categories Link for Mobile */}
+                  <SheetClose asChild>
+                    <Link
+                      href="/categories"
+                      className={`text-lg font-medium transition-colors hover:text-primary ${pathname === '/categories' ? 'text-primary' : 'text-foreground/80'}`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                  </SheetClose>
 
                   {/* Navigation Links */}
                   {navLinks.map(link => 
