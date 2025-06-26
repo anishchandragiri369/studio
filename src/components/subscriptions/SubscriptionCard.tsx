@@ -58,7 +58,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
 
     setIsPausing(true);
     try {
-      const response = await fetch('/api/subscriptions/pause', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/pause`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -106,7 +106,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
 
     setIsReactivating(true);
     try {
-      const response = await fetch('/api/subscriptions/reactivate', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/reactivate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,7 +244,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 size="sm"
                 onClick={async () => {
                   try {
-                    const response = await fetch('/api/subscriptions/regenerate-schedule', {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/regenerate-schedule`, {
                       method: 'POST'
                     });
                     const result = await response.json();

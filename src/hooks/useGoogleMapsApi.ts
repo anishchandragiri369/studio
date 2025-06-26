@@ -29,11 +29,15 @@ const checkGoogleMapsReady = (): boolean => {
     // @ts-ignore
     const infoWindow = window.google?.maps?.InfoWindow;
     
-    // Very basic check - just need Google Maps API
-    const isReady = !!(windowGoogle && maps && typeof infoWindow === 'function');
+    // Enhanced check for mobile compatibility
+    if (typeof window !== 'undefined' && windowGoogle && maps && infoWindow) {
+      console.log('Google Maps API is ready');
+      return true;
+    }
     
-    return isReady;
+    return false;
   } catch (error) {
+    console.error('Error checking Google Maps readiness:', error);
     return false;
   }
 };

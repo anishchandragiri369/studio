@@ -1,18 +1,17 @@
-
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.elixr.app',
   appName: 'Elixr',
-  webDir: 'dist', // This will be created by our build process
+  webDir: 'out', // Use Next.js static export output
   server: {
     androidScheme: 'https',
     // For development with live reload:
-    url: 'http://localhost:9002',
+    // url: 'http://192.168.29.232:9002',
     cleartext: true
-    
     // For production, comment out the url above and use webDir
-  },plugins: {
+  },
+  plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: true,
@@ -25,8 +24,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      style: 'DEFAULT',
+      style: 'LIGHT',
       backgroundColor: '#ffffff',
+      overlaysWebView: false, // Prevent status bar from overlaying the web view
     },
     Keyboard: {
       resizeOnFullScreen: true,

@@ -42,7 +42,7 @@ export default function TestWebhookPage() {
           }
         }
       };      // Call webhook directly (for testing)
-      const response = await fetch('/api/webhook/payment-confirm', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/webhook/payment-confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function TestWebhookPage() {
 
     try {
       // Call the email API to check if order exists
-      const response = await fetch('/api/send-order-email', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/send-order-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

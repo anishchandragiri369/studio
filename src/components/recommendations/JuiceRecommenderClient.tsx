@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useTransition } from 'react';
@@ -32,8 +31,8 @@ const JuiceRecommenderClient = () => {
     startTransition(async () => {
       try {
         const input: RecommendJuiceCombinationsInput = {
-          pastOrders,
-          preferences,
+          pastOrders: JSON.stringify(pastOrders),
+          preferences: JSON.stringify(preferences),
         };
         const result = await recommendJuiceCombinations(input);
         // The AI flow returns a stringified JSON, so parse it

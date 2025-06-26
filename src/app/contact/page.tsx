@@ -1,4 +1,6 @@
-import { Metadata } from 'next';
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,22 +8,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'Contact Us - Elixr',
-  description: 'Get in touch with Elixr for support, inquiries, or feedback.',
-};
-
 export default function ContactPage() {
-  // This would be a server action in a real app
-  async function handleSubmit(formData: FormData) {
-    'use server';
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const message = formData.get('message');
-    console.log('Form submitted:', { name, email, message });
-    // Here you would typically send an email or save to a database
-    // For now, we just log it.
-  }
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      message: formData.get('message'),
+    };
+
+    try {
+      // In a real app, this would make an API call to your contact endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        (e.target as HTMLFormElement).reset();
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -40,7 +65,17 @@ export default function ContactPage() {
             <CardTitle className="font-headline text-2xl text-center md:text-left">Send us a Message</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {submitStatus === 'success' && (
+                <div className="bg-green-100 text-green-800 p-3 rounded-md">
+                  Thank you! Your message has been sent successfully.
+                </div>
+              )}
+              {submitStatus === 'error' && (
+                <div className="bg-red-100 text-red-800 p-3 rounded-md">
+                  Sorry, there was an error sending your message. Please try again.
+                </div>
+              )}
               <div>
                 <Label htmlFor="name" className="font-medium">Full Name</Label>
                 <Input type="text" id="name" name="name" placeholder="John Doe" required className="mt-1" />
@@ -53,8 +88,9 @@ export default function ContactPage() {
                 <Label htmlFor="message" className="font-medium">Message</Label>
                 <Textarea id="message" name="message" placeholder="Your message here..." rows={5} required className="mt-1" />
               </div>
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3">
-                <Send className="mr-2 h-5 w-5" /> Send Message
+              <Button type="submit" disabled={isSubmitting} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-3">
+                <Send className="mr-2 h-5 w-5" /> 
+                {isSubmitting ? 'Sending...' : 'Send Message'}
               </Button>
             </form>
           </CardContent>

@@ -45,7 +45,7 @@ export default function SubscriptionRenewalDialog({
 
     setIsRenewing(true);
     try {
-      const response = await fetch('/api/subscriptions/renew', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/renew`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },        body: JSON.stringify({
           subscriptionId: subscription.id,

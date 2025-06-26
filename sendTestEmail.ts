@@ -61,8 +61,13 @@ async function sendTestEmail() {
   } catch (error) {
     console.error('Error sending test email:', error);
     // Log more details if it's an OAuth error
-    if (error.response && error.response.data) {
-      console.error('OAuth Error Details:', error.response.data);
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      (error as any).response?.data
+    ) {
+      console.error('OAuth Error Details:', (error as any).response.data);
     }
   }
 }

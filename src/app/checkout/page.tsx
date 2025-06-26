@@ -353,7 +353,7 @@ function CheckoutPageContents() {
       console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
       // const userId = user.id;
       // 1. Create order in your backend
-      const orderCreationResponse = await fetch('/api/orders/create', {
+      const orderCreationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/orders/create`, {
         method: 'POST',
         headers:
          {
@@ -382,7 +382,7 @@ function CheckoutPageContents() {
           phone: (formData as CheckoutAddressFormData).mobileNumber,
        }
       };
-      const cashfreeOrderResponse = await fetch('/api/cashfree/create-order', {
+      const cashfreeOrderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/cashfree/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

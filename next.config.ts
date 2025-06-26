@@ -3,6 +3,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -17,8 +18,20 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '**', // Allow all HTTPS domains
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
     ],
     unoptimized: true,
+    loader: 'custom',
+    loaderFile: './src/lib/imageLoader.ts',
   },
 };
 

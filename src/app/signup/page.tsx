@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -51,23 +50,20 @@ export default function SignUpPage() {
     // Call the signUp function from AuthContext
     const result = await signUp(data);
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       const supabaseError = result.error as SupabaseAuthError;
-      if (supabaseError.message.includes("User already registered")) { // Supabase often returns this specific message
+      if (supabaseError.message.includes("User already registered")) {
         setError("This email is already registered. Try logging in.");
       } else if (result.error.code === 'supabase/not-configured') {
         setError(result.error.message);
       } else {
         setError(supabaseError.message || "An unexpected error occurred during sign up. Please try again.");
       }
+    } else if ('code' in result && 'message' in result) {
+      setError(result.message);
     } else if (result.data?.user) {
-      // User object exists, check if session is null (which might indicate email confirmation needed)
-      // Supabase's signUp returns user data even if confirmation is pending.
-      // The key is that result.error is null.
       setSuccessMessage("Sign up successful! Please check your email to confirm your account. You will be able to log in after confirming.");
-      // Don't redirect here, user needs to confirm email first.
     } else {
-      // This case should ideally not be hit if Supabase returns user or error
       setError("An unexpected issue occurred. User data not received. Please try again.");
     }
     setSubmitLoading(false);

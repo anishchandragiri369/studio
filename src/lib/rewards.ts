@@ -78,7 +78,7 @@ export const validateReferralCode = async (referralCode: string, userId?: string
   }
 
   try {
-    const response = await fetch('/api/referrals/validate', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/referrals/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ referralCode, userId })

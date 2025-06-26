@@ -126,7 +126,7 @@ export interface UserSubscription {
 export interface SubscriptionDurationOption {
   months: 1 | 2 | 3 | 4 | 6 | 12;
   discountPercentage: number;
-  discountType: 'bronze' | 'silver' | 'gold' | 'platinum';
+  discountType: 'bronze' | 'silver' | 'gold' | 'platinum' | 'none';
   label: string;
   weeks?: number; // Optional field for weekly subscriptions to specify actual weeks
 }
@@ -140,4 +140,21 @@ export interface SubscriptionDelivery {
   created_at: string;
   updated_at: string;
 }
+
+// For AI Juice Combination Recommendation Input
+export type RecommendJuiceCombinationsInput = {
+  pastOrders: string;
+  preferences?: string;
+  // Add more fields as needed for your AI flow
+};
+
+export type SuggestSubscriptionPlanInput = {
+  preferences: string;
+  availableJuices: string[];
+  tastePreferences?: string;
+  consumptionHabits?: string;
+  orderHistory?: string;
+  availableJuiceFlavors?: string[];
+  // Add more fields as needed for your AI flow/component
+};
 
