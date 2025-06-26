@@ -1,9 +1,14 @@
 
 import type {NextConfig} from 'next';
 
+// Detect build mode from environment
+const isMobileBuild = process.env.MOBILE_BUILD === 'true' || process.env.BUILD_TARGET === 'mobile';
+const isStaticExport = isMobileBuild || process.env.STATIC_EXPORT === 'true';
+
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
+  // Conditionally enable static export for mobile builds
+  ...(isStaticExport && { output: 'export' }),
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -30,8 +35,11 @@ const nextConfig: NextConfig = {
       },
     ],
     unoptimized: true,
-    loader: 'custom',
-    loaderFile: './src/lib/imageLoader.ts',
+    // Only use custom loader for static export builds
+    ...(isStaticExport && {
+      loader: 'custom',
+      loaderFile: './src/lib/imageLoader.ts',
+    }),
   },
 };
 

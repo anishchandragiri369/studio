@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { apiPost } from '@/lib/apiUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -49,13 +50,7 @@ export default function TestSubscriptionPage() {
         basePrice: 120
       };
 
-      const response = await fetch('/api/subscriptions/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testPayload)
-      });
-
-      const result = await response.json();
+      const result = await apiPost('/api/subscriptions/create', testPayload);
 
       if (result.success) {
         toast({
@@ -120,13 +115,7 @@ export default function TestSubscriptionPage() {
         }
       };
 
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testOrderPayload)
-      });
-
-      const result = await response.json();
+      const result = await apiPost('/api/orders/create', testOrderPayload);
 
       if (result.success) {
         toast({

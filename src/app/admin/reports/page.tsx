@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { apiPost } from '@/lib/apiUtils';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ export default function AdminReportsPage() {
   const handleDownloadReport = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/admin-download-report', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin-download-report`, {
         method: 'GET',
       });
 
@@ -59,14 +60,7 @@ export default function AdminReportsPage() {
   const handleEmailReport = async () => {
     setIsSendingEmail(true);
     try {
-      const response = await fetch('/api/admin-send-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
+      const result = await apiPost('/api/admin-send-report', {});
 
       if (result.success) {
         toast({
