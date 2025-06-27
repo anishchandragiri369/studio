@@ -50,8 +50,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session }, error } = await supabase!.auth.getSession();
         if (error) {
           console.error('[AuthContext] Error getting initial session:', error);
+          
+          // Handle specific refresh token errors
+          if (error.message?.includes('refresh_token_not_found') || 
+              error.message?.includes('Invalid Refresh Token') ||
+              error.message?.includes('JWT expired')) {
+            console.log('[AuthContext] Refresh token invalid, clearing local auth state');
+            
+            // Clear local auth state without triggering a server-side sign out
+            await supabase!.auth.signOut({ scope: 'local' });
+            
+            // Clean up any stale localStorage entries
+            if (typeof window !== 'undefined') {
+              const authKeys = Object.keys(localStorage).filter(key => 
+                key.includes('supabase') || key.includes('auth')
+              );
+              authKeys.forEach(key => {
+                try {
+                  localStorage.removeItem(key);
+                } catch (cleanupError) {
+                  console.warn('[AuthContext] Failed to remove localStorage key:', key);
+                }
+              });
+            }
+          }
+          
           setUser(null);
-          setIsAdmin(false);        } else if (session?.user) {
+          setIsAdmin(false);
+        } else if (session?.user) {
           console.log('[AuthContext] Initial session found for user:', session.user.email);
           setUser(session.user);
           
@@ -94,8 +120,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthContext] Auth state changed:', event, session?.user?.email || 'no user');
       
+      // Handle specific auth events
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('[AuthContext] Token refreshed successfully');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] Processing SIGNED_OUT event');
+        setUser(null);
+        setIsAdmin(false);
+        
+        // Additional cleanup for signed out state
+        if (typeof window !== 'undefined') {
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => {
+            try {
+              localStorage.removeItem(key);
+            } catch (e) {
+              console.warn('[AuthContext] Failed to remove localStorage key:', key);
+            }
+          });
+        }
+        
+        if (!loading) {
+          setLoading(false);
+        }
+        return; // Early return for SIGNED_OUT
+      }
+      
       const currentUser = session?.user || null;
-      setUser(currentUser);      if (currentUser && currentUser.email) {
+      setUser(currentUser);
+      
+      if (currentUser && currentUser.email) {
         try {
           // Query the 'admins' table for this email
           // Don't use .single() to avoid 406 errors when user is not an admin
@@ -119,25 +179,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } else {
         setIsAdmin(false);
-      }
-      
-      // If the event is SIGNED_OUT, ensure complete cleanup
-      if (event === 'SIGNED_OUT') {
-        console.log('[AuthContext] Processing SIGNED_OUT event');
-        setUser(null);
-        setIsAdmin(false);
-        
-        // Additional cleanup for signed out state
-        if (typeof window !== 'undefined') {
-          const keysToRemove = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('supabase') || key.includes('auth'))) {
-              keysToRemove.push(key);
-            }
-          }
-          keysToRemove.forEach(key => localStorage.removeItem(key));
-        }
       }
       
       if (!loading) {
