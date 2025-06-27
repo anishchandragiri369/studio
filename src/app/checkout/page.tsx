@@ -379,17 +379,8 @@ function CheckoutPageContents() {
       const orderCreateUrl = `${effectiveBaseUrl}/api/orders/create`;
       console.log("Order creation URL:", orderCreateUrl);
       
-      // Test basic connectivity first
-      try {
-        console.log("Testing API connectivity...");
-        const testResponse = await fetch(`${effectiveBaseUrl}/api/orders/create`, {
-          method: 'HEAD', // Use HEAD to test connectivity without sending data
-        });
-        console.log("Connectivity test result:", testResponse.status);
-      } catch (connectivityError) {
-        console.warn("Connectivity test failed:", connectivityError);
-        // Continue anyway as HEAD might not be supported
-      }
+      // Log API endpoint for debugging
+      console.log("Using API endpoint:", orderCreateUrl);
       
       // 1. Create order in your backend with enhanced error handling
       let orderCreationResponse;

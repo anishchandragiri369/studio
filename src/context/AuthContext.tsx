@@ -146,9 +146,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         }
         
-        if (!loading) {
-          setLoading(false);
-        }
         return; // Early return for SIGNED_OUT
       }
       
@@ -180,16 +177,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setIsAdmin(false);
       }
-      
-      if (!loading) {
-        setLoading(false);
-      }
     });
     
     return () => {
       subscription?.unsubscribe();
     };
-  }, [isActuallyConfiguredAndAuthReady, loading]);
+  }, [isActuallyConfiguredAndAuthReady]);
 
   const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);

@@ -348,11 +348,12 @@ export default function OrderSuccessPage() {
                   <Link 
                     href="/"
                     onClick={(e) => {
-                      // If auth issues persist, use window.location for reliable navigation
-                      if (authError || (!user && !loading && sessionRestoreAttempted)) {
+                      // Only use window.location as last resort for severe auth issues
+                      if (authError && authError.includes('refresh_token_not_found')) {
                         e.preventDefault();
                         window.location.href = '/';
                       }
+                      // Let Next.js handle navigation in most cases
                     }}
                   >
                     <Home className="mr-2 h-4 w-4" />
@@ -367,15 +368,13 @@ export default function OrderSuccessPage() {
                   <Link 
                     href={user ? "/orders" : "/login"}
                     onClick={(e) => {
-                      // If no user and auth issues, redirect to login instead of orders
-                      if (!user && !loading) {
+                      // Only prevent default if there are clear auth issues
+                      if (!user && !loading && authError) {
                         e.preventDefault();
-                        if (authError || sessionRestoreAttempted) {
-                          window.location.href = '/login';
-                        } else {
-                          window.location.href = '/orders';
-                        }
+                        // Use router.push for better navigation
+                        router.push('/login?redirect=/orders');
                       }
+                      // Let Next.js handle navigation in all other cases
                     }}
                   >
                     <ArrowRight className="mr-2 h-4 w-4" />

@@ -114,3 +114,9 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// Add HEAD method handler for connectivity tests
+export async function HEAD(req: NextRequest) {
+  // Simple connectivity check - just return 200 OK
+  return new NextResponse(null, { status: 200 });
+}
