@@ -10,9 +10,9 @@ import { ArrowRight } from 'lucide-react';
 export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 mobile-container">
         {/* Page Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 mobile-section">
           <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
             Explore Our Categories
           </h1>
@@ -23,7 +23,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Health-Focused Categories */}
-        <section className="mb-16">
+        <section className="mb-16 mobile-section">
           <h2 className="text-3xl font-semibold text-foreground mb-8 text-center">
             Health-Focused Categories
           </h2>
@@ -35,7 +35,7 @@ export default function CategoriesPage() {
         </section>
 
         {/* Traditional Juice Categories */}
-        <section className="mb-16">
+        <section className="mb-16 mobile-section">
           <h2 className="text-3xl font-semibold text-foreground mb-8 text-center">
             Traditional Juice Categories
           </h2>
@@ -61,7 +61,7 @@ export default function CategoriesPage() {
         </section>
 
         {/* Call to Action */}
-        <div className="text-center">
+        <div className="text-center mobile-section">
           <Card className="max-w-2xl mx-auto bg-primary/5 border-primary/20">
             <CardContent className="p-8">
               <h3 className="text-2xl font-semibold text-primary mb-4">

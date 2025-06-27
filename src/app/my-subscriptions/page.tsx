@@ -58,7 +58,7 @@ export default function MySubscriptionsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -66,7 +66,7 @@ export default function MySubscriptionsPage() {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 mobile-container">
         <Alert variant="destructive" className="max-w-2xl mx-auto">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Subscriptions Unavailable</AlertTitle>

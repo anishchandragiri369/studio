@@ -82,7 +82,7 @@ export default function SubscriptionsPage() {
           <div className="absolute bottom-32 right-16 w-12 h-12 bg-accent/10 rounded-full animate-float" style={{ animationDelay: '1s' }}></div>
         </div>
         
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-4 relative z-10 text-center mobile-container">
           <div className="glass-card rounded-3xl p-8 md:p-12 max-w-4xl mx-auto animate-scale-in">
             <div className="mb-6">
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
@@ -121,8 +121,8 @@ export default function SubscriptionsPage() {
       </section>
 
       {/* Plans Section */}
-      <section id="plans-section" className="py-8 bg-background"> {/* Reduced from py-16 */}
-        <div className="container mx-auto px-4">
+      <section id="plans-section" className="py-8 bg-background mobile-section"> {/* Reduced from py-16 */}
+        <div className="container mx-auto px-4 mobile-container">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-headline font-bold gradient-text mb-2">

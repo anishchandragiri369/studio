@@ -240,15 +240,18 @@ function CheckoutPageContents() {
     };
     try {
       cashfree.checkout(checkoutOptions).then((result: any) => {
-      if (result.error) {
-        // Only log error to console, no secrets or sensitive data
-        console.error("Checkout error:", result.error.message);
-      } 
-      // No debug logs or secrets
-      if(result.paymentDetails){
-        // Payment completed, no logs
-      }
-    });
+        if (result.error) {
+          // Only log error to console, no secrets or sensitive data
+          console.error("Checkout error:", result.error.message);
+        } 
+        // No debug logs or secrets
+        if(result.paymentDetails){
+          // Payment completed successfully
+          console.log("Payment completed successfully");
+          // Clear cart after successful payment
+          clearCart(false); // Clear without toast since user will be redirected
+        }
+      });
     } catch (error) {
       console.error("Error during checkout:", error);
     }
@@ -451,7 +454,7 @@ function CheckoutPageContents() {
           <div className="absolute bottom-40 left-8 w-8 h-8 bg-secondary/8 rounded-full opacity-20 animate-float" style={{ animationDelay: '5s' }}></div>
         </div>
         <div className="relative z-10">
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 py-8 mobile-container">
             <Button variant="outline" asChild className="mb-6 glass-card border-0 btn-hover-lift">
               <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -459,7 +462,7 @@ function CheckoutPageContents() {
               </Link>
             </Button>
 
-        <section className="text-center mb-8">
+        <section className="text-center mb-8 mobile-section">
           <h1 className="text-4xl md:text-6xl font-headline font-bold gradient-text mb-4">
             Checkout
           </h1>
@@ -920,7 +923,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Suspense fallback={
-        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)] mobile-container">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Loading checkout...</p>
         </div>

@@ -163,7 +163,7 @@ function MenuPageContent() {
           <div className="absolute bottom-24 left-20 w-14 h-14 bg-gradient-to-r from-green-500 to-teal-500 rounded-full opacity-15 animate-float-ultra" style={{ animationDelay: '2s' }}></div>
           <div className="absolute top-36 left-16 w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full opacity-10 animate-float-ultra" style={{ animationDelay: '4s' }}></div>
           <div className="absolute bottom-28 right-24 w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-10 animate-float-ultra" style={{ animationDelay: '6s' }}></div>
-        </div>        <div className="container mx-auto px-4 relative z-10">
+        </div>        <div className="container mx-auto px-4 relative z-10 mobile-container">
           <div className="text-center max-w-5xl mx-auto">
             <div className="mb-4">
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/30 to-accent/30 text-white text-sm font-medium border border-white/30 shadow-lg">

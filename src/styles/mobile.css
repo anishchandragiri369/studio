@@ -60,7 +60,7 @@
 /* Touch feedback */
 .mobile-native .touchable {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
 }
 
 /* Mobile loading states */
@@ -101,185 +101,181 @@
   }
 }
 
-/* Reduce unnecessary vertical spacing for mobile-native containers and cards */
+/* Reduce unnecessary vertical spacing for mobile containers */
 @media (max-width: 768px) {
   .mobile-native .container {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
   .mobile-native .card {
-    margin-bottom: 0.75rem !important;
-    margin-top: 0.75rem !important;
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
+    margin-bottom: 1rem !important;
+    margin-top: 1rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
   .mobile-native .mb-4,
   .mobile-native .mb-6,
   .mobile-native .mb-8,
   .mobile-native .mb-12 {
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
   .mobile-native .mt-4,
   .mobile-native .mt-6,
   .mobile-native .mt-8,
   .mobile-native .mt-12 {
-    margin-top: 0.5rem !important;
+    margin-top: 0.75rem !important;
   }
   .mobile-native .py-4,
   .mobile-native .py-6,
   .mobile-native .py-8 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
   }
   .mobile-native .gap-4,
   .mobile-native .gap-6,
   .mobile-native .gap-8 {
-    gap: 0.5rem !important;
-  }
-}
-
-/* Additional mobile spacing optimizations */
-@media (max-width: 768px) {
-  /* Reduce section padding for more compact mobile layout */
-  .py-16 {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-  }
-  .py-12 {
-    padding-top: 1.5rem !important;
-    padding-bottom: 1.5rem !important;
-  }
-  .py-8 {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-  }
-  
-  /* Reduce large text margins */
-  .text-3xl,
-  .text-4xl,
-  .text-5xl {
-    line-height: 1.2 !important;
-  }
-  
-  /* Make buttons more compact on mobile */
-  .mobile-btn {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    font-size: 0.875rem !important;
-  }
-}
-
-/* More aggressive mobile spacing reductions for footer and contact sections */
-@media (max-width: 768px) {
-  /* Reduce all large gaps and spacing */
-  .gap-8 {
-    gap: 1rem !important;
-  }
-  .gap-6 {
     gap: 0.75rem !important;
   }
-  
-  /* Reduce text spacing moderately */
-  .text-sm {
-    font-size: 0.875rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  /* Make all mobile containers more compact but not ultra-tight */
-  .mobile-container {
+}
+
+/* Additional mobile spacing optimizations - balanced approach */
+@media (max-width: 768px) {
+  /* Make buttons appropriately sized for mobile */
+  .mobile-btn {
     padding-top: 0.75rem !important;
     padding-bottom: 0.75rem !important;
+    font-size: 0.875rem !important;
   }
   
-  /* Reduce flex container spacing moderately */
+  /* Improve text readability */
+  .text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Better flex container spacing */
   .flex.items-center.justify-center {
     padding-top: 0.75rem !important;
     padding-bottom: 0.75rem !important;
   }
   
-  /* Reduce py-2 classes on mobile but keep readable */
-  .py-2 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-  }
-  
-  /* Compact section spacing globally */
-  section {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-  }
-  
-  /* Reduce container padding everywhere */
-  .container {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-  }
-  
-  /* Make dividers smaller */
+  /* Reduce divider size slightly */
   .w-px.h-4 {
-    height: 0.75rem !important;
+    height: 0.875rem !important;
   }
   
-  /* Reduce icon and text spacing */
+  /* Improve icon and text spacing */
   .flex.items-center.gap-2 {
-    gap: 0.375rem !important;
+    gap: 0.5rem !important;
   }
 }
 
-/* Force mobile styles to apply with higher specificity - balanced approach */
+/* Balanced mobile spacing - not too tight, not too loose */
 @media (max-width: 768px) {
-  /* Target common spacing classes directly - more moderate reductions */
-  .mb-6, .mb-8, .mb-12 {
-    margin-bottom: 0.75rem !important;
+  /* Reduce all large gaps and spacing moderately */
+  .gap-8 {
+    gap: 1.5rem !important;
+  }
+  .gap-6 {
+    gap: 1.25rem !important;
   }
   
-  .mb-4 {
-    margin-bottom: 0.5rem !important;
+  /* Improve text spacing for readability */
+  .text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
   }
   
-  .mt-6, .mt-8, .mt-12 {
-    margin-top: 0.75rem !important;
-  }
-  
-  .mt-4 {
-    margin-top: 0.5rem !important;
-  }
-  
-  .py-8, .py-12, .py-16 {
+  /* Make all mobile containers appropriately compact */
+  .mobile-container {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
   }
   
-  .py-4, .py-6 {
+  /* Reduce flex container spacing reasonably */
+  .flex.items-center.justify-center {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Adjust py-2 classes on mobile but keep readable */
+  .py-2 {
     padding-top: 0.75rem !important;
     padding-bottom: 0.75rem !important;
   }
   
+  /* Section spacing - balanced reduction */
+  section {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  /* Container padding - moderate reduction */
+  .container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce icon and text spacing reasonably */
+  .flex.items-center.gap-2 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Apply mobile styles with balanced specificity */
+@media (max-width: 768px) {
+  /* Target common spacing classes directly - balanced reductions */
+  .mb-6, .mb-8, .mb-12 {
+    margin-bottom: 1.25rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mt-6, .mt-8, .mt-12 {
+    margin-top: 1.25rem !important;
+  }
+  
+  .mt-4 {
+    margin-top: 1rem !important;
+  }
+  
+  .py-8, .py-12, .py-16 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  .py-4, .py-6 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
   .gap-6, .gap-8 {
-    gap: 0.75rem !important;
+    gap: 1.25rem !important;
   }
   
   .gap-4 {
-    gap: 0.5rem !important;
+    gap: 1rem !important;
   }
   
-  /* Target text elements for compact display - less aggressive */
+  /* Target text elements for balanced display */
   .text-4xl, .text-5xl, .text-6xl, .text-7xl {
-    font-size: 1.875rem !important;
+    font-size: 2rem !important;
     line-height: 1.3 !important;
   }
   
   .text-3xl {
-    font-size: 1.5rem !important;
+    font-size: 1.75rem !important;
     line-height: 1.3 !important;
   }
   
-  /* Override container spacing universally - less aggressive */
+  /* Override container spacing universally - balanced */
   .container, .max-w-3xl, .max-w-4xl, .max-w-5xl {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
   }
 }
 
@@ -498,15 +494,15 @@
   }
 }
 
-/* Homepage hero section mobile spacing improvements - balanced */
+/* Homepage hero section mobile spacing improvements - well balanced */
 @media (max-width: 768px) {
   .mobile-container {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
   }
   .mobile-container .max-w-3xl {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
   }
   .mobile-container .mb-2,
   .mobile-container .mb-3,
@@ -514,17 +510,17 @@
   .mobile-container .mb-6,
   .mobile-container .mb-8,
   .mobile-container .mb-12 {
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
   .mobile-container .gap-3,
   .mobile-container .gap-4,
   .mobile-container .gap-6 {
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
   }
   .mobile-container .py-3,
   .mobile-container .py-4 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
   }
   .mobile-container .px-6,
   .mobile-container .px-8 {
@@ -532,11 +528,11 @@
     padding-right: 1rem !important;
   }
   .mobile-container .h-11 {
-    height: 2.5rem !important;
+    height: 2.75rem !important;
   }
   .mobile-container .text-3xl {
-    font-size: 1.75rem !important;
-    line-height: 2rem !important;
+    font-size: 1.875rem !important;
+    line-height: 2.25rem !important;
   }
   .mobile-container .text-base {
     font-size: 1rem !important;
@@ -546,47 +542,176 @@
   }
 }
 
-/* Ultra-compact mobile hero section - remove all unnecessary spacing */
+/* Compact but readable mobile hero section */
 @media (max-width: 768px) {
-  /* Hero section specific - eliminate top/bottom spacing */
+  /* Hero section specific - reduce but maintain readability */
   section.hero-mobile,
   .min-h-\[60vh\],
   .min-h-\[80vh\] {
-    min-height: auto !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    min-height: 50vh !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
   }
   
-  /* Reduce section padding moderately for mobile-section */
+  /* Balanced section padding for mobile-section */
   .mobile-section {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.75rem !important;
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.25rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.25rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
   }
   
-  /* More balanced max-width containers */
+  /* Balanced max-width containers */
   .max-w-3xl {
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.25rem !important;
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
   }
   
-  /* Ultra-compact star rating section */
+  /* Balanced star rating section */
   .flex.items-center.justify-center.gap-4,
   .flex.items-center.justify-center {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
   }
   
-  /* Ensure no extra spacing from flex containers */
+  /* Ensure reasonable spacing from flex containers */
   .flex.items-center.justify-center.overflow-hidden {
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0.25rem !important;
+    margin: 0.25rem !important;
+  }
+}
+
+/* Fix cart badge cropping on mobile */
+@media (max-width: 768px) {
+  /* Ensure cart badge has enough space and doesn't get cropped */
+  .relative button[aria-label="Shopping Cart"] {
+    margin-right: 0.25rem !important;
+    margin-top: 0.125rem !important;
+  }
+  
+  /* Adjust cart badge positioning for mobile to prevent cropping */
+  .relative button[aria-label="Shopping Cart"] .absolute {
+    top: -0.125rem !important;
+    right: -0.125rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    padding: 0.125rem !important;
+  }
+  
+  /* Ensure the button container has enough padding for the badge */
+  .relative button[aria-label="Shopping Cart"] {
+    padding: 0.375rem !important;
+  }
+}
+
+/* Make mobile spacing less aggressive - balanced approach */
+@media (max-width: 768px) {
+  /* Reduce section padding but keep it readable */
+  .py-16 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+  }
+  .py-12 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .py-8 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .py-6 {
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+  .py-4 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Moderate margin reductions */
+  .mb-12 {
+    margin-bottom: 2rem !important;
+  }
+  .mb-8 {
+    margin-bottom: 1.5rem !important;
+  }
+  .mb-6 {
+    margin-bottom: 1.25rem !important;
+  }
+  .mb-4 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mt-12 {
+    margin-top: 2rem !important;
+  }
+  .mt-8 {
+    margin-top: 1.5rem !important;
+  }
+  .mt-6 {
+    margin-top: 1.25rem !important;
+  }
+  .mt-4 {
+    margin-top: 1rem !important;
+  }
+  
+  /* Moderate gap reductions */
+  .gap-8 {
+    gap: 1.5rem !important;
+  }
+  .gap-6 {
+    gap: 1.25rem !important;
+  }
+  .gap-4 {
+    gap: 1rem !important;
+  }
+  .gap-3 {
+    gap: 0.75rem !important;
+  }
+  
+  /* Container spacing adjustments - less aggressive */
+  .container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .mobile-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .mobile-section {
+    padding-top: 1rem !important;
+    padding-bottom: 1.25rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Hero section adjustments - less aggressive */
+  section.hero-mobile,
+  .min-h-\[60vh\],
+  .min-h-\[80vh\] {
+    min-height: 50vh !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  /* Text size adjustments - keep readable */
+  .text-4xl, .text-5xl {
+    font-size: 2rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-3xl {
+    font-size: 1.75rem !important;
+    line-height: 1.3 !important;
   }
 }

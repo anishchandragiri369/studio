@@ -71,7 +71,7 @@ export default function LoginPage() {
 
   if (authLoading) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -80,7 +80,7 @@ export default function LoginPage() {
   if (user && isSupabaseConfigured) return null; 
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>

@@ -133,7 +133,7 @@ export default function JuiceDetailPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
+      <div className="container mx-auto px-4 py-8 text-center mobile-container">
         <Alert variant="destructive" className="max-w-md mx-auto">
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle>Error Loading Juice</AlertTitle>
@@ -148,7 +148,7 @@ export default function JuiceDetailPage() {
 
   if (!juice) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
+      <div className="container mx-auto px-4 py-8 text-center mobile-container">
         <Alert variant="default" className="max-w-md mx-auto border-orange-500">
           <AlertTriangle className="h-5 w-5 text-orange-500" />
           <AlertTitle className="text-orange-600">Juice Not Found</AlertTitle>
@@ -165,7 +165,7 @@ export default function JuiceDetailPage() {
   const displayDataAiHint = juice.data_ai_hint || juice.dataAiHint || juice.name.toLowerCase().split(" ").slice(0, 2).join(" ");
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 mobile-container">
       <Button variant="outline" asChild className="mb-8">
         <Link href="/menu"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Menu</Link>
       </Button>

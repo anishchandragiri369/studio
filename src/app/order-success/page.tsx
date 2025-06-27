@@ -6,17 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, ArrowRight, Home } from 'lucide-react';
 import Link from 'next/link';
+import { useCart } from '@/hooks/useCart';
 
 export default function OrderSuccessPage() {
   const router = useRouter();
+  const { clearCart } = useCart();
 
   useEffect(() => {
     // Set page title
     document.title = 'Order Successful - Elixr';
-  }, []);
+    
+    // Clear the cart after successful order completion
+    clearCart(false); // Clear cart without showing toast since we're on success page
+  }, [clearCart]);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-12 mobile-container">
       <div className="max-w-2xl mx-auto text-center">
         <Card className="shadow-lg">
           <CardHeader>
@@ -57,4 +62,4 @@ export default function OrderSuccessPage() {
       </div>
     </div>
   );
-} 
+}

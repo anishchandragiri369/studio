@@ -148,7 +148,7 @@ export default function OrdersPage() {
   };
   if (authLoading) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -156,7 +156,7 @@ export default function OrdersPage() {
 
   if (!isSupabaseConfigured && !authLoading) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 mobile-container">
         <Alert variant="destructive" className="max-w-2xl mx-auto">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Order History Unavailable</AlertTitle>
@@ -180,7 +180,7 @@ export default function OrdersPage() {
           <Image src="/images/fruit-bowl-custom.jpg" alt="Juice orders background" fill className="object-cover opacity-60 blur-sm pointer-events-none select-none" priority />
           <div className="absolute inset-0 bg-gradient-to-br from-orange-100/80 via-yellow-50/80 to-pink-100/80 mix-blend-multiply" />
         </div>
-        <div className="relative z-10 container mx-auto px-4 py-12">
+        <div className="relative z-10 container mx-auto px-4 py-12 mobile-container">
           <Button variant="outline" asChild className="mb-8">
             <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -188,7 +188,7 @@ export default function OrdersPage() {
             </Link>
           </Button>
           
-          <section className="text-center mb-10">
+          <section className="text-center mb-10 mobile-section">
             <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-3">
               View Your Orders
             </h1>
