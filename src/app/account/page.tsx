@@ -44,7 +44,8 @@ export default function AccountPage() {
         return;
       }
       setLoadingOrders(true);
-      setErrorFetchingOrders(null);      const { data, error } = await supabase
+      setErrorFetchingOrders(null);
+      const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)

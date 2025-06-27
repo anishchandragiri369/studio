@@ -143,7 +143,7 @@ function MenuPageContent() {
     );
   }
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Section with World of Elixirs Background */}
       <section className="relative py-4 md:py-8 overflow-hidden hero-mobile">
         <div className="absolute inset-0 z-0">
@@ -265,115 +265,117 @@ function MenuPageContent() {
             </div>
           )}
         </div>
-      </section>      {/* Products Section */}
-      <section className="py-06 bg-background">
-        <div className="container mx-auto px-4">
-          {filteredJuices.length > 0 ? (
-            <>
-              <div className="flex items-center justify-between mb-6">
-                <div className="glass-card px-6 py-4 rounded-xl shadow-soft">
-                  <p className="text-foreground/90 font-medium">
-                    ✨ Showing <span className="text-primary font-bold">{filteredJuices.length}</span> elixir{filteredJuices.length !== 1 ? 's' : ''}
-                    {selectedCategory && <span className="text-accent"> in {selectedCategory}</span>}
-                    {searchTerm && <span className="text-secondary"> for "{searchTerm}"</span>}
-                  </p>
-                </div>
-              </div>
-
-              <div className={
-                viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                  : "space-y-4"
-              }>
-                {filteredJuices.map((juice, index) => (
-                  <div 
-                    key={juice.id} 
-                    className={`animate-fade-in hover:scale-105 transition-transform duration-300 ${viewMode === 'list' ? 'max-w-2xl mx-auto' : ''}`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="card-premium rounded-2xl p-1 shadow-neon hover:shadow-glass-ultra transition-all duration-500">
-                      <JuiceCard juice={juice} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <Card className="glass-hero border-white/20 p-16 text-center max-w-lg mx-auto shadow-ultra">
-              <div className="animate-glow-pulse mb-6">
-                <Search className="w-20 h-20 text-primary mx-auto" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 gradient-text">No elixrs found</h3>
-              <p className="text-white/70 mb-6 text-lg">
-                {searchTerm 
-                  ? `No elixrs match "${searchTerm}"`
-                  : selectedCategory 
-                  ? `No elixrs available in ${selectedCategory}`
-                  : "No elixrs available"
-                }
-              </p>
-              {(searchTerm || selectedCategory) && (
-                <Button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory(null);
-                  }}
-                  variant="outline"
-                  className="glass border-white/30 text-white hover:bg-white/20 shadow-ultra px-8 py-3 rounded-xl"
-                >
-                  ✨ Clear Filters
-                </Button>
-              )}
-            </Card>
-          )}
-        </div>
-      </section>      {/* Shop by Category */}
-      {!selectedCategory && (
-        <section className="py-16 bg-background">
+      </section>      <div className="flex-1 overflow-y-auto">
+        {/* Products Section */}
+        <section className="py-06 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-4xl md:text-6xl font-headline font-bold mb-4 leading-tight text-foreground">
-                Shop by Category
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium">
-                Explore our carefully curated elixir categories, each crafted with premium ingredients
-              </p>
-            </div>
+            {filteredJuices.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="glass-card px-6 py-4 rounded-xl shadow-soft">
+                    <p className="text-foreground/90 font-medium">
+                      ✨ Showing <span className="text-primary font-bold">{filteredJuices.length}</span> elixir{filteredJuices.length !== 1 ? 's' : ''}
+                      {selectedCategory && <span className="text-accent"> in {selectedCategory}</span>}
+                      {searchTerm && <span className="text-secondary"> for "{searchTerm}"</span>}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.filter(cat => cat.count > 0).map((category, index) => (
-                <Card 
-                  key={category.name}
-                  className="border border-border/20 group cursor-pointer transition-all duration-300 animate-fade-in overflow-hidden bg-card"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => setSelectedCategory(category.name)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-                          <Star className="w-7 h-7 text-primary" />
+                <div className={
+                  viewMode === 'grid' 
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    : "space-y-4"
+                }>
+                  {filteredJuices.map((juice, index) => (
+                    <div 
+                      key={juice.id} 
+                      className={`animate-fade-in hover:scale-105 transition-transform duration-300 ${viewMode === 'list' ? 'max-w-2xl mx-auto' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="card-premium rounded-2xl p-1 shadow-neon hover:shadow-glass-ultra transition-all duration-500">
+                        <JuiceCard juice={juice} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <Card className="glass-hero border-white/20 p-16 text-center max-w-lg mx-auto shadow-ultra">
+                <div className="animate-glow-pulse mb-6">
+                  <Search className="w-20 h-20 text-primary mx-auto" />
+                </div>
+                <h3 className="text-2xl font-bold mb-4 gradient-text">No elixrs found</h3>
+                <p className="text-white/70 mb-6 text-lg">
+                  {searchTerm 
+                    ? `No elixrs match "${searchTerm}"`
+                    : selectedCategory 
+                    ? `No elixrs available in ${selectedCategory}`
+                    : "No elixrs available"
+                  }
+                </p>
+                {(searchTerm || selectedCategory) && (
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory(null);
+                    }}
+                    variant="outline"
+                    className="glass border-white/30 text-white hover:bg-white/20 shadow-ultra px-8 py-3 rounded-xl"
+                  >
+                    ✨ Clear Filters
+                  </Button>
+                )}
+              </Card>
+            )}
+          </div>
+        </section>        {/* Shop by Category */}
+        {!selectedCategory && (
+          <section className="py-16 bg-background">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl md:text-6xl font-headline font-bold mb-4 leading-tight text-foreground">
+                  Shop by Category
+                </h2>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium">
+                  Explore our carefully curated elixir categories, each crafted with premium ingredients
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {categories.filter(cat => cat.count > 0).map((category, index) => (
+                  <Card 
+                    key={category.name}
+                    className="border border-border/20 group cursor-pointer transition-all duration-300 animate-fade-in overflow-hidden bg-card"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                    onClick={() => setSelectedCategory(category.name)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                            <Star className="w-7 h-7 text-primary" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-foreground mb-1">
+                            {category.name}
+                          </h3>
+                          <p className="text-muted-foreground text-lg">
+                            {category.count} premium elixir{category.count !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <ArrowRight className="w-6 h-6 text-primary" />
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-2xl group-hover:text-primary transition-colors duration-300 text-foreground mb-1">
-                          {category.name}
-                        </h3>
-                        <p className="text-muted-foreground text-lg">
-                          {category.count} premium elixir{category.count !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <ArrowRight className="w-6 h-6 text-primary" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }

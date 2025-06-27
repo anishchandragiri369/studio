@@ -1,6 +1,21 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle preflight OPTIONS request
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
@@ -8,7 +23,7 @@ export async function GET(
   if (!supabase) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
-      { status: 503 }
+      { status: 503, headers: corsHeaders }
     );
   }
 
@@ -18,7 +33,7 @@ export async function GET(
     if (!userId) {
       return NextResponse.json(
         { success: false, message: 'User ID is required.' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -36,13 +51,13 @@ export async function GET(
           success: true,
           data: null,
           message: 'No rewards found for user.'
-        });
+        }, { headers: corsHeaders });
       }
       
       console.error('Error fetching user rewards:', rewardsError);
       return NextResponse.json(
         { success: false, message: 'Unable to fetch user rewards.' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -56,13 +71,13 @@ export async function GET(
         referralsCount: rewards.referrals_count,
         lastUpdated: rewards.last_updated
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Error in user rewards API:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error.' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

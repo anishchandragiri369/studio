@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { REWARD_CONFIG, convertPointsToAmount, canRedeemPoints } from '@/lib/rewards';
+import { isSupabaseConfigured } from '@/lib/supabaseClient';
 
 interface UserRewards {
   userId: string;
@@ -47,6 +48,12 @@ interface RewardTransaction {
 export default function RewardsDisplay() {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Early return if Supabase is not configured - don't show rewards at all
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  
   const [rewards, setRewards] = useState<UserRewards | null>(null);
   const [transactions, setTransactions] = useState<RewardTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +63,8 @@ export default function RewardsDisplay() {
     if (user?.id) {
       fetchUserRewards();
       fetchRewardTransactions();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -64,18 +73,16 @@ export default function RewardsDisplay() {
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/user/${user.id}`);
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setRewards(result.data);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setRewards(result.data);
+        }
       }
+      // Silently ignore fetch failures for rewards feature
     } catch (error) {
-      console.error('Error fetching user rewards:', error);
-      toast({
-        title: "Error",
-        description: "Unable to load your rewards. Please try again.",
-        variant: "destructive"
-      });
+      // Silently ignore errors - rewards is an optional feature
     } finally {
       setLoading(false);
     }
@@ -86,13 +93,16 @@ export default function RewardsDisplay() {
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/transactions/${user.id}`);
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setTransactions(result.data);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setTransactions(result.data);
+        }
       }
+      // Silently ignore fetch failures for rewards feature
     } catch (error) {
-      console.error('Error fetching reward transactions:', error);
+      // Silently ignore errors - rewards is an optional feature
     }
   };
 

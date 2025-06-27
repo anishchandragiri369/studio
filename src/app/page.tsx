@@ -79,6 +79,7 @@ export default function HomePage() {
         </div>
 
         <div className="container mx-auto px-3 md:px-4 relative z-10 text-center mobile-container">
+          
           <div className="max-w-3xl mx-auto text-center">
             {/* Tagline and Premium Badge */}
             <div className="mb-2 md:mb-4">

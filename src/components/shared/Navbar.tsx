@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
+import UserProfilePhoto from './UserProfilePhoto';
 import { NAV_LINKS as DEFAULT_NAV_LINKS, TRADITIONAL_JUICE_CATEGORIES } from '@/lib/constants';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -195,8 +196,8 @@ const Navbar = () => {
               {user && isSupabaseConfigured ? ( 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="User Menu" className="flex-shrink-0">
-                      <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    <Button variant="ghost" className="flex-shrink-0 p-1 rounded-full" aria-label="User Menu">
+                      <UserProfilePhoto size="sm" showName={false} showLoginPrompt={false} />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -285,7 +286,7 @@ const Navbar = () => {
                   <MenuIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] p-6 bg-background">
+              <SheetContent side="right" className="w-[280px] p-6 bg-background overflow-y-auto">
                 <SheetHeader className="mb-6 text-left">
                   <SheetClose asChild><Logo /></SheetClose>
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
