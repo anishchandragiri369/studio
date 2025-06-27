@@ -241,7 +241,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 <Calendar className="h-4 w-4 text-blue-500" />
                 <span>Next delivery: {SubscriptionManager.formatDate(subscription.next_delivery_date)}</span>
               </div>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={async () => {
@@ -262,15 +262,15 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 className="text-xs"
               >
                 Regen Daily
-              </Button>
+              </Button> */}
             </div>
             
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {/* <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
               <span>
                 {SubscriptionManager.getTimeUntilDelivery(subscription.next_delivery_date)} until next delivery
               </span>
-            </div>
+            </div> */}
 
             {/* Toggle to show full delivery schedule */}
             <Button
