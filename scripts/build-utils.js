@@ -35,11 +35,21 @@ function backupApiRoutes() {
   ensureBackupDir();
   
   const routeFiles = getAllRouteFiles(API_DIR);
+  let backedUpCount = 0;
   
   for (const routeFile of routeFiles) {
     const relativePath = path.relative(API_DIR, routeFile);
     const backupPath = path.join(BACKUP_DIR, relativePath);
     const backupDir = path.dirname(backupPath);
+    
+    // Check if the file contains real code (not a placeholder)
+    const content = fs.readFileSync(routeFile, 'utf8');
+    const isPlaceholder = content.includes('export {};') && content.includes('placeholder for static export');
+    
+    if (isPlaceholder) {
+      console.log(`⚠️  Skipping placeholder file: ${relativePath}`);
+      continue;
+    }
     
     // Create backup directory structure
     if (!fs.existsSync(backupDir)) {
@@ -48,9 +58,10 @@ function backupApiRoutes() {
     
     // Copy original file to backup
     fs.copyFileSync(routeFile, backupPath);
+    backedUpCount++;
   }
   
-  console.log(`✅ Backed up ${routeFiles.length} API route files`);
+  console.log(`✅ Backed up ${backedUpCount} API route files with real code`);
 }
 
 // Replace API routes with static export placeholders
@@ -64,11 +75,28 @@ function replaceWithPlaceholders() {
 export {};
 `;
 
+  let replacedCount = 0;
+  let removedCount = 0;
+
   for (const routeFile of routeFiles) {
-    fs.writeFileSync(routeFile, placeholder);
+    // Check if this is a dynamic route (contains [])
+    if (routeFile.includes('[') && routeFile.includes(']')) {
+      // For dynamic routes, remove the directory entirely to avoid static export issues
+      const routeDir = path.dirname(routeFile);
+      if (fs.existsSync(routeDir)) {
+        fs.rmSync(routeDir, { recursive: true, force: true });
+        removedCount++;
+        console.log(`🗑️  Removed dynamic route: ${path.relative(API_DIR, routeDir)}`);
+      }
+    } else {
+      // For non-dynamic routes, replace with placeholder
+      fs.writeFileSync(routeFile, placeholder);
+      replacedCount++;
+    }
   }
   
-  console.log(`✅ Replaced ${routeFiles.length} API route files with placeholders`);
+  console.log(`✅ Replaced ${replacedCount} static API routes with placeholders`);
+  console.log(`✅ Removed ${removedCount} dynamic API routes for static export`);
 }
 
 // Restore original API routes from backup
@@ -85,12 +113,50 @@ function restoreApiRoutes() {
   for (const backupFile of backupFiles) {
     const relativePath = path.relative(BACKUP_DIR, backupFile);
     const originalPath = path.join(API_DIR, relativePath);
+    const originalDir = path.dirname(originalPath);
+    
+    // Create directory structure if it doesn't exist (for dynamic routes that were removed)
+    if (!fs.existsSync(originalDir)) {
+      fs.mkdirSync(originalDir, { recursive: true });
+    }
     
     // Restore original file
     fs.copyFileSync(backupFile, originalPath);
   }
   
   console.log(`✅ Restored ${backupFiles.length} API route files`);
+}
+
+// Ensure we have a good backup with real code (not placeholders)
+function ensureGoodBackup() {
+  console.log('🔍 Checking backup quality...');
+  
+  if (!fs.existsSync(BACKUP_DIR)) {
+    console.log('📦 No backup found, creating fresh backup...');
+    backupApiRoutes();
+    return;
+  }
+  
+  const backupFiles = getAllRouteFiles(BACKUP_DIR);
+  let hasValidBackup = false;
+  
+  for (const backupFile of backupFiles) {
+    const content = fs.readFileSync(backupFile, 'utf8');
+    const isPlaceholder = content.includes('export {};') && content.includes('placeholder for static export');
+    
+    if (!isPlaceholder && content.trim().length > 100) {
+      hasValidBackup = true;
+      break;
+    }
+  }
+  
+  if (!hasValidBackup) {
+    console.log('⚠️  Backup contains placeholders, refreshing from current API files...');
+    fs.rmSync(BACKUP_DIR, { recursive: true, force: true });
+    backupApiRoutes();
+  } else {
+    console.log('✅ Good backup found');
+  }
 }
 
 // Clean up backup directory
@@ -110,7 +176,7 @@ function main() {
       backupApiRoutes();
       break;
     case 'prepare-static':
-      backupApiRoutes();
+      ensureGoodBackup();
       replaceWithPlaceholders();
       break;
     case 'restore':
@@ -119,14 +185,18 @@ function main() {
     case 'cleanup':
       cleanupBackup();
       break;
+    case 'ensure-backup':
+      ensureGoodBackup();
+      break;
     default:
-      console.log('Usage: node build-utils.js [backup|prepare-static|restore|cleanup]');
+      console.log('Usage: node build-utils.js [backup|prepare-static|restore|cleanup|ensure-backup]');
       console.log('');
       console.log('Commands:');
       console.log('  backup         - Backup original API routes');
-      console.log('  prepare-static - Backup and replace API routes with placeholders');
+      console.log('  prepare-static - Ensure good backup and replace API routes with placeholders');
       console.log('  restore        - Restore original API routes from backup');
       console.log('  cleanup        - Remove backup directory');
+      console.log('  ensure-backup  - Ensure we have a good backup of real API code');
   }
 }
 
