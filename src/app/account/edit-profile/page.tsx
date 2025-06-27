@@ -187,7 +187,7 @@ export default function EditProfilePage() {
           <CardContent className="space-y-6">
             <div>
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted/50" />
+              <Input id="email" type="email" value={user.email || ''} autoComplete="email" disabled className="bg-muted/50" />
               <p className="text-xs text-muted-foreground">Your email address cannot be changed here.</p>
             </div>
             
@@ -197,6 +197,7 @@ export default function EditProfilePage() {
                 id="fullName" 
                 type="text" 
                 placeholder="Enter your full name" 
+                autoComplete="name"
                 {...register("fullName")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />
@@ -219,6 +220,7 @@ export default function EditProfilePage() {
                 id="newPassword" 
                 type="password" 
                 placeholder="Enter new password (min. 6 characters)" 
+                autoComplete="new-password"
                 {...register("newPassword")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />
@@ -231,6 +233,7 @@ export default function EditProfilePage() {
                 id="confirmNewPassword" 
                 type="password" 
                 placeholder="Confirm new password" 
+                autoComplete="new-password"
                 {...register("confirmNewPassword")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />

@@ -457,3 +457,76 @@
     margin-bottom: 0.5rem !important;
   }
 }
+
+/* Categories horizontal scrolling */
+.categories-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.3) transparent;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.categories-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.categories-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.3);
+  border-radius: 2px;
+}
+
+.categories-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+/* Mobile categories improvements */
+@media (max-width: 768px) {
+  .categories-scroll {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    scrollbar-width: none; /* Hide scrollbar on mobile */
+  }
+  
+  .categories-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar on mobile */
+  }
+}
+
+/* Ultra-compact mobile header */
+@media (max-width: 768px) {
+  /* Make header extremely compact */
+  .mobile-nav {
+    height: 2.25rem !important; /* Even smaller - 36px */
+    padding: 0.125rem !important;
+    min-height: 2.25rem !important;
+    max-height: 2.25rem !important;
+  }
+  
+  /* Logo specific mobile sizing */
+  .navbar-logo {
+    padding: 0.125rem !important;
+    gap: 0.25rem !important;
+  }
+  
+  /* Hero sections - ultra compact */
+  .hero-mobile {
+    padding: 0.75rem 0 !important; /* Minimal top/bottom padding */
+    margin: 0 !important;
+  }
+  
+  /* Remove any extra spacing from sections */
+  .mobile-section {
+    padding: 0.5rem 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Container padding - minimal */
+  .mobile-container {
+    padding: 0.125rem 0.5rem !important;
+  }
+}

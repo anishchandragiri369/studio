@@ -8,14 +8,14 @@ const logoText = 'World of Elixrs';
 
 const Logo = () => {
   return (
-    <Link href="/" className="flex items-center gap-4 text-2xl md:text-3xl font-headline font-bold text-accent hover:text-accent/90 transition-colors">
+    <Link href="/" className="flex items-center gap-2 md:gap-4 text-xl md:text-2xl font-headline font-bold text-accent hover:text-accent/90 transition-colors navbar-logo">
       <img
         src="/images/elixr-logo.png"
         alt="Elixr Logo"
-        className="h-12 w-auto md:h-16 object-contain"
-        style={{ objectFit: 'contain', objectPosition: 'center', maxWidth: '180px', minWidth: '40px' }}
+        className="h-8 w-auto md:h-12 object-contain"
+        style={{ objectFit: 'contain', objectPosition: 'center', maxWidth: '120px', minWidth: '32px' }}
       />
-      <span className="ml-2 text-xl md:text-2xl font-semibold whitespace-nowrap">
+      <span className="ml-1 md:ml-2 text-lg md:text-xl font-semibold whitespace-nowrap">
         {logoText.split('').map((char, i) =>
           char === ' ' ? (
             <span key={i}>&nbsp;</span>

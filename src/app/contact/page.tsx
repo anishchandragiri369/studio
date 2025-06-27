@@ -82,7 +82,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <Label htmlFor="email" className="font-medium">Email Address</Label>
-                <Input type="email" id="email" name="email" placeholder="you@example.com" required className="mt-1" />
+                <Input type="email" id="email" name="email" placeholder="you@example.com" autoComplete="email" required className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="message" className="font-medium">Message</Label>

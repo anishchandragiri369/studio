@@ -512,7 +512,6 @@ html, body {
 /* Container fixes for narrow viewports (like when dev tools are open) */
 .container {
   max-width: 100%;
-  overflow-x: hidden;
 }
 
 /* Fix for navbar and header elements in narrow viewports */
@@ -521,10 +520,18 @@ header, nav {
   overflow-x: hidden;
 }
 
-/* Ensure flex items don't exceed container width */
+/* Ensure flex items don't exceed container width - but allow intended horizontal scroll */
 .flex {
   flex-wrap: wrap;
-  overflow-x: hidden;
+}
+
+/* Allow horizontal scrolling for specific components */
+.flex-nowrap,
+.categories-scroll,
+[class*="scroll-x"],
+[class*="overflow-x-auto"] {
+  overflow-x: auto !important;
+  flex-wrap: nowrap !important;
 }
 
 /* Fix for very narrow viewports (dev tools open scenario) */
@@ -610,8 +617,8 @@ header, nav {
   
   /* Mobile navigation - reduce height */
   .mobile-nav {
-    height: 3.5rem !important; /* 56px instead of 64px */
-    padding: 0.5rem !important;
+    height: 2.5rem !important; /* 40px instead of 56px */
+    padding: 0.25rem !important;
   }
   
   /* Mobile cards - tighter spacing */
@@ -635,6 +642,32 @@ header, nav {
   /* Remove excessive spacing between sections */
   .section-divider {
     margin: 0.5rem 0 !important;
+  }
+  
+  /* Compact header and remove spacing */
+  header {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Remove any gap between navbar and main content */
+  main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Ensure logo and nav elements are compact */
+  .navbar-logo {
+    padding: 0.25rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Make the navbar container even more compact */
+  .mobile-nav .container {
+    padding: 0.25rem 0.5rem !important;
+    margin: 0 !important;
+    min-height: 2.5rem !important;
+    max-height: 2.5rem !important;
   }
 }
 

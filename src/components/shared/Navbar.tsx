@@ -71,7 +71,7 @@ const Navbar = () => {
     : DEFAULT_NAV_LINKS;
   return (
     <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft overflow-hidden mobile-nav">
-      <div className="container mx-auto flex h-12 md:h-16 items-center justify-between px-2 sm:px-4 md:px-6 max-w-full overflow-hidden mobile-container">
+      <div className="container mx-auto flex h-10 md:h-12 items-center justify-between px-2 sm:px-3 md:px-4 max-w-full overflow-hidden mobile-container">
         <div className="flex-shrink-0">
           <Logo />
         </div>        <nav className="hidden lg:flex items-center gap-2 xl:gap-3 text-sm font-medium flex-shrink min-w-0 overflow-hidden">

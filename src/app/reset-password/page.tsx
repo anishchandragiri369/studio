@@ -88,6 +88,7 @@ function ResetPasswordForm() {
               className="w-full border rounded px-3 py-2 mb-4"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
             <label className="block mb-2 font-medium">Confirm Password</label>
@@ -96,6 +97,7 @@ function ResetPasswordForm() {
               className="w-full border rounded px-3 py-2 mb-6"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
             <Button type="submit" className="w-full" disabled={loading}>

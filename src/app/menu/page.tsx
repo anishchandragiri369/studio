@@ -145,7 +145,7 @@ function MenuPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with World of Elixirs Background */}
-      <section className="relative py-10 overflow-hidden">
+      <section className="relative py-4 md:py-8 overflow-hidden hero-mobile">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-green-900/20 to-blue-900/20"></div>
           <Image
@@ -199,7 +199,7 @@ function MenuPageContent() {
           </div>
         </div>
       </section>      {/* Filters Section */}
-      <section className="py-03 bg-background/95 backdrop-blur-sm border-b border-border/20">
+      <section className="py-2 md:py-3 bg-background/95 backdrop-blur-sm border-b border-border/20 mobile-section">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-center">
             {/* Search */}
@@ -249,12 +249,12 @@ function MenuPageContent() {
           </div>          {/* Categories */}
           {!selectedCategory && (
             <div className="mt-4">
-              <div className="flex flex-wrap gap-2 justify-center">
+              <div className="flex gap-2 overflow-x-auto pb-2 px-2 categories-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.3) transparent' }}>
                 {categories.map((category, index) => (
                   <Badge
                     key={category.name}
                     variant="outline"
-                    className="glass-card border-border/50 hover:bg-primary/10 hover:border-primary/50 cursor-pointer transition-all duration-300 animate-fade-in px-3 py-1.5 text-sm font-medium shadow-soft hover:shadow-lg rounded-full text-foreground hover:text-primary"
+                    className="glass-card border-border/50 hover:bg-primary/10 hover:border-primary/50 cursor-pointer transition-all duration-300 animate-fade-in px-3 py-1.5 text-sm font-medium shadow-soft hover:shadow-lg rounded-full text-foreground hover:text-primary whitespace-nowrap flex-shrink-0"
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => setSelectedCategory(category.name)}
                   >

@@ -237,6 +237,7 @@ export default function OrdersPage() {
                       placeholder="you@example.com"
                       value={guestEmail}
                       onChange={(e) => setGuestEmail(e.target.value)}
+                      autoComplete="email"
                       required
                       className="w-full"
                     />

@@ -532,6 +532,7 @@ function CheckoutPageContents() {
                             type="email" 
                             {...register("email")} 
                             placeholder="you@example.com" 
+                            autoComplete="email"
                             className="glass border-border/50 focus:border-primary/50 transition-all"
                           />
                           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
