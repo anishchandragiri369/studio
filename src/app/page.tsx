@@ -175,16 +175,32 @@ export default function HomePage() {
       {/* Featured Products */}
       <section className="py-2 md:py-4 bg-background mobile-section">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-xl md:text-3xl lg:text-5xl font-headline font-bold gradient-text mb-2 md:mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
               Zero Sugar Fruit Juice From ₹120
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Our most popular cold-pressed juices, crafted with love and delivered fresh
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Mobile: Horizontal scroll, Desktop: Grid */}
+          <div className="block md:hidden">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
+              {featuredJuices.map((juice, index) => (
+                <div 
+                  key={juice.id} 
+                  className="flex-none w-64 animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <JuiceCard juice={juice} />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Desktop: Grid layout */}
+          <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredJuices.map((juice, index) => (
               <div 
                 key={juice.id} 
@@ -196,7 +212,7 @@ export default function HomePage() {
             ))}
           </div>
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-6 md:mt-12">
             <Button asChild size="lg" variant="outline" className="btn-hover-lift">
               <Link href="/menu">
                 View All Products
