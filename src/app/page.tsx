@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section - Glassmorphic Design */}
-      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[60vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden mobile-section hero-mobile">
         {/* Ultra HD Background with multiple layers */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-purple-900/20 to-blue-900/20"></div>
@@ -78,36 +78,36 @@ export default function HomePage() {
           <div className="absolute bottom-3/4 right-1/2 w-4 h-4 bg-gradient-to-r from-purple-300 to-violet-300 rounded-full opacity-30 animate-float-ultra-fast" style={{ animationDelay: '4.8s' }}></div>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-3 md:px-4 relative z-10 text-center mobile-container">
           <div className="max-w-3xl mx-auto text-center">
             {/* Tagline and Premium Badge */}
-            <div className="mb-4">
-              <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-sm font-medium mb-4 border border-white/50">
-                <Zap className="w-4 h-4 mr-2" />
+            <div className="mb-2 md:mb-4">
+              <span className="inline-flex items-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-xs md:text-sm font-medium mb-2 md:mb-4 border border-white/50">
+                <Zap className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Premium Cold-Pressed elixrs
               </span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-headline font-bold mb-6 leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-7xl font-headline font-bold mb-3 md:mb-6 leading-tight mobile-text">
               <span className="gradient-text">Taste the Freshness</span><br />
               {/* <span className="gradient-text">Freshness</span> */}
             </h1>
             
-            <p className="text-xl md:text-2xl text-black/80 max-w-3xl mx-auto mb-8 leading-relaxed font-medium drop-shadow-md">
+            <p className="text-base md:text-xl lg:text-2xl text-black/80 max-w-3xl mx-auto mb-4 md:mb-8 leading-relaxed font-medium drop-shadow-md mobile-text">
               Experience the ultimate fusion of taste and wellness with our 
               <br className="hidden md:block" />
               <span className="text-orange-900 font-semibold">handcrafted elixrs</span> delivered fresh to your door.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 md:gap-4 mb-4 md:mb-8">
               <Button 
                 asChild 
                 size="lg" 
-                className="bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-8 py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
+                className="bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mobile-btn"
               >
                 <Link href="/menu">
-                  <Sparkles className="mr-2 h-5 w-5" />
+                  <Sparkles className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
                   Explore elixrs
                 </Link>
               </Button>
@@ -116,7 +116,7 @@ export default function HomePage() {
                 asChild 
                 variant="outline" 
                 size="lg" 
-                className="border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-8 py-4 text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
+                className="border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold mobile-btn"
               >
                 <Link href="/subscriptions">
                   <Gift className="mr-2 h-5 w-5" />
@@ -146,7 +146,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Actions Bar */}
-      <section className="bg-white/80 backdrop-blur-sm border-b border-border/50 py-4">        <div className="container mx-auto px-4">
+      <section className="bg-white/80 backdrop-blur-sm border-b border-border/50 py-2 md:py-4 mobile-section">        <div className="container mx-auto px-3 md:px-4 mobile-container">
           <div className="flex items-center justify-center gap-8 text-sm">
             <WhatsAppLink className="flex items-center gap-2 text-green-600 hover:text-green-700 transition-colors">
               <MessageCircle className="w-4 h-4" />
@@ -165,7 +165,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>      {/* Categories Section */}
-      <section className="py-5 bg-gradient-to-br from-background to-muted/30">
+      <section className="py-3 md:py-5 bg-gradient-to-br from-background to-muted/30 mobile-section">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-block pb-4 w-full">
@@ -187,7 +187,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-4 bg-background">
+      <section className="py-2 md:py-4 bg-background mobile-section">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
@@ -223,7 +223,7 @@ export default function HomePage() {
 
       {/* Subscription Plans */}
       {(weeklyKickstarterPlan || monthlyWellnessPlan) && (
-        <section className="py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
+        <section className="py-8 md:py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background mobile-section">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
@@ -266,7 +266,7 @@ export default function HomePage() {
       )}
 
       {/* Quality Features */}
-      <section className="py-16 bg-gradient-to-br from-muted/30 to-background">        <div className="container mx-auto px-4">
+      <section className="py-8 md:py-16 bg-gradient-to-br from-muted/30 to-background mobile-section">        <div className="container mx-auto px-3 md:px-4 mobile-container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
               background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",

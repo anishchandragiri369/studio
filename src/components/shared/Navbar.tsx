@@ -70,14 +70,16 @@ const Navbar = () => {
     ? DEFAULT_NAV_LINKS.filter(link => link.href !== '/login' && link.href !== '/signup')
     : DEFAULT_NAV_LINKS;
   return (
-    <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Logo />        <nav className="hidden md:flex items-center gap-3 text-sm font-medium">
+    <header className="glass-nav sticky top-0 z-50 w-full border-b border-border/20 shadow-soft overflow-hidden mobile-nav">
+      <div className="container mx-auto flex h-12 md:h-16 items-center justify-between px-2 sm:px-4 md:px-6 max-w-full overflow-hidden mobile-container">
+        <div className="flex-shrink-0">
+          <Logo />
+        </div>        <nav className="hidden lg:flex items-center gap-2 xl:gap-3 text-sm font-medium flex-shrink min-w-0 overflow-hidden">
           {/* Categories Dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70">
+            <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70 whitespace-nowrap">
               Categories
-              <ChevronDown className="ml-1 h-4 w-4" />
+              <ChevronDown className="ml-1 h-3 w-3 xl:h-4 xl:w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Shop by Category</DropdownMenuLabel>
@@ -173,13 +175,14 @@ const Navbar = () => {
             )
           ))}
         </nav>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative" asChild>
+        
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0">
+          <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative flex-shrink-0" asChild>
             <Link href="/cart">
               <>
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                     {itemCount < 100 ? itemCount : '99+'}
                   </span>
                 )}
@@ -192,8 +195,8 @@ const Navbar = () => {
               {user && isSupabaseConfigured ? ( 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="User Menu">
-                      <UserCircle className="h-6 w-6 text-primary" />
+                    <Button variant="ghost" size="icon" aria-label="User Menu" className="flex-shrink-0">
+                      <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -251,15 +254,17 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : isSupabaseConfigured ? (
-                <div className="hidden md:flex items-center gap-2">
-                  <Button variant="ghost" asChild>
+                <div className="hidden lg:flex items-center gap-1 xl:gap-2 flex-shrink-0">
+                  <Button variant="ghost" size="sm" asChild className="hidden xl:flex">
                     <Link href="/login">
-                      <LogInIcon className="mr-2 h-4 w-4" /> Login
+                      <LogInIcon className="mr-1 h-4 w-4" /> 
+                      <span className="hidden xl:inline">Login</span>
                     </Link>
                   </Button>
-                  <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Button size="sm" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0">
                      <Link href="/signup">
-                       <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+                       <UserPlus className="mr-1 h-4 w-4" /> 
+                       <span className="hidden xl:inline">Sign Up</span>
                     </Link>
                   </Button>
                 </div>
@@ -273,11 +278,11 @@ const Navbar = () => {
           )}
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="lg:hidden flex-shrink-0">
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open menu">
-                  <MenuIcon className="h-6 w-6" />
+                <Button variant="ghost" size="icon" aria-label="Open menu" className="flex-shrink-0">
+                  <MenuIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] p-6 bg-background">

@@ -54,13 +54,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(false);        } else if (session?.user) {
           console.log('[AuthContext] Initial session found for user:', session.user.email);
           setUser(session.user);
-          // Query the 'admins' table for this email
-          const { data: adminData, error: adminError } = await supabase!
-            .from('admins')
-            .select('email')
-            .eq('email', session.user.email)
-            .single();
-          setIsAdmin(!!adminData && !adminError);
+          
+          try {
+            // Query the 'admins' table for this email
+            // Don't use .single() to avoid 406 errors when user is not an admin
+            const { data: adminData, error: adminError } = await supabase!
+              .from('admins')
+              .select('email')
+              .eq('email', session.user.email);
+            
+            // Check if user is admin (data array has results and no error)
+            const isUserAdmin = !adminError && adminData && adminData.length > 0;
+            setIsAdmin(isUserAdmin);
+            
+            console.log('[AuthContext] Initial admin check result:', { 
+              email: session.user.email, 
+              isAdmin: isUserAdmin, 
+              error: adminError 
+            });
+          } catch (adminCheckError) {
+            console.error('[AuthContext] Error checking initial admin status:', adminCheckError);
+            setIsAdmin(false);
+          }
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -81,13 +96,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const currentUser = session?.user || null;
       setUser(currentUser);      if (currentUser && currentUser.email) {
-        // Query the 'admins' table for this email
-        const { data: adminData, error: adminError } = await supabase!
-          .from('admins')
-          .select('email')
-          .eq('email', currentUser.email)
-          .single();
-        setIsAdmin(!!adminData && !adminError);
+        try {
+          // Query the 'admins' table for this email
+          // Don't use .single() to avoid 406 errors when user is not an admin
+          const { data: adminData, error: adminError } = await supabase!
+            .from('admins')
+            .select('email')
+            .eq('email', currentUser.email);
+          
+          // Check if user is admin (data array has results and no error)
+          const isUserAdmin = !adminError && adminData && adminData.length > 0;
+          setIsAdmin(isUserAdmin);
+          
+          console.log('[AuthContext] Admin check result:', { 
+            email: currentUser.email, 
+            isAdmin: isUserAdmin, 
+            error: adminError 
+          });
+        } catch (error) {
+          console.error('[AuthContext] Error checking admin status:', error);
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(false);
       }
