@@ -253,8 +253,8 @@ export default function HomePage() {
 
       {/* Quality Features */}
       <section className="py-8 md:py-16 bg-gradient-to-br from-muted/30 to-background mobile-section">        <div className="container mx-auto px-3 md:px-4 mobile-container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold mb-2 md:mb-4" style={{ 
               background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -262,35 +262,35 @@ export default function HomePage() {
             }}>
               High Standard Quality And Taste
             </h2>
-            <p className="text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
+            <p className="text-xs md:text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
               We follow hygienic and natural processes to maintain freshness and flavor 
               without adding artificial additives to get that natural fruit drink feeling.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Leaf className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Rich Protein</h3>
-                <p className="text-muted-foreground">
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-8">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Leaf className="w-6 h-6 md:w-12 md:h-12 text-green-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">Rich Protein</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Packed with natural proteins from fresh fruits and vegetables
                 </p>
               </CardContent>
             </Card>
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Body Care</h3>
-                <p className="text-muted-foreground">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Heart className="w-6 h-6 md:w-12 md:h-12 text-red-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">Body Care</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Nourish your body with essential vitamins and minerals
                 </p>
               </CardContent>
             </Card>
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">0% Trans Fat</h3>
-                <p className="text-muted-foreground">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Shield className="w-6 h-6 md:w-12 md:h-12 text-blue-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">0% Trans Fat</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Pure, natural ingredients with no artificial additives
                 </p>
               </CardContent>
