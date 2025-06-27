@@ -1,6 +1,18 @@
-/* Mobile app specific styles */
+/* 
+=======================================================
+📱 MOBILE APP SPECIFIC STYLES
+=======================================================
+TARGET: iOS and Android app-specific styling
+EFFECT: Handles platform-specific mobile behaviors
+*/
 
-/* Safe area handling for iOS */
+/* 
+=======================================================
+📐 SAFE AREA HANDLING FOR iOS
+=======================================================
+TARGET: Elements with .mobile-app class
+EFFECT: Handles iPhone notch and safe areas
+*/
 .mobile-app {
   --safe-area-inset-top: env(safe-area-inset-top);
   --safe-area-inset-right: env(safe-area-inset-right);
@@ -8,7 +20,13 @@
   --safe-area-inset-left: env(safe-area-inset-left);
 }
 
-/* Platform specific styles */
+/* 
+=======================================================
+🎮 PLATFORM SPECIFIC STYLES
+=======================================================
+TARGET: iOS and Android specific behaviors
+EFFECT: Optimizes scrolling and interactions per platform
+*/
 .platform-ios {
   /* iOS specific styles */
   -webkit-overflow-scrolling: touch;
@@ -19,57 +37,111 @@
   overscroll-behavior: none;
 }
 
-/* Mobile navigation adjustments */
+/* 
+=======================================================
+🧭 MOBILE NAVIGATION ADJUSTMENTS
+=======================================================
+TARGET: Navigation bar in mobile native apps
+EFFECT: Handles safe areas and backdrop blur
+*/
 .mobile-native .navbar {
   padding-top: var(--safe-area-inset-top);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
 }
 
-/* Mobile form adjustments */
+/* 
+=======================================================
+📝 MOBILE FORM ADJUSTMENTS
+=======================================================
+TARGET: Input fields, textareas, and select elements
+EFFECT: Prevents iOS zoom on focus and improves UX
+*/
 .mobile-native input,
 .mobile-native textarea,
 .mobile-native select {
   font-size: 16px; /* Prevent zoom on iOS */
 }
 
-/* Mobile button adjustments */
+/* 
+=======================================================
+🔘 MOBILE BUTTON ADJUSTMENTS
+=======================================================
+TARGET: All button elements in mobile native
+EFFECT: Ensures minimum touch target size for accessibility
+*/
 .mobile-native button {
   min-height: 44px; /* iOS touch target size */
   min-width: 44px;
 }
 
-/* Mobile card adjustments */
+/* 
+=======================================================
+🃏 MOBILE CARD ADJUSTMENTS
+=======================================================
+TARGET: Card components in mobile view
+EFFECT: Enhanced visual styling with rounded corners and shadows
+*/
 .mobile-native .card {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Keyboard handling */
+/* 
+=======================================================
+⌨️ KEYBOARD HANDLING
+=======================================================
+TARGET: Layout adjustment when virtual keyboard appears
+EFFECT: Prevents content from being hidden behind keyboard
+*/
 .mobile-native {
   padding-bottom: var(--keyboard-height, 0);
   transition: padding-bottom 0.3s ease;
 }
 
-/* Mobile scroll improvements */
+/* 
+=======================================================
+📜 MOBILE SCROLL IMPROVEMENTS
+=======================================================
+TARGET: Scrolling behavior optimization
+EFFECT: Smooth scrolling with overscroll containment
+*/
 .mobile-native {
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
 
-/* Touch feedback */
+/* 
+=======================================================
+👆 TOUCH FEEDBACK
+=======================================================
+TARGET: Touchable elements with visual feedback
+EFFECT: Provides subtle highlight on touch/tap
+*/
 .mobile-native .touchable {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  tap-highlight-color: rgba(0, 0, 0, 0.1);
+  /* tap-highlight-color: rgba(0, 0, 0, 0.1); */ /* Non-standard property */
 }
 
-/* Mobile loading states */
+/* 
+=======================================================
+⏳ MOBILE LOADING STATES
+=======================================================
+TARGET: Elements with .loading class
+EFFECT: Visual indication of loading state with reduced opacity
+*/
 .mobile-native .loading {
   pointer-events: none;
   opacity: 0.6;
 }
 
-/* Mobile offline indicator */
+/* 
+=======================================================
+📶 MOBILE OFFLINE INDICATOR
+=======================================================
+TARGET: Offline notification element
+EFFECT: Smooth slide-down animation for offline status
+*/
 #offline-notification {
   animation: slideDown 0.3s ease;
 }
@@ -83,7 +155,14 @@
   }
 }
 
-/* Mobile responsive adjustments */
+/* 
+=======================================================
+📱 MOBILE RESPONSIVE ADJUSTMENTS
+=======================================================
+TARGET: Basic mobile layout adjustments
+EFFECT: Font size and container adjustments for screens ≤768px
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   .mobile-native {
     font-size: 16px; /* Prevent zoom */
@@ -101,7 +180,14 @@
   }
 }
 
-/* Reduce unnecessary vertical spacing for mobile-native containers and cards */
+/* 
+=======================================================
+📏 REDUCE VERTICAL SPACING FOR MOBILE-NATIVE
+=======================================================
+TARGET: Containers and cards with .mobile-native class
+EFFECT: More compact layout for mobile native apps
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   .mobile-native .container {
     padding-top: 0.75rem !important;
@@ -138,7 +224,14 @@
   }
 }
 
-/* Additional mobile spacing optimizations */
+/* 
+=======================================================
+📐 ADDITIONAL MOBILE SPACING OPTIMIZATIONS
+=======================================================
+TARGET: Common spacing classes (py, text, buttons)
+EFFECT: Reduces section padding and optimizes text/button sizes
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   /* Reduce section padding for more compact mobile layout */
   .py-16 {
@@ -169,7 +262,14 @@
   }
 }
 
-/* More aggressive mobile spacing reductions for footer and contact sections */
+/* 
+=======================================================
+⚡ AGGRESSIVE MOBILE SPACING REDUCTIONS
+=======================================================
+TARGET: Footer, contact sections, and general layout elements
+EFFECT: Significant spacing reductions for compact mobile experience
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   /* Reduce all large gaps and spacing */
   .gap-8 {
@@ -226,7 +326,14 @@
   }
 }
 
-/* Force mobile styles to apply with higher specificity - balanced approach */
+/* 
+=======================================================
+🎯 FORCE MOBILE STYLES - HIGH SPECIFICITY
+=======================================================
+TARGET: Common Tailwind spacing classes with balanced approach
+EFFECT: Overrides default spacing with mobile-optimized values
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   /* Target common spacing classes directly - more moderate reductions */
   .mb-6, .mb-8, .mb-12 {
@@ -283,7 +390,13 @@
   }
 }
 
-/* Capacitor specific adjustments */
+/* 
+=======================================================
+📱 CAPACITOR SPECIFIC ADJUSTMENTS
+=======================================================
+TARGET: Capacitor app keyboard states
+EFFECT: Handles virtual keyboard appearance/disappearance
+*/
 .capacitor-keyboard-open {
   padding-bottom: 0 !important;
 }
@@ -292,7 +405,13 @@
   padding-bottom: var(--safe-area-inset-bottom);
 }
 
-/* Platform-specific scrollbar hiding */
+/* 
+=======================================================
+📜 PLATFORM-SPECIFIC SCROLLBAR HIDING
+=======================================================
+TARGET: iOS and Android scrollbar customization
+EFFECT: Hides scrollbars across different platforms
+*/
 .platform-ios::-webkit-scrollbar {
   display: none;
 }
@@ -306,13 +425,25 @@
   display: none;
 }
 
-/* Mobile navigation drawer */
+/* 
+=======================================================
+🗂️ MOBILE NAVIGATION DRAWER
+=======================================================
+TARGET: Slide-out navigation drawer component
+EFFECT: Sets width and max-width for mobile drawer
+*/
 .mobile-native .drawer {
   width: 100%;
   max-width: 320px;
 }
 
-/* Mobile bottom sheet */
+/* 
+=======================================================
+📋 MOBILE BOTTOM SHEET
+=======================================================
+TARGET: Bottom sheet modal component
+EFFECT: Slide-up modal with smooth animations and safe area handling
+*/
 .mobile-native .bottom-sheet {
   position: fixed;
   bottom: 0;
@@ -330,7 +461,13 @@
   transform: translateY(0);
 }
 
-/* Mobile pull-to-refresh */
+/* 
+=======================================================
+🔄 MOBILE PULL-TO-REFRESH
+=======================================================
+TARGET: Pull-to-refresh functionality
+EFFECT: Visual indicator and smooth animations for refresh gesture
+*/
 .mobile-native .pull-to-refresh {
   position: relative;
   overflow: hidden;
@@ -356,7 +493,13 @@
   top: 10px;
 }
 
-/* Mobile swipe gestures */
+/* 
+=======================================================
+👆 MOBILE SWIPE GESTURES
+=======================================================
+TARGET: Elements with swipe functionality
+EFFECT: Enables pan-y touch action and swipe animations
+*/
 .mobile-native .swipeable {
   touch-action: pan-y;
 }
@@ -371,7 +514,13 @@
   transition: transform 0.3s ease;
 }
 
-/* Mobile haptic feedback visual cues */
+/* 
+=======================================================
+🎮 MOBILE HAPTIC FEEDBACK VISUAL CUES
+=======================================================
+TARGET: Elements with haptic feedback
+EFFECT: Visual pulse animation to accompany haptic feedback
+*/
 .mobile-native .haptic-feedback {
   animation: hapticPulse 0.1s ease;
 }
@@ -382,7 +531,13 @@
   100% { transform: scale(1); }
 }
 
-/* Mobile dark mode adjustments */
+/* 
+=======================================================
+🌙 MOBILE DARK MODE ADJUSTMENTS
+=======================================================
+TARGET: Dark mode styling for mobile elements
+EFFECT: Adapts colors and styling for dark theme preference
+*/
 @media (prefers-color-scheme: dark) {
   .mobile-native {
     background: #1a1a1a;
@@ -399,7 +554,13 @@
   }
 }
 
-/* Prevent text selection on mobile */
+/* 
+=======================================================
+🚫 PREVENT TEXT SELECTION ON MOBILE
+=======================================================
+TARGET: Elements with .no-select class
+EFFECT: Disables text selection for better mobile UX
+*/
 .mobile-native .no-select {
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -407,7 +568,13 @@
   user-select: none;
 }
 
-/* Mobile focus styles */
+/* 
+=======================================================
+🎯 MOBILE FOCUS STYLES
+=======================================================
+TARGET: Form inputs with focus state
+EFFECT: Enhanced focus indicators for better accessibility
+*/
 .mobile-native input:focus,
 .mobile-native textarea:focus,
 .mobile-native select:focus {
@@ -415,7 +582,13 @@
   outline-offset: 2px;
 }
 
-/* Mobile accessibility improvements */
+/* 
+=======================================================
+♿ MOBILE ACCESSIBILITY IMPROVEMENTS
+=======================================================
+TARGET: Interactive elements and screen reader content
+EFFECT: Enhanced accessibility for mobile users
+*/
 .mobile-native [role="button"],
 .mobile-native button {
   cursor: pointer;
@@ -433,7 +606,14 @@
   border: 0;
 }
 
-/* Additional fix for dev tools viewport issues */
+/* 
+=======================================================
+🛠️ DEV TOOLS VIEWPORT ISSUES FIX
+=======================================================
+TARGET: Navigation responsiveness when dev tools are open
+EFFECT: Handles narrow viewport scenarios during development
+BREAKPOINT: 800px and below
+*/
 @media (max-width: 800px) {
   /* When dev tools are open and viewport is narrow */
   .navbar-responsive {
@@ -459,7 +639,13 @@
   }
 }
 
-/* Categories horizontal scrolling */
+/* 
+=======================================================
+📂 CATEGORIES HORIZONTAL SCROLLING
+=======================================================
+TARGET: Category scroll elements
+EFFECT: Smooth scrolling with custom scrollbar styling
+*/
 .categories-scroll {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -483,7 +669,14 @@
   background: rgba(0,0,0,0.5);
 }
 
-/* Mobile categories improvements */
+/* 
+=======================================================
+📱 MOBILE CATEGORIES IMPROVEMENTS
+=======================================================
+TARGET: Category scrolling on mobile devices
+EFFECT: Hides scrollbars and adds padding for mobile UX
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   .categories-scroll {
     padding-left: 1rem;
@@ -498,7 +691,14 @@
   }
 }
 
-/* Homepage hero section mobile spacing improvements - balanced */
+/* 
+=======================================================
+🏠 HOMEPAGE HERO SECTION - BALANCED MOBILE SPACING
+=======================================================
+TARGET: Hero section elements and containers
+EFFECT: Balanced spacing improvements for mobile homepage
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   .mobile-container {
     padding-top: 0.75rem !important;
@@ -546,7 +746,15 @@
   }
 }
 
-/* Ultra-compact mobile hero section - remove all unnecessary spacing */
+/* 
+=======================================================
+🎪 HERO SECTION - LEGACY SPACING REMOVAL
+=======================================================
+TARGET: Hero section with aggressive spacing removal (Legacy)
+EFFECT: Eliminates unnecessary spacing for ultra-compact layout
+NOTE: This section may conflict with newer compact spacing above
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   /* Hero section specific - eliminate top/bottom spacing */
   section.hero-mobile,
@@ -591,7 +799,14 @@
   }
 }
 
-/* Fix cart badge cropping on mobile */
+/* 
+=======================================================
+🛒 CART BADGE CROPPING FIX
+=======================================================
+TARGET: Shopping cart badge positioning
+EFFECT: Prevents cart badge from being cropped on mobile
+BREAKPOINT: 768px and below
+*/
 @media (max-width: 768px) {
   /* Ensure cart badge has enough space and doesn't get cropped */
   .relative button[aria-label="Shopping Cart"] {
@@ -616,7 +831,14 @@
   }
 }
 
-/* Horizontal scrolling utilities */
+/* 
+=======================================================
+📜 HORIZONTAL SCROLLING UTILITIES
+=======================================================
+TARGET: Elements with .scrollbar-hide class
+EFFECT: Hides scrollbars on horizontal scroll areas
+USAGE: Applied to featured products mobile scroll
+*/
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
   scrollbar-width: none;  /* Firefox */
@@ -624,4 +846,228 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
+}
+
+/* 
+=======================================================
+🧃 MOBILE JUICE CARDS CONSISTENT HEIGHT
+=======================================================
+TARGET: Featured products horizontal scroll section
+EFFECT: Ensures all juice cards have same height in mobile scroll
+*/
+@media (max-width: 768px) {
+  /* 
+  ================================================================
+  📱 MOBILE LAYOUT OPTIMIZATION SYSTEM
+  ================================================================
+  
+  This section controls the mobile layout for the main homepage sections:
+  
+  🎯 SECTION ORDER & TARGETS:
+  1. Hero Section (.hero-mobile) - Main banner with "Taste the Freshness"
+  2. Quick Actions Bar (nth-of-type(2)) - WhatsApp/Instagram/Free Delivery
+  3. Categories Section (nth-of-type(3)) - "Shop by Category" 
+  4. Featured Products (nth-of-type(4)) - "Zero Sugar Fruit Juice From ₹120"
+  
+  ⚡ QUICK EDIT GUIDE:
+  - To make sections taller: INCREASE padding values
+  - To make sections shorter: DECREASE padding values  
+  - To add gaps between sections: INCREASE margin values
+  - To remove gaps: KEEP margins at 0
+  - To adjust text spacing: MODIFY line-height and margin-bottom
+  
+  🔧 RESPONSIVE BREAKPOINT: 768px and below
+  ================================================================
+  */
+  
+  .mobile-juice-scroll .glass-card {
+    height: 100%;
+    min-height: 400px; /* ⚡ EDIT HERE: Change card height */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  /* 
+  =======================================================
+  🎯 HERO SECTION (1ST VIEW) - COMPACT SPACING
+  =======================================================
+  TARGET: Main hero section with background image
+  SELECTOR: .hero-mobile class
+  EFFECT: Makes hero more compact but still readable
+  */
+  .hero-mobile {
+    min-height: 47vh !important; /* ⚡ EDIT HERE: Change hero height (compact, was 50vh) */
+    padding-top: 1.5rem !important; /* ⚡ EDIT HERE: Hero top spacing */
+    padding-bottom: 1.5rem !important; /* ⚡ EDIT HERE: Hero bottom spacing */
+  }
+  
+  /* 
+  TARGET: Content container inside hero
+  EFFECT: Reduces inner padding of hero content moderately
+  */
+  .hero-mobile .mobile-container {
+    padding-top: 0.75rem !important; /* ⚡ EDIT HERE: Inner content top spacing */
+    padding-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Inner content bottom spacing */
+  }
+  
+  /* 
+  =======================================================
+  📏 HERO MARGINS & GAPS - ELEMENT SPACING
+  =======================================================
+  TARGET: Spacing between elements inside hero section
+  */
+  
+  /* Badge margin (Premium Cold-Pressed elixrs) */
+  .hero-mobile .mb-1 {
+    margin-bottom: 0.375rem !important; /* ⚡ EDIT HERE: Space below badge */
+  }
+  
+  /* Title and text margins */
+  .hero-mobile .mb-2 {
+    margin-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Space below title/text */
+  }
+  
+  /* Small gaps between elements */
+  .hero-mobile .gap-2 {
+    gap: 0.625rem !important; /* ⚡ EDIT HERE: Small element gaps */
+  }
+  
+  /* Medium gaps between elements */
+  .hero-mobile .gap-4 {
+    gap: 1rem !important; /* ⚡ EDIT HERE: Medium element gaps */
+  }
+  
+  /* 
+  =======================================================
+  📝 HERO TEXT STYLING
+  =======================================================
+  TARGET: Text elements with .mobile-text class in hero
+  EFFECT: Makes text moderately compact with good readability
+  */
+  .hero-mobile .mobile-text {
+    line-height: 1.2 !important; /* ⚡ EDIT HERE: Text line spacing (balanced readability) */
+  }
+  
+  /* 
+  =======================================================
+  🔘 HERO BUTTONS - SIZE & SPACING
+  =======================================================
+  TARGET: "Explore elixrs" and "Premium Plans" buttons
+  EFFECT: Makes buttons moderately compact but still touchable
+  */
+  .hero-mobile .mobile-btn {
+    padding-top: 0.5rem !important; /* ⚡ EDIT HERE: Button top padding */
+    padding-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Button bottom padding */
+    padding-left: 1rem !important; /* ⚡ EDIT HERE: Button left padding */
+    padding-right: 1rem !important; /* ⚡ EDIT HERE: Button right padding */
+    font-size: 0.875rem !important; /* ⚡ EDIT HERE: Button text size */
+    height: 2.5rem !important; /* ⚡ EDIT HERE: Button height (h-10 equivalent) */
+  }
+  
+  /* 
+  =======================================================
+  📂 CATEGORIES SECTION (2ND VIEW) - COMPACT SPACING
+  =======================================================
+  TARGET: "Shop by Category" section (3rd section on page)
+  EFFECT: Reduces top/bottom spacing for more compact layout
+  */
+  .mobile-section:nth-of-type(3) { /* Categories section */
+    padding-top: 1.25rem !important; /* ⚡ EDIT HERE: Categories section top spacing */
+    padding-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Categories section bottom spacing */
+  }
+  
+  /* TARGET: "Shop by Category" heading margin */
+  .mobile-section:nth-of-type(3) .mb-12 {
+    margin-bottom: 2rem !important; /* ⚡ EDIT HERE: Space below category heading */
+  }
+  
+  /* 
+  =======================================================
+  🧃 FEATURED PRODUCTS SECTION - COMPACT SPACING
+  =======================================================
+  TARGET: "Zero Sugar Fruit Juice From ₹120" section (4th section)
+  EFFECT: Reduces spacing around featured products
+  */
+  .mobile-section:nth-of-type(4) { /* Featured products section */
+    padding-top: 1.25rem !important; /* ⚡ EDIT HERE: Featured products top spacing */
+    padding-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Featured products bottom spacing */
+  }
+  
+  /* TARGET: Featured products heading margin */
+  .mobile-section:nth-of-type(4) .mb-6 {
+    margin-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Space below featured products heading */
+  }
+  
+  /* 
+  =======================================================
+  ⚡ QUICK ACTIONS BAR - ULTRA-COMPACT
+  =======================================================
+  TARGET: WhatsApp/Instagram/Free Delivery bar (2nd section)
+  EFFECT: Makes the actions bar very thin
+  */
+  .mobile-section:nth-of-type(2) { /* Quick actions bar */
+    padding-top: 0.75rem !important; /* ⚡ EDIT HERE: Actions bar top spacing */
+    padding-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Actions bar bottom spacing */
+  }
+  
+  /* 
+  =======================================================
+  🌐 GLOBAL MOBILE OPTIMIZATIONS
+  =======================================================
+  TARGET: All sections and general spacing
+  EFFECT: Creates seamless flow between sections
+  */
+  
+  /* Remove gaps between all sections */
+  .mobile-section {
+    margin-bottom: 0 !important; /* ⚡ EDIT HERE: Space between sections (0 = no gaps) */
+  }
+  
+  /* 
+  =======================================================
+  📝 TEXT SPACING OPTIMIZATIONS
+  =======================================================
+  TARGET: All text elements with .mobile-text class
+  */
+  .mobile-text h1 {
+    margin-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Space below headings */
+  }
+  
+  .mobile-text p {
+    margin-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Space below paragraphs */
+  }
+  
+  /* 
+  =======================================================
+  📦 MOBILE CONTAINERS - HORIZONTAL SPACING
+  =======================================================
+  TARGET: All .mobile-container elements
+  EFFECT: Controls how close content gets to screen edges
+  */
+  .mobile-container {
+    padding-left: 0.75rem !important; /* ⚡ EDIT HERE: Left edge spacing */
+    padding-right: 0.75rem !important; /* ⚡ EDIT HERE: Right edge spacing */
+  }
+  
+  /* 
+  =======================================================
+  🎯 ULTRA-COMPACT VIEW FOR INITIAL SECTIONS
+  =======================================================
+  TARGET: First 4 sections (Hero, Actions, Categories, Featured)
+  EFFECT: Removes all margins for seamless mobile experience
+  */
+  .mobile-section:nth-of-type(1), /* Hero section */
+  .mobile-section:nth-of-type(2), /* Quick actions */
+  .mobile-section:nth-of-type(3), /* Categories */
+  .mobile-section:nth-of-type(4) { /* Featured products */
+    margin-top: 0 !important; /* ⚡ EDIT HERE: Top margins (keep at 0 for seamless flow) */
+    margin-bottom: 0 !important; /* ⚡ EDIT HERE: Bottom margins (keep at 0 for seamless flow) */
+  }
 }

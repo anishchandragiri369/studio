@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section - Glassmorphic Design */}
-      <section className="relative min-h-[60vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden mobile-section hero-mobile">
+      <section className="relative min-h-[50vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden mobile-section hero-mobile">{/* ...existing code... */}
         {/* Ultra HD Background with multiple layers */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-purple-900/20 to-blue-900/20"></div>
@@ -185,12 +185,12 @@ export default function HomePage() {
           </div>
           
           {/* Mobile: Horizontal scroll, Desktop: Grid */}
-          <div className="block md:hidden">
+          <div className="block md:hidden mobile-juice-scroll">
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
               {featuredJuices.map((juice, index) => (
                 <div 
                   key={juice.id} 
-                  className="flex-none w-64 animate-fade-in"
+                  className="flex-none w-64 h-[420px] animate-fade-in"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <JuiceCard juice={juice} />
