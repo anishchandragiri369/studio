@@ -15,7 +15,7 @@ import type { CheckoutAddressFormData, Juice as JuiceType } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import GoogleMapPicker from '@/components/checkout/GoogleMapPicker';
+import LazyGoogleMapPicker from '@/components/checkout/LazyGoogleMapPicker';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
@@ -81,6 +81,8 @@ function CheckoutPageContents() {
     code: string;
     referrerId: string;
   } | null>(null);
+  const [shouldLoadMaps, setShouldLoadMaps] = useState(false);
+  const [proceedToCheckout, setProceedToCheckout] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -193,8 +195,12 @@ function CheckoutPageContents() {
   }, []);
 
   const handleFormSubmit: SubmitHandler<CheckoutAddressFormData> = (data) => {
-    // Remove conceptual logging and toast
-    // Instead, trigger the real Cashfree payment flow
+    // Trigger maps loading if not already loaded
+    if (!shouldLoadMaps && !proceedToCheckout) {
+      setShouldLoadMaps(true);
+      setProceedToCheckout(true);
+    }
+    // Trigger the real Cashfree payment flow
     handleCashfreePayment();
   };
 
@@ -260,11 +266,19 @@ function CheckoutPageContents() {
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
     toast({
- duration: 6000, // Extend duration for async process
+      duration: 6000, // Extend duration for async process
       title: "Processing Payment...",
- description: "Creating order and initializing payment gateway...",
+      description: "Creating order and initializing payment gateway...",
     });
+    
     try {
+      // Pre-flight checks
+      console.log("Starting payment process...");
+      console.log("Environment check:", {
+        NODE_ENV: process.env.NODE_ENV,
+        API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'N/A'
+      });
     //    if (isAuthLoading) {
     //      toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
     //      setIsProcessingPayment(false);
@@ -354,23 +368,77 @@ function CheckoutPageContents() {
         } : null
       };
       console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
-      // const userId = user.id;
-      // 1. Create order in your backend
-      const orderCreationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/orders/create`, {
-        method: 'POST',
-        headers:
-         {
-          // Correcting header for JSON content
-
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderPayload),
-      });
       
-      const orderCreationResult = await orderCreationResponse.json();
+      // Get the API base URL and construct the full URL
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      console.log("API Base URL from env:", process.env.NEXT_PUBLIC_API_BASE_URL);
+      console.log("Current window location:", window.location.origin);
+      
+      // If no API base URL is set, use the current origin
+      const effectiveBaseUrl = apiBaseUrl || window.location.origin;
+      const orderCreateUrl = `${effectiveBaseUrl}/api/orders/create`;
+      console.log("Order creation URL:", orderCreateUrl);
+      
+      // Test basic connectivity first
+      try {
+        console.log("Testing API connectivity...");
+        const testResponse = await fetch(`${effectiveBaseUrl}/api/orders/create`, {
+          method: 'HEAD', // Use HEAD to test connectivity without sending data
+        });
+        console.log("Connectivity test result:", testResponse.status);
+      } catch (connectivityError) {
+        console.warn("Connectivity test failed:", connectivityError);
+        // Continue anyway as HEAD might not be supported
+      }
+      
+      // 1. Create order in your backend with enhanced error handling
+      let orderCreationResponse;
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        );
+        
+        const fetchPromise = fetch(orderCreateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(orderPayload),
+        });
+        
+        orderCreationResponse = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      } catch (fetchError) {
+        console.error("Fetch error creating order:", fetchError);
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+        if (errorMessage.includes('timeout')) {
+          throw new Error(`Request timed out: The server is taking too long to respond. Please try again.`);
+        }
+        throw new Error(`Network error: Unable to connect to the server. Please check your internet connection and try again. Details: ${errorMessage}`);
+      }
+      
+      if (!orderCreationResponse) {
+        throw new Error("No response received from server");
+      }
+      
+      console.log("Order creation response status:", orderCreationResponse.status);
+      
+      let orderCreationResult;
+      try {
+        orderCreationResult = await orderCreationResponse.json();
+      } catch (jsonError) {
+        console.error("JSON parse error:", jsonError);
+        throw new Error(`Server response error: Unable to parse server response. Status: ${orderCreationResponse.status}`);
+      }
 
       if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
-        throw new Error(orderCreationResult.message || "Failed to create internal order.");
+        console.error("Order creation failed:", {
+          status: orderCreationResponse.status,
+          statusText: orderCreationResponse.statusText,
+          result: orderCreationResult
+        });
+        throw new Error(orderCreationResult.message || `Failed to create internal order. Server responded with status ${orderCreationResponse.status}`);
       }
 
       const internalOrderId = orderCreationResult.data.id;
@@ -385,25 +453,65 @@ function CheckoutPageContents() {
           phone: (formData as CheckoutAddressFormData).mobileNumber,
        }
       };
-      const cashfreeOrderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/cashfree/create-order`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cashfreeOrderPayload),
-      });
+      
+      const cashfreeCreateUrl = `${effectiveBaseUrl}/api/cashfree/create-order`;
+      console.log("Cashfree order creation URL:", cashfreeCreateUrl);
+      console.log("Cashfree order payload:", JSON.stringify(cashfreeOrderPayload));
+      
+      let cashfreeOrderResponse;
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        );
+        
+        const fetchPromise = fetch(cashfreeCreateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(cashfreeOrderPayload),
+        });
+        
+        cashfreeOrderResponse = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      } catch (fetchError) {
+        console.error("Fetch error creating Cashfree order:", fetchError);
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+        if (errorMessage.includes('timeout')) {
+          throw new Error(`Payment service timeout: The payment service is taking too long to respond. Please try again.`);
+        }
+        throw new Error(`Network error: Unable to connect to payment service. Please check your internet connection and try again. Details: ${errorMessage}`);
+      }
 
-      const cashfreeOrderResult = await cashfreeOrderResponse.json();
+      if (!cashfreeOrderResponse) {
+        throw new Error("No response received from payment service");
+      }
+      
+      console.log("Cashfree order response status:", cashfreeOrderResponse.status);
+      
+      let cashfreeOrderResult;
+      try {
+        cashfreeOrderResult = await cashfreeOrderResponse.json();
+      } catch (jsonError) {
+        console.error("JSON parse error:", jsonError);
+        throw new Error(`Payment service response error: Unable to parse response. Status: ${cashfreeOrderResponse.status}`);
+      }
 
       if (cashfreeOrderResponse.ok && cashfreeOrderResult.success && cashfreeOrderResult.data?.orderToken) {
          // Now that the SDK is loaded and order created, initiate checkout
-         if (cashfreeInstance  && typeof cashfreeInstance .checkout === 'function') {
-             createCheckout(cashfreeInstance , cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
+         if (cashfreeInstance && typeof cashfreeInstance.checkout === 'function') {
+             createCheckout(cashfreeInstance, cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`);
          } else {
              throw new Error("Cashfree SDK not available for checkout.");
          }
       } else {
-        throw new Error(cashfreeOrderResult.message || "Failed to create Cashfree order session.");
+        console.error("Cashfree order creation failed:", {
+          status: cashfreeOrderResponse.status,
+          statusText: cashfreeOrderResponse.statusText,
+          result: cashfreeOrderResult
+        });
+        throw new Error(cashfreeOrderResult.message || `Failed to create payment session. Status: ${cashfreeOrderResponse.status}`);
       }
     } catch (error) {
       console.error("Payment error:", error);
@@ -499,12 +607,35 @@ function CheckoutPageContents() {
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="rounded-xl overflow-hidden border border-border/50">
-                          <GoogleMapPicker 
+                          <LazyGoogleMapPicker 
                             location={selectedLocation} 
                             mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID} 
-                            onPlaceSelected={handlePlaceSelected} 
+                            onPlaceSelected={handlePlaceSelected}
+                            forceLoad={shouldLoadMaps || proceedToCheckout}
+                            autoLoadOnDesktop={true}
                           />
                         </div>
+                        
+                        {/* Helper button for mobile users to load maps */}
+                        {!shouldLoadMaps && !proceedToCheckout && (
+                          <div className="text-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShouldLoadMaps(true);
+                                setProceedToCheckout(true);
+                              }}
+                              className="gap-2"
+                            >
+                              <MapPin className="h-4 w-4" />
+                              Load Interactive Map
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Or fill the address fields manually below
+                            </p>
+                          </div>
+                        )}
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -701,7 +832,7 @@ function CheckoutPageContents() {
                     >
                       <CreditCard className="mr-2 h-5 w-5" /> 
                       Complete Order
-                    </Button>
+                    </Button>                    
                   </form>
                 </CardContent>
               </Card>

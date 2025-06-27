@@ -1522,3 +1522,132 @@ EFFECT: Ensures all juice cards have same height in mobile scroll
     margin-right: 0.125rem !important;
   }
 }
+
+/* 
+=======================================================
+🗺️ MOBILE MAPS OPTIMIZATION
+=======================================================
+TARGET: Google Maps components on mobile devices
+EFFECT: Better mobile performance and UX for maps
+*/
+
+/* Mobile maps container */
+@media (max-width: 768px) {
+  .maps-container {
+    /* Better touch handling */
+    touch-action: pan-x pan-y;
+    /* Improve rendering performance */
+    will-change: transform;
+    /* Better isolation */
+    contain: layout style paint;
+  }
+  
+  /* Maps loading placeholder */
+  .maps-loading-placeholder {
+    min-height: 250px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  /* Lazy loading button for mobile */
+  .maps-lazy-trigger {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .maps-lazy-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.15);
+  }
+  
+  /* Mobile-optimized map picker */
+  gmpx-place-picker {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+  }
+  
+  gmp-map {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    /* Better rendering on mobile */
+    image-rendering: optimizeQuality;
+  }
+  
+  /* Checkout form mobile optimization */
+  .checkout-address-section {
+    /* Stack vertically on mobile */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .checkout-form-row {
+    /* Ensure form fields stack on mobile */
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+}
+
+/* Additional mobile performance improvements */
+@media (max-width: 640px) {
+  .maps-container gmp-map {
+    /* Reduce height on very small screens */
+    height: 200px !important;
+  }
+  
+  /* Optimize touch targets */
+  .maps-lazy-trigger {
+    min-height: 44px; /* iOS recommended minimum */
+    min-width: 44px;
+  }
+}
+
+/* 
+=======================================================
+🎯 MOBILE TOUCH OPTIMIZATION
+=======================================================
+TARGET: Interactive elements in checkout
+EFFECT: Better touch experience and accessibility
+*/
+@media (max-width: 768px) {
+  /* Ensure all interactive elements meet touch guidelines */
+  button, 
+  .btn, 
+  input[type="submit"],
+  .interactive-element {
+    min-height: 44px;
+    min-width: 44px;
+    /* Better touch feedback */
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Improve form field usability */
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  /* Better spacing for form sections */
+  .checkout-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+}
