@@ -169,6 +169,103 @@
   }
 }
 
+/* More aggressive mobile spacing reductions for footer and contact sections */
+@media (max-width: 768px) {
+  /* Reduce all large gaps and spacing */
+  .gap-8 {
+    gap: 1rem !important;
+  }
+  .gap-6 {
+    gap: 0.75rem !important;
+  }
+  
+  /* Reduce text spacing */
+  .text-sm {
+    font-size: 0.8rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Make all mobile containers more compact */
+  .mobile-container {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Reduce flex container spacing */
+  .flex.items-center.justify-center {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Reduce all py-2 classes on mobile */
+  .py-2 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Compact section spacing globally */
+  section {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce container padding everywhere */
+  .container {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Make dividers smaller */
+  .w-px.h-4 {
+    height: 0.75rem !important;
+  }
+  
+  /* Reduce icon and text spacing */
+  .flex.items-center.gap-2 {
+    gap: 0.375rem !important;
+  }
+}
+
+/* Force mobile styles to apply with higher specificity */
+@media (max-width: 768px) {
+  /* Target common spacing classes directly */
+  .mb-1, .mb-2, .mb-3, .mb-4, .mb-6, .mb-8, .mb-12 {
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .mt-1, .mt-2, .mt-3, .mt-4, .mt-6, .mt-8, .mt-12 {
+    margin-top: 0.25rem !important;
+  }
+  
+  .py-1, .py-2, .py-3, .py-4, .py-6, .py-8, .py-12, .py-16 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  .gap-1, .gap-2, .gap-3, .gap-4, .gap-6, .gap-8 {
+    gap: 0.25rem !important;
+  }
+  
+  /* Target text elements for compact display */
+  .text-3xl, .text-4xl, .text-5xl, .text-6xl, .text-7xl {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .text-xl, .text-2xl {
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Override container spacing universally */
+  .container, .max-w-3xl, .max-w-4xl, .max-w-5xl {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}
+
 /* Capacitor specific adjustments */
 .capacitor-keyboard-open {
   padding-bottom: 0 !important;
@@ -387,8 +484,8 @@
 /* Homepage hero section mobile spacing improvements */
 @media (max-width: 768px) {
   .mobile-container {
-    padding-top: 1.5rem !important;
-    padding-bottom: 1.5rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
   }
   .mobile-container .max-w-3xl {
     margin-top: 0 !important;
@@ -429,5 +526,50 @@
   }
   .mobile-container .text-lg {
     font-size: 1.125rem !important;
+  }
+}
+
+/* Ultra-compact mobile hero section - remove all unnecessary spacing */
+@media (max-width: 768px) {
+  /* Hero section specific - eliminate top/bottom spacing */
+  section.hero-mobile,
+  .min-h-\[60vh\],
+  .min-h-\[80vh\] {
+    min-height: auto !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Remove section padding completely for mobile-section */
+  .mobile-section {
+    padding-top: 0 !important;
+    padding-bottom: 0.25rem !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Compact all max-width containers */
+  .max-w-3xl {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Ultra-compact star rating section */
+  .flex.items-center.justify-center.gap-4,
+  .flex.items-center.justify-center {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Ensure no extra spacing from flex containers */
+  .flex.items-center.justify-center.overflow-hidden {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
