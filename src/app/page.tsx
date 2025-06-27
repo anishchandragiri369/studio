@@ -79,53 +79,38 @@ export default function HomePage() {
         </div>
 
         <div className="container mx-auto px-3 md:px-4 relative z-10 text-center mobile-container">
-          
           <div className="max-w-3xl mx-auto text-center">
             {/* Tagline and Premium Badge */}
-            <div className="mb-2 md:mb-4">
-              <span className="inline-flex items-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-xs md:text-sm font-medium mb-2 md:mb-4 border border-white/50">
+            <div className="mb-1 md:mb-4"> {/* Reduced mb-2 to mb-1 for mobile */}
+              <span className="inline-flex items-center px-2 md:px-4 py-1 md:py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-xs md:text-sm font-medium mb-1 md:mb-4 border border-white/50">
                 <Zap className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Premium Cold-Pressed elixrs
               </span>
             </div>
             
-            <h1 className="text-3xl md:text-5xl lg:text-7xl font-headline font-bold mb-3 md:mb-6 leading-tight mobile-text">
+            <h1 className="text-2xl md:text-5xl lg:text-7xl font-headline font-bold mb-2 md:mb-6 leading-tight mobile-text"> {/* Reduced text-3xl to text-2xl and mb-3 to mb-2 for mobile */}
               <span className="gradient-text">Taste the Freshness</span><br />
               {/* <span className="gradient-text">Freshness</span> */}
             </h1>
             
-            <p className="text-base md:text-xl lg:text-2xl text-black/80 max-w-3xl mx-auto mb-4 md:mb-8 leading-relaxed font-medium drop-shadow-md mobile-text">
-              Experience the ultimate fusion of taste and wellness with our 
+            <p className="text-sm md:text-xl lg:text-2xl text-black/80 max-w-3xl mx-auto mb-2 md:mb-8 leading-relaxed font-medium drop-shadow-md mobile-text"> {/* Reduced text-base to text-sm and mb-4 to mb-2 for mobile */}
+              Experience the ultimate fusion of taste and wellness with our
               <br className="hidden md:block" />
               <span className="text-orange-900 font-semibold">handcrafted elixrs</span> delivered fresh to your door.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 md:gap-4 mb-4 md:mb-8">
-              <Button 
-                asChild 
-                size="lg" 
-                className="bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mobile-btn"
-              >
-                <Link href="/menu">
-                  <Sparkles className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
-                  Explore elixrs
-                </Link>
-              </Button>
-              
-              <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold mobile-btn"
-              >
-                <Link href="/subscriptions">
-                  <Gift className="mr-2 h-5 w-5" />
-                  Premium Plans
-                </Link>
-              </Button>
-            </div>            {/* Social Proof */}
-            <div className="flex items-center justify-center gap-6 text-base text-white/90">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 md:gap-4 mb-2 md:mb-8"> {/* Reduced gap-3 to gap-2 and mb-4 to mb-2 for mobile */}
+              <a className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-4 md:px-8 py-2 md:py-4 text-sm md:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mobile-btn" href="/menu"> {/* Reduced h-11 to h-10, px-6 to px-4, py-3 to py-2, text-base to text-sm for mobile */}
+                <Sparkles className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+                Explore elixrs
+              </a>
+              <a className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:text-accent-foreground h-10 border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-4 md:px-8 py-2 md:py-4 text-sm md:text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold mobile-btn" href="/subscriptions"> {/* Reduced h-11 to h-10, px-6 to px-4, py-3 to py-2, text-base to text-sm for mobile */}
+                <Gift className="mr-2 h-5 w-5" />
+                Premium Plans
+              </a>
+            </div>
+            <div className="flex items-center justify-center gap-4 text-sm text-white/90"> {/* Reduced gap-6 to gap-4 and text-base to text-sm for mobile */}
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1,2,3,4,5].map(i => (

@@ -101,13 +101,81 @@
   }
 }
 
+/* Reduce unnecessary vertical spacing for mobile-native containers and cards */
+@media (max-width: 768px) {
+  .mobile-native .container {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-native .card {
+    margin-bottom: 0.75rem !important;
+    margin-top: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-native .mb-4,
+  .mobile-native .mb-6,
+  .mobile-native .mb-8,
+  .mobile-native .mb-12 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mobile-native .mt-4,
+  .mobile-native .mt-6,
+  .mobile-native .mt-8,
+  .mobile-native .mt-12 {
+    margin-top: 0.5rem !important;
+  }
+  .mobile-native .py-4,
+  .mobile-native .py-6,
+  .mobile-native .py-8 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mobile-native .gap-4,
+  .mobile-native .gap-6,
+  .mobile-native .gap-8 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Additional mobile spacing optimizations */
+@media (max-width: 768px) {
+  /* Reduce section padding for more compact mobile layout */
+  .py-16 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .py-12 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .py-8 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce large text margins */
+  .text-3xl,
+  .text-4xl,
+  .text-5xl {
+    line-height: 1.2 !important;
+  }
+  
+  /* Make buttons more compact on mobile */
+  .mobile-btn {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
 /* Capacitor specific adjustments */
 .capacitor-keyboard-open {
-  /* Styles when keyboard is open */
+  padding-bottom: 0 !important;
 }
 
 .capacitor-keyboard-closed {
-  /* Styles when keyboard is closed */
+  padding-bottom: var(--safe-area-inset-bottom);
 }
 
 /* Platform-specific scrollbar hiding */
@@ -313,5 +381,53 @@
   
   .categories-scroll::-webkit-scrollbar {
     display: none; /* Hide scrollbar on mobile */
+  }
+}
+
+/* Homepage hero section mobile spacing improvements */
+@media (max-width: 768px) {
+  .mobile-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .mobile-container .max-w-3xl {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .mobile-container .mb-2,
+  .mobile-container .mb-3,
+  .mobile-container .mb-4,
+  .mobile-container .mb-6,
+  .mobile-container .mb-8,
+  .mobile-container .mb-12 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mobile-container .gap-3,
+  .mobile-container .gap-4,
+  .mobile-container .gap-6 {
+    gap: 0.5rem !important;
+  }
+  .mobile-container .py-3,
+  .mobile-container .py-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mobile-container .px-6,
+  .mobile-container .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .mobile-container .h-11 {
+    height: 2.5rem !important;
+  }
+  .mobile-container .text-3xl {
+    font-size: 1.75rem !important;
+    line-height: 2rem !important;
+  }
+  .mobile-container .text-base {
+    font-size: 1rem !important;
+  }
+  .mobile-container .text-lg {
+    font-size: 1.125rem !important;
   }
 }
