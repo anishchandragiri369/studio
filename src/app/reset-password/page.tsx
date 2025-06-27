@@ -20,9 +20,6 @@ function ResetPasswordForm() {
   const recoveryToken = searchParams.get('token');
   const type = searchParams.get('type');
 
-  // Debug: Show all query params if token is missing
-  const debugParams = Array.from(searchParams.entries());
-
   // If recoveryToken and type=recovery, exchange for session
   const [sessionReady, setSessionReady] = useState(!recoveryToken || type !== 'recovery');
   useEffect(() => {
@@ -107,9 +104,8 @@ function ResetPasswordForm() {
         )}
         {(!accessToken || !refreshToken) && (
           <div className="mb-4 text-yellow-700 text-xs bg-yellow-100 p-2 rounded">
-            <div><b>Debug:</b> Query params received:</div>
-            <pre>{JSON.stringify(debugParams, null, 2)}</pre>
-            <div>Expected <code>access_token</code> and <code>refresh_token</code> in the URL.</div>
+            <div>Expected access token and refresh token in the URL.</div>
+            <div>Please make sure you clicked the correct password reset link from your email.</div>
           </div>
         )}
       </form>

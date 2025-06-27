@@ -251,9 +251,8 @@ function CheckoutPageContents() {
           console.error("Checkout error:", result.error.message);
         } 
         // No debug logs or secrets
-        if(result.paymentDetails){
+        if (result.paymentDetails) {
           // Payment completed successfully
-          console.log("Payment completed successfully");
           // Clear cart after successful payment
           clearCart(false); // Clear without toast since user will be redirected
         }
@@ -273,23 +272,11 @@ function CheckoutPageContents() {
     
     try {
       // Pre-flight checks
-      console.log("Starting payment process...");
-      console.log("Environment check:", {
-        NODE_ENV: process.env.NODE_ENV,
-        API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'N/A'
-      });
-    //    if (isAuthLoading) {
-    //      toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
-    //      setIsProcessingPayment(false);
-    //      return;
-    //    }
-    //   if (!user) {
-    //     toast({ title: "Authentication Required", description: "Please log in to complete your order.", variant: "destructive" });
-    //     setIsProcessingPayment(false);
-    //     // Optionally redirect to login page: router.push('/login');
-    //     return;
-    //   }
+      if (isAuthLoading) {
+        toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
+        setIsProcessingPayment(false);
+        return;
+      }
       let cashfreeInstance = await load({ mode: "sandbox" });
       // Initialize Cashfree SDK asynchronously
       initializeSDK(); // Ensure the script is loaded
@@ -320,8 +307,6 @@ function CheckoutPageContents() {
       if (currentOrderTotal < 1) {
         throw new Error("Order amount must be at least ₹1.");
       }
-      
-      console.log("Order validation passed. Current order total:", currentOrderTotal);
       
       const orderPayload = {
         orderAmount: currentOrderTotal,
@@ -367,20 +352,13 @@ function CheckoutPageContents() {
           basePrice: subscriptionDetails?.basePrice || 120
         } : null
       };
-      console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
       
       // Get the API base URL and construct the full URL
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-      console.log("API Base URL from env:", process.env.NEXT_PUBLIC_API_BASE_URL);
-      console.log("Current window location:", window.location.origin);
       
       // If no API base URL is set, use the current origin
       const effectiveBaseUrl = apiBaseUrl || window.location.origin;
       const orderCreateUrl = `${effectiveBaseUrl}/api/orders/create`;
-      console.log("Order creation URL:", orderCreateUrl);
-      
-      // Log API endpoint for debugging
-      console.log("Using API endpoint:", orderCreateUrl);
       
       // 1. Create order in your backend with enhanced error handling
       let orderCreationResponse;
@@ -413,8 +391,6 @@ function CheckoutPageContents() {
         throw new Error("No response received from server");
       }
       
-      console.log("Order creation response status:", orderCreationResponse.status);
-      
       let orderCreationResult;
       try {
         orderCreationResult = await orderCreationResponse.json();
@@ -446,8 +422,6 @@ function CheckoutPageContents() {
       };
       
       const cashfreeCreateUrl = `${effectiveBaseUrl}/api/cashfree/create-order`;
-      console.log("Cashfree order creation URL:", cashfreeCreateUrl);
-      console.log("Cashfree order payload:", JSON.stringify(cashfreeOrderPayload));
       
       let cashfreeOrderResponse;
       try {
@@ -478,8 +452,6 @@ function CheckoutPageContents() {
       if (!cashfreeOrderResponse) {
         throw new Error("No response received from payment service");
       }
-      
-      console.log("Cashfree order response status:", cashfreeOrderResponse.status);
       
       let cashfreeOrderResult;
       try {

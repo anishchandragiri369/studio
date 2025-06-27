@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
   useEffect(() => {
     if (!isActuallyConfiguredAndAuthReady) {
-      console.warn("AuthContext: Supabase Auth is not available or not properly configured. Authentication features will be disabled.");
       setUser(null);
       setIsAdmin(false);
       setLoading(false);
@@ -55,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (error.message?.includes('refresh_token_not_found') || 
               error.message?.includes('Invalid Refresh Token') ||
               error.message?.includes('JWT expired')) {
-            console.log('[AuthContext] Refresh token invalid, clearing local auth state');
             
             // Clear local auth state without triggering a server-side sign out
             await supabase!.auth.signOut({ scope: 'local' });
@@ -78,7 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
           setIsAdmin(false);
         } else if (session?.user) {
-          console.log('[AuthContext] Initial session found for user:', session.user.email);
           setUser(session.user);
           
           try {
@@ -92,12 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Check if user is admin (data array has results and no error)
             const isUserAdmin = !adminError && adminData && adminData.length > 0;
             setIsAdmin(isUserAdmin);
-            
-            console.log('[AuthContext] Initial admin check result:', { 
-              email: session.user.email, 
-              isAdmin: isUserAdmin, 
-              error: adminError 
-            });
           } catch (adminCheckError) {
             console.error('[AuthContext] Error checking initial admin status:', adminCheckError);
             setIsAdmin(false);
@@ -118,13 +109,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     getInitialSession();
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AuthContext] Auth state changed:', event, session?.user?.email || 'no user');
-      
       // Handle specific auth events
       if (event === 'TOKEN_REFRESHED') {
-        console.log('[AuthContext] Token refreshed successfully');
+        // Token refreshed successfully
       } else if (event === 'SIGNED_OUT') {
-        console.log('[AuthContext] Processing SIGNED_OUT event');
         setUser(null);
         setIsAdmin(false);
         
@@ -164,12 +152,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Check if user is admin (data array has results and no error)
           const isUserAdmin = !adminError && adminData && adminData.length > 0;
           setIsAdmin(isUserAdmin);
-          
-          console.log('[AuthContext] Admin check result:', { 
-            email: currentUser.email, 
-            isAdmin: isUserAdmin, 
-            error: adminError 
-          });
         } catch (error) {
           console.error('[AuthContext] Error checking admin status:', error);
           setIsAdmin(false);
@@ -237,8 +219,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      console.log('[AuthContext] Starting logout process...');
-      
       // Sign out from Supabase
       const { error } = await supabase!.auth.signOut();
         // Clear local state immediately
@@ -270,13 +250,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
       
-      console.log('[AuthContext] Logout completed successfully');
-      
       if (error) {
-        console.warn('[AuthContext] Supabase signOut error (but continuing with cleanup):', error);
+        // Continue with cleanup even if signOut had an error
       }
     } catch (error) {
-      console.error('[AuthContext] Error during logout:', error);
       // Even if there's an error, clear local state
       setUser(null);
       setIsAdmin(false);

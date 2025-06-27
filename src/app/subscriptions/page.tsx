@@ -32,17 +32,12 @@ export default function SubscriptionsPage() {
     return plan.frequency === frequencyFilter;
   });
 
-  // Debug: log filtered plans
-  console.log('Current filter:', frequencyFilter);
-  console.log('All plans:', SUBSCRIPTION_PLANS);
-  console.log('Filtered plans:', filteredPlans);  // Navigate to specific plan or filter
+  // Navigate to specific plan or filter
   const handlePlanNavigation = (filter: 'all' | 'weekly' | 'monthly') => {
-    console.log('Setting filter to:', filter);
     if (filter === 'weekly') {
       // Navigate to the first weekly plan
       const weeklyPlan = SUBSCRIPTION_PLANS.find(plan => plan.frequency === 'weekly');
       if (weeklyPlan) {
-        console.log('Navigating to weekly plan:', weeklyPlan.id);
         router.push(`/subscriptions/subscribe?plan=${weeklyPlan.id}`);
         return;
       }
