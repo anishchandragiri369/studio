@@ -1071,3 +1071,454 @@ EFFECT: Ensures all juice cards have same height in mobile scroll
     margin-bottom: 0 !important; /* ⚡ EDIT HERE: Bottom margins (keep at 0 for seamless flow) */
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* 🏷️ IN STOCK BADGE: REDUCE SIZE FOR MOBILE                                 */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card span.px-2.py-1.rounded-full.text-xs.font-medium {
+    padding: 0.125rem 0.375rem !important; /* Smaller padding */
+    font-size: 0.6rem !important; /* Smaller text */
+    line-height: 1 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .absolute.top-3.right-3.z-10 {
+    top: 0.5rem !important; /* Move badge closer to edge */
+    right: 0.5rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD SECTION: FURTHER REDUCE SIZE FOR MOBILE (Even More Compact) */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card {
+    min-height: 300px !important; /* Further reduced from 340px */
+    padding: 0.5rem !important;   /* Even less padding */
+  }
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 100px !important; /* Less space for content */
+    margin-bottom: 0.25rem !important;
+  }
+  .mobile-juice-scroll .glass-card .card-footer,
+  .mobile-juice-scroll .glass-card .product-actions,
+  .mobile-juice-scroll .glass-card .flex:last-child {
+    min-height: 36px !important; /* Even smaller action/footer area */
+    padding-top: 0.25rem !important;
+    gap: 0.25rem !important;
+  }
+  /* Make action row container more compact */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    padding: 0.25rem 0 !important;
+    gap: 0.25rem !important;
+    min-height: 32px !important;
+  }
+  /* Make buttons and controls even smaller */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"],
+  .mobile-juice-scroll .glass-card .quantity-btn,
+  .mobile-juice-scroll .glass-card .add-to-cart-btn,
+  .mobile-juice-scroll .glass-card button[aria-label*="Add"],
+  .mobile-juice-scroll .glass-card .btn-primary {
+    min-height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.85rem !important;
+    padding: 0.25rem !important;
+  }
+  .mobile-juice-scroll .glass-card .quantity-display,
+  .mobile-juice-scroll .glass-card span[class*="text"] {
+    min-height: 28px !important;
+    min-width: 1.25rem !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD ACTION ROW: ULTRA COMPACT (Below 120px total)               */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card {
+    min-height: 240px !important; /* Reduced to fit under 120px action area */
+    max-height: 240px !important;
+    padding: 0.375rem !important;
+    overflow: hidden !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 80px !important; /* Very compact content area */
+    max-height: 120px !important;
+    margin-bottom: 0.125rem !important;
+  }
+  
+  /* Ultra compact action row - stays within container */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    padding: 0.125rem 0 !important;
+    gap: 0.125rem !important;
+    min-height: 24px !important;
+    max-height: 32px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .card-footer,
+  .mobile-juice-scroll .glass-card .product-actions,
+  .mobile-juice-scroll .glass-card .flex:last-child {
+    min-height: 24px !important;
+    max-height: 32px !important;
+    padding: 0.125rem 0 !important;
+    gap: 0.125rem !important;
+  }
+  
+  /* Ultra small buttons and controls */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"],
+  .mobile-juice-scroll .glass-card .quantity-btn,
+  .mobile-juice-scroll .glass-card .add-to-cart-btn,
+  .mobile-juice-scroll .glass-card button[aria-label*="Add"],
+  .mobile-juice-scroll .glass-card .btn-primary {
+    min-height: 22px !important;
+    max-height: 24px !important;
+    min-width: 22px !important;
+    font-size: 0.7rem !important;
+    padding: 0.125rem 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .quantity-display,
+  .mobile-juice-scroll .glass-card span[class*="text"] {
+    min-height: 22px !important;
+    max-height: 24px !important;
+    min-width: 1rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD: OVERRIDE CONTAINER HEIGHT & MAKE CONTENT VISIBLE           */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Override the fixed 420px container height */
+  .mobile-juice-scroll .flex-none.w-64.h-\[420px\] {
+    height: auto !important;
+    min-height: 320px !important;
+    max-height: none !important;
+  }
+  
+  .mobile-juice-scroll .glass-card {
+    min-height: 300px !important;
+    max-height: none !important;
+    height: 373px !important;
+    padding: 0.75rem !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 140px !important; /* More space for content to be visible */
+    max-height: none !important;
+    margin-bottom: 0.5rem !important;
+    flex: 1 !important;
+  }
+  
+  /* Ensure image container is visible */
+  .mobile-juice-scroll .glass-card .relative.w-full.overflow-hidden {
+    height: 120px !important; /* Smaller but visible image area */
+    min-height: 120px !important;
+  }
+  
+  /* Make text content visible */
+  .mobile-juice-scroll .glass-card .p-4.flex-grow {
+    padding: 0.5rem !important;
+    min-height: 100px !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .font-semibold.tracking-tight {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .text-sm.text-muted-foreground {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .text-xs.text-foreground {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+    min-height: 2.5em !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.justify-between.items-center {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* Action row - compact but visible */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem 0.5rem 0.25rem 0.5rem !important;
+    min-height: 40px !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.5rem !important;
+    min-height: 36px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Make buttons visible and touchable */
+  .mobile-juice-scroll .glass-card button {
+    min-height: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.8rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card span.w-10.text-center {
+    min-width: 1.5rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🛒 FIX ADD TO CART CROPPING & QUANTITY NUMBER POSITIONING                 */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Ensure action row has enough space and doesn't crop */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.75rem !important;
+    min-height: 42px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  
+  /* Fix quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.5rem !important;
+    min-width: 100px !important;
+    flex-shrink: 0 !important;
+    align-items: center !important;
+    display: flex !important;
+  }
+  
+  /* Fix quantity buttons */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 36px !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Fix quantity number positioning */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 2rem !important;
+    width: 2rem !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Fix Add to Cart button - prevent cropping */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 36px !important;
+    height: 36px !important;
+    min-width: 90px !important;
+    max-width: 120px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Fix Add to Cart icon */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+    margin-right: 0.25rem !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Ensure container doesn't clip content */
+  .mobile-juice-scroll .glass-card {
+    padding-bottom: 0.75rem !important;
+    overflow: visible !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔢 INCREASE QUANTITY SIZE & ENHANCE ADD TO CART BORDER                    */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Increase quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.375rem !important;
+    min-width: 95px !important;
+    max-width: 95px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Increase quantity buttons size */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 34px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0.25rem !important;
+    border-width: 1px !important;
+    border-radius: 0.375rem !important;
+  }
+  
+  /* Increase quantity number size */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 34px !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Enhance Add to Cart button with better border and fit within boundary */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 34px !important;
+    height: 34px !important;
+    min-width: 75px !important;
+    max-width: 85px !important;
+    width: auto !important;
+    padding: 0.375rem 0.625rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    flex: 1 !important;
+    flex-shrink: 1 !important;
+    box-sizing: border-box !important;
+    
+    /* Enhanced blue border and styling */
+    border: 2px solid hsl(var(--accent)) !important;
+    border-radius: 0.5rem !important;
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  /* Hover state for Add to Cart button */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2:hover {
+    border-color: hsl(var(--accent)) !important;
+    background-color: hsl(var(--accent)/90) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+  }
+  
+  /* Adjust Add to Cart icon size */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  /* Adjust action row spacing to accommodate larger elements */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Ensure parent container accommodates larger elements */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem 0.5rem 0.375rem 0.5rem !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔢 COMPACT QUANTITY CONTROLS TO FIT IN REDUCED ACTION AREA               */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Compact quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.25rem !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    flex-shrink: 0 !important;
+    height: 28px !important;
+  }
+  
+  /* Compact quantity buttons to fit action area */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 28px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0.125rem !important;
+    border-width: 1px !important;
+    border-radius: 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  /* Compact quantity number */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 28px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Compact Add to Cart button */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 28px !important;
+    height: 28px !important;
+    min-width: 70px !important;
+    max-width: 80px !important;
+    width: auto !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+    flex: 1 !important;
+    flex-shrink: 1 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Compact Add to Cart icon */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.7rem !important;
+    height: 0.7rem !important;
+    margin-right: 0.125rem !important;
+  }
+}
