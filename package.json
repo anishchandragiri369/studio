@@ -6,7 +6,7 @@
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
-    "build:server": "npm run api:restore && npx cross-env MOBILE_BUILD=false STATIC_EXPORT=false NEXT_PUBLIC_BUILD_MODE=server next build",
+    "build:server": "npx cross-env MOBILE_BUILD=false STATIC_EXPORT=false NEXT_PUBLIC_BUILD_MODE=server next build",
     "build:static": "npm run api:prepare-static && npx cross-env MOBILE_BUILD=true NEXT_PUBLIC_BUILD_MODE=static next build && npm run api:restore",
     "start": "next start",
     "lint": "next lint",

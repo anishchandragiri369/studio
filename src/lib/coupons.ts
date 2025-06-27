@@ -145,18 +145,14 @@ export const validateCoupon = async (
   // Check if user-specific validation is needed
   if (userId && (coupon.firstOrderOnly || coupon.maxUsesPerUser)) {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/coupons/validate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          couponCode: coupon.code,
-          userId,
-          firstOrderOnly: coupon.firstOrderOnly,
-          maxUsesPerUser: coupon.maxUsesPerUser
-        })
+      const { apiPost } = await import('./apiUtils');
+      const result = await apiPost('/api/coupons/validate', {
+        couponCode: coupon.code,
+        userId,
+        firstOrderOnly: coupon.firstOrderOnly,
+        maxUsesPerUser: coupon.maxUsesPerUser
       });
       
-      const result = await response.json();
       if (!result.success) {
         return { isValid: false, error: result.message };
       }

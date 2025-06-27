@@ -1,4 +1,9 @@
-// This file is a placeholder for static export compatibility.
-// Next.js static export does not support API routes.
-// No exports: this prevents build errors for static export.
-export {};
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    message: 'API is working',
+    timestamp: new Date().toISOString()
+  });
+}
