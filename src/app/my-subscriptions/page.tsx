@@ -1,4 +1,39 @@
+
 "use client";
+
+// Helper to normalize both user_subscriptions and order-based subscription items to a common shape
+function normalizeSubscription(sub: any): any {
+  // If it's a user_subscriptions row (native subscription)
+  if (sub && sub.plan_id && sub.status && sub.delivery_frequency) {
+    return sub;
+  }
+  // If it's an order-based subscription item (from orders table)
+  const info = sub?.subscription_info || {};
+  return {
+    id: sub?.id || sub?.order_id || '',
+    user_id: sub?.user_id || '',
+    plan_id: sub?.plan_id || sub?.planId || info.plan_id || info.planId || 'Subscription Plan',
+    status: sub?.status || sub?.order_status || 'active',
+    created_at: sub?.created_at || '',
+    updated_at: sub?.updated_at || sub?.created_at || '',
+    next_delivery_date: sub?.next_delivery_date || sub?.first_delivery_date || info.next_delivery_date || '',
+    pause_date: sub?.pause_date || undefined,
+    pause_reason: sub?.pause_reason || undefined,
+    reactivation_deadline: sub?.reactivation_deadline || undefined,
+    delivery_frequency: sub?.delivery_frequency || info.frequency || info.delivery_frequency || 'monthly',
+    selected_juices: sub?.selected_juices || info.selected_juices || [],
+    delivery_address: sub?.shipping_address || sub?.delivery_address || info.delivery_address || {},
+    total_amount: sub?.total_amount || info.total_amount || sub?.pricePerItem || info.pricePerItem || 0,
+    subscription_duration: sub?.subscription_duration || info.duration || info.subscription_duration || 1,
+    subscription_start_date: sub?.subscription_start_date || info.start_date || info.subscription_start_date || sub?.first_delivery_date || '',
+    subscription_end_date: sub?.subscription_end_date || info.end_date || info.subscription_end_date || '',
+    original_price: sub?.original_price || info.original_price || sub?.pricePerItem || info.pricePerItem || 0,
+    discount_percentage: sub?.discount_percentage || info.discount_percentage || 0,
+    discount_amount: sub?.discount_amount || info.discount_amount || 0,
+    final_price: sub?.final_price || info.final_price || sub?.pricePerItem || info.pricePerItem || 0,
+    renewal_notification_sent: sub?.renewal_notification_sent || false,
+  };
+}
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -164,13 +199,14 @@ export default function MySubscriptionsPage() {
               </AlertDescription>
             </Alert>
 
-            {subscriptions.map((subscription) => (
+            {subscriptions.map((subscription: any, idx: number) => (
               <SubscriptionCard
-                key={subscription.id}
-                subscription={subscription}
+                key={(subscription && (subscription.id || subscription.order_id)) || idx}
+                subscription={normalizeSubscription(subscription)}
                 onUpdate={fetchSubscriptions}
               />
             ))}
+
           </div>
         )}
       </div>

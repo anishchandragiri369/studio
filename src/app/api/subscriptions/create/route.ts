@@ -2,6 +2,13 @@ import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { CheckoutAddressFormData } from '@/lib/types';
+import { 
+  calculateFirstDeliveryDate, 
+  generateSubscriptionDeliveryDates,
+  type DeliverySchedule,
+  type SubscriptionDeliveryDates 
+} from '@/lib/deliveryScheduler';
+import { validatePincode } from '@/lib/pincodeValidation';
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
@@ -47,6 +54,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate pincode for delivery area
+    if (!customerInfo.address?.zipCode) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Pincode is required for delivery.' 
+      }, { status: 400 });
+    }
+    
+    const pincodeValidation = validatePincode(customerInfo.address.zipCode);
+    if (!pincodeValidation.isServiceable) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Sorry, we don\'t deliver to this pincode yet. Please contact us for delivery updates!',
+        pincodeError: true
+      }, { status: 400 });
+    }
+
     if (!['weekly', 'monthly'].includes(planFrequency)) {
       return NextResponse.json(
         { success: false, message: 'Invalid plan frequency.' },
@@ -62,20 +86,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate subscription pricing
-    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, subscriptionDuration);    // Calculate subscription dates
+    const pricing = SubscriptionManager.calculateSubscriptionPricing(basePrice, subscriptionDuration);
+
+    // Calculate subscription dates
     const startDate = new Date();
-    const endDate = SubscriptionManager.calculateSubscriptionEndDate(startDate, subscriptionDuration);    // Calculate first delivery date using SubscriptionManager
-    const firstDeliveryDate = SubscriptionManager.getNextScheduledDelivery(
-      startDate, 
-      planFrequency as 'weekly' | 'monthly'
+    const endDate = SubscriptionManager.calculateSubscriptionEndDate(startDate, subscriptionDuration);
+
+    // Use new delivery scheduling system with 6 PM cutoff
+    const deliverySchedule: DeliverySchedule = calculateFirstDeliveryDate(new Date());
+    
+    // Generate all delivery dates for the subscription period
+    const subscriptionDeliveryDates: SubscriptionDeliveryDates = generateSubscriptionDeliveryDates(
+      planFrequency as 'weekly' | 'monthly',
+      subscriptionDuration, // Duration in months
+      deliverySchedule.firstDeliveryDate
     );
     
-    // Set to 10 AM
-    firstDeliveryDate.setHours(10, 0, 0, 0);
-    
-    const nextDeliveryDate = firstDeliveryDate;
+    // Set first delivery time to 10 AM
+    const nextDeliveryDate = new Date(deliverySchedule.firstDeliveryDate);
+    nextDeliveryDate.setHours(10, 0, 0, 0);
 
-    // Create subscription record
+    // Create subscription record with delivery schedule
     const subscriptionData = {
       user_id: userId,
       plan_id: planId,
@@ -94,7 +125,16 @@ export async function POST(req: NextRequest) {
       final_price: pricing.finalPrice,
       renewal_notification_sent: false,
       created_at: startDate.toISOString(),
-      updated_at: startDate.toISOString()
+      updated_at: startDate.toISOString(),
+      // Add delivery schedule information
+      first_delivery_date: deliverySchedule.firstDeliveryDate.toISOString(),
+      is_after_cutoff: deliverySchedule.isAfterCutoff,
+      delivery_schedule: {
+        startDate: subscriptionDeliveryDates.startDate.toISOString(),
+        endDate: subscriptionDeliveryDates.endDate.toISOString(),
+        deliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString()),
+        totalDeliveries: subscriptionDeliveryDates.totalDeliveries
+      }
     };
 
     const { data: subscription, error: subscriptionError } = await supabase
@@ -109,31 +149,20 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Failed to create subscription.', error: subscriptionError.message },
         { status: 500 }
       );
-    }    // Generate initial delivery schedule
-    let deliveryRecords = [];
-    
-    if (planFrequency === 'monthly') {
-      // Generate 2 months of delivery schedule
-      const monthlyDeliveries = SubscriptionManager.generateMonthlyDeliverySchedule(nextDeliveryDate, 2);
-      deliveryRecords = monthlyDeliveries.map(date => ({
+    }    // Generate delivery schedule using new delivery scheduling system
+    const deliveryRecords = subscriptionDeliveryDates.deliveryDates.map(deliveryDate => {
+      const deliveryDateTime = new Date(deliveryDate);
+      deliveryDateTime.setHours(10, 0, 0, 0); // Set delivery time to 10 AM
+      
+      return {
         subscription_id: subscription.id,
-        delivery_date: date.toISOString(),
+        delivery_date: deliveryDateTime.toISOString(),
         status: 'scheduled',
         items: selectedJuices || [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }));
-    } else {
-      // For weekly, create first delivery record
-      deliveryRecords = [{
-        subscription_id: subscription.id,
-        delivery_date: nextDeliveryDate.toISOString(),
-        status: 'scheduled',
-        items: selectedJuices || [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }];
-    }
+      };
+    });
 
     const { error: deliveryError } = await supabase
       .from('subscription_deliveries')
@@ -151,7 +180,14 @@ export async function POST(req: NextRequest) {
         subscription,
         pricing,
         nextDeliveryDate: nextDeliveryDate.toISOString(),
-        subscriptionEndDate: endDate.toISOString()
+        subscriptionEndDate: endDate.toISOString(),
+        deliverySchedule: {
+          firstDeliveryDate: deliverySchedule.firstDeliveryDate.toISOString(),
+          isAfterCutoff: deliverySchedule.isAfterCutoff,
+          orderCutoffTime: deliverySchedule.orderCutoffTime.toISOString(),
+          totalDeliveries: subscriptionDeliveryDates.totalDeliveries,
+          allDeliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString())
+        }
       }
     });
 

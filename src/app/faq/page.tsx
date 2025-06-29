@@ -95,7 +95,7 @@ export default function FAQPage() {
               <a href="mailto:support@elixrjuices.com" className="btn btn-primary">
                 Email Support
               </a>
-              <a href="tel:+91-9876543210" className="btn btn-outline">
+              <a href="tel:+91-9704595252" className="btn btn-outline">
                 Call Us
               </a>
             </div>

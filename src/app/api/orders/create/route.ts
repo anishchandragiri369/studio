@@ -1,6 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import type { OrderItem, CheckoutAddressFormData } from '@/lib/types';
+import { 
+  calculateFirstDeliveryDate, 
+  generateSubscriptionDeliveryDates,
+  type DeliverySchedule,
+  type SubscriptionDeliveryDates 
+} from '@/lib/deliveryScheduler';
+import { validatePincode } from '@/lib/pincodeValidation';
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
@@ -11,7 +18,7 @@ export async function POST(req: NextRequest) {
     );
   }
   try {    const body = await req.json();
-    const { orderAmount, originalAmount, appliedCoupon, appliedReferral, orderItems, customerInfo, userId, subscriptionData } = body;
+    const { orderAmount, originalAmount, appliedCoupon, appliedReferral, orderItems, customerInfo, userId, subscriptionData, hasSubscriptions, hasRegularItems } = body;
 
     // Validation
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
@@ -28,7 +35,67 @@ export async function POST(req: NextRequest) {
     
     if (!customerInfo.name || !customerInfo.email) {
       return NextResponse.json({ success: false, message: 'Customer name and email are required.' }, { status: 400 });
-    }    const orderToInsert = {
+    }
+    
+    // Validate pincode for delivery area
+    if (!customerInfo.address?.zipCode) {
+      return NextResponse.json({ success: false, message: 'Pincode is required for delivery.' }, { status: 400 });
+    }
+    
+    const pincodeValidation = validatePincode(customerInfo.address.zipCode);
+    if (!pincodeValidation.isServiceable) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Sorry, we don\'t deliver to this pincode yet. Please contact us for delivery updates!',
+        pincodeError: true
+      }, { status: 400 });
+    }
+    
+    // Determine if this order contains subscriptions - check multiple sources
+    const containsSubscriptions = hasSubscriptions || 
+                                 subscriptionData || 
+                                 orderItems.some((item: any) => item.type === 'subscription');
+    
+    // Determine order type based on content
+    let orderType: string;
+    if (containsSubscriptions && hasRegularItems) {
+      orderType = 'mixed'; // Both subscription and regular items
+    } else if (containsSubscriptions) {
+      orderType = 'subscription'; // Only subscription items
+    } else {
+      orderType = 'one_time'; // Only regular items
+    }    // Calculate delivery dates for subscription orders
+    let deliverySchedule: DeliverySchedule | null = null;
+    let subscriptionDeliveryDates: SubscriptionDeliveryDates | null = null;
+    
+    if (containsSubscriptions) {
+      // Calculate the first delivery date based on order time and 6 PM cutoff
+      deliverySchedule = calculateFirstDeliveryDate(new Date());
+      
+      // Generate all delivery dates for the subscription period
+      // For mixed orders, use subscription data from the first subscription item
+      let subscriptionInfo = subscriptionData;
+      if (!subscriptionInfo) {
+        // Extract subscription info from subscription items
+        const subscriptionItem = orderItems.find((item: any) => item.type === 'subscription');
+        if (subscriptionItem?.subscriptionData) {
+          subscriptionInfo = {
+            frequency: subscriptionItem.subscriptionData.planFrequency,
+            duration: subscriptionItem.subscriptionData.subscriptionDuration
+          };
+        }
+      }
+      
+      if (subscriptionInfo?.frequency && subscriptionInfo?.duration) {
+        subscriptionDeliveryDates = generateSubscriptionDeliveryDates(
+          subscriptionInfo.frequency,
+          subscriptionInfo.duration,
+          deliverySchedule.firstDeliveryDate
+        );
+      }
+    }
+
+    const orderToInsert = {
       user_id: userId,
       email: customerInfo.email, // Add email field
       total_amount: orderAmount,
@@ -40,8 +107,20 @@ export async function POST(req: NextRequest) {
       items: orderItems,
       shipping_address: customerInfo, // <-- FIXED: use shipping_address
       status: 'payment_pending', // Use snake_case for consistency
-      order_type: subscriptionData ? 'subscription' : 'one_time', // Add order type
-      subscription_info: subscriptionData || null, // Store subscription details
+      order_type: orderType, // Use the new calculated order type
+      subscription_info: containsSubscriptions ? (subscriptionData || {
+        hasSubscriptionItems: true,
+        subscriptionItems: orderItems.filter((item: any) => item.type === 'subscription')
+      }) : null, // Store subscription details
+      // Add delivery scheduling information
+      first_delivery_date: deliverySchedule?.firstDeliveryDate?.toISOString() || null,
+      is_after_cutoff: deliverySchedule?.isAfterCutoff || null,
+      delivery_schedule: subscriptionDeliveryDates ? {
+        startDate: subscriptionDeliveryDates.startDate.toISOString(),
+        endDate: subscriptionDeliveryDates.endDate.toISOString(),
+        deliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString()),
+        totalDeliveries: subscriptionDeliveryDates.totalDeliveries
+      } : null,
     };const { data, error } = await supabase
       .from('orders')
       .insert([orderToInsert])

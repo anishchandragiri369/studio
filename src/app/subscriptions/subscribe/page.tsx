@@ -13,12 +13,14 @@ import SubscriptionDurationSelector from '@/components/subscriptions/Subscriptio
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { SubscriptionPlan, Juice } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
+import { useCart } from '@/hooks/useCart';
 
 type CustomSelections = Record<string, number>; // { juiceId: quantity }
 
 function SubscribePageContents() {
   const searchParams = useSearchParams();
   const router = useRouter(); // Initialize useRouter
+  const { addSubscriptionToCart } = useCart(); // Add cart functionality
   const planId = searchParams.get('plan');
   const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
   const [customSelections, setCustomSelections] = useState<CustomSelections>({});
@@ -83,17 +85,16 @@ function SubscribePageContents() {
     setSelectedPricing(pricing);
   };
   const handleProceedToCheckout = () => {
-    console.log('Proceed to checkout clicked');
-    console.log('selectedPlan:', selectedPlan);
-    console.log('selectedPricing:', selectedPricing);
-    console.log('selectedDuration:', selectedDuration);
+    console.log('Adding subscription to cart');
     
     if (!selectedPlan) {
       console.error('No selected plan');
       return;
     }
-      if (!selectedPricing) {
-      console.error('No selected pricing - initializing now');      // Try to initialize pricing if it's missing
+    
+    if (!selectedPricing) {
+      console.error('No selected pricing - initializing now');
+      // Try to initialize pricing if it's missing
       const pricing = SubscriptionManager.calculateSubscriptionPricing(
         selectedPlan.pricePerDelivery, 
         selectedDuration,
@@ -101,36 +102,37 @@ function SubscribePageContents() {
       );
       setSelectedPricing(pricing);
       
-      // Use the calculated pricing for navigation
-      const queryParams = new URLSearchParams();
-      queryParams.append('planId', selectedPlan.id);
-      queryParams.append('planName', selectedPlan.name);
-      queryParams.append('planPrice', pricing.finalPrice.toString());
-      queryParams.append('planFrequency', selectedPlan.frequency);
-      queryParams.append('subscriptionDuration', selectedDuration.toString());
-      queryParams.append('basePrice', selectedPlan.pricePerDelivery.toString());
-
-      if (selectedPlan.isCustomizable && Object.keys(customSelections).length > 0) {
-        queryParams.append('selectedJuices', JSON.stringify(customSelections));
-      }
-
-      router.push(`/checkout?${queryParams.toString()}`);
+      // Use the calculated pricing for adding to cart
+      const subscriptionData = {
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        planFrequency: selectedPlan.frequency,
+        subscriptionDuration: selectedDuration,
+        basePrice: pricing.finalPrice, // Use final price with discount
+        selectedJuices: selectedPlan.isCustomizable 
+          ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
+          : selectedPlan.defaultJuices || []
+      };
+      
+      addSubscriptionToCart(subscriptionData);
+      router.push('/cart');
       return;
     }
 
-    const queryParams = new URLSearchParams();
-    queryParams.append('planId', selectedPlan.id);
-    queryParams.append('planName', selectedPlan.name);
-    queryParams.append('planPrice', selectedPricing.finalPrice.toString()); // Use final price with discount
-    queryParams.append('planFrequency', selectedPlan.frequency);
-    queryParams.append('subscriptionDuration', selectedDuration.toString());
-    queryParams.append('basePrice', selectedPlan.pricePerDelivery.toString());
-
-    if (selectedPlan.isCustomizable && Object.keys(customSelections).length > 0) {
-      queryParams.append('selectedJuices', JSON.stringify(customSelections));
-    }
-
-    router.push(`/checkout?${queryParams.toString()}`);
+    // Add subscription to cart with proper data structure
+    const subscriptionData = {
+      planId: selectedPlan.id,
+      planName: selectedPlan.name,
+      planFrequency: selectedPlan.frequency,
+      subscriptionDuration: selectedDuration,
+      basePrice: selectedPricing.finalPrice, // Use final price with discount
+      selectedJuices: selectedPlan.isCustomizable 
+        ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
+        : selectedPlan.defaultJuices || []
+    };
+    
+    addSubscriptionToCart(subscriptionData);
+    router.push('/cart');
   };
 
   return (
@@ -263,7 +265,7 @@ function SubscribePageContents() {
                 }
               >
                 <ShoppingCart className="mr-2 h-5 w-5" /> 
-                {!selectedPricing ? 'Loading...' : 'Proceed to Checkout'}
+                {!selectedPricing ? 'Loading...' : 'Add to Cart'}
               </Button>
               {!selectedPricing && (
                 <p className="text-sm text-muted-foreground mt-2">

@@ -14,11 +14,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Filter, Gift, Calendar, Zap, Heart, Sparkles, Users, Star } from 'lucide-react';
+import { ChevronDown, Filter, Gift, Calendar, Zap, Heart, Sparkles, Users, Star, Clock, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { calculateFirstDeliveryDate, formatDeliveryDate } from '@/lib/deliveryScheduler';
 
 export default function SubscriptionsPage() {
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'weekly' | 'monthly'>('all');
+  const [deliveryInfo, setDeliveryInfo] = useState<{
+    firstDeliveryDate: string;
+    isAfterCutoff: boolean;
+    cutoffTime: string;
+  } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +33,21 @@ export default function SubscriptionsPage() {
                   'Juice Subscriptions - Elixr';
     document.title = title;
   }, [frequencyFilter]);
+
+  // Calculate delivery information on component mount
+  useEffect(() => {
+    const deliverySchedule = calculateFirstDeliveryDate(new Date());
+    setDeliveryInfo({
+      firstDeliveryDate: formatDeliveryDate(deliverySchedule.firstDeliveryDate),
+      isAfterCutoff: deliverySchedule.isAfterCutoff,
+      cutoffTime: deliverySchedule.orderCutoffTime.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      })
+    });
+  }, []);
+
   const filteredPlans = SUBSCRIPTION_PLANS.filter(plan => {
     if (frequencyFilter === 'all') return true;
     return plan.frequency === frequencyFilter;
@@ -111,6 +132,44 @@ export default function SubscriptionsPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Delivery Information */}
+            {deliveryInfo && (
+              <div className="mt-8">
+                <Card className="glass border-0 shadow-soft max-w-lg mx-auto">
+                  <CardContent className="p-6 text-center">
+                    <div className="flex items-center justify-center mb-3">
+                      <Clock className="w-6 h-6 text-primary mr-2" />
+                      <h3 className="font-semibold text-lg">Delivery Information</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Orders placed before {deliveryInfo.cutoffTime}: 
+                        <span className="font-medium text-primary ml-1">Next day delivery</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Orders placed after {deliveryInfo.cutoffTime}: 
+                        <span className="font-medium text-primary ml-1">Day after next delivery</span>
+                      </p>
+                      <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                        <div className="flex items-center justify-center mb-1">
+                          <CheckCircle className="w-4 h-4 text-primary mr-2" />
+                          <span className="text-sm font-medium">Your next delivery would be:</span>
+                        </div>
+                        <p className="text-primary font-semibold">
+                          {deliveryInfo.firstDeliveryDate}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {deliveryInfo.isAfterCutoff 
+                            ? 'Order placed after cutoff time' 
+                            : 'Order placed before cutoff time'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </section>
