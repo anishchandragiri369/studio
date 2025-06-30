@@ -158,80 +158,85 @@ exports.handler = async (event) => {
           console.error('Error calling send-order-email API:', emailError);
         }
         // Create subscription ONLY if payment was successful and order has subscription data
-        if (type === 'PAYMENT_SUCCESS_WEBHOOK' && order.order_type === 'subscription' && order.subscription_info) {
-          console.log('Creating subscription for successful payment...');
-          try {
-            const subscriptionData = order.subscription_info;
-            const customerInfo = order.shipping_address || {};
+if (
+  type === 'PAYMENT_SUCCESS_WEBHOOK' &&
+  (order.order_type === 'subscription' || order.order_type === 'mixed') &&
+  order.subscription_info &&
+  Array.isArray(order.subscription_info.subscriptionItems)
+) {
+  console.log('Creating subscriptions for successful payment...');
+  for (const subscriptionItem of order.subscription_info.subscriptionItems) {
+    try {
+      const subscriptionData = subscriptionItem?.subscriptionData || {};
+      const customerInfo = order.shipping_address || {};
 
-            const subscriptionPayload = {
-              userId: order.user_id,
-              planId: subscriptionData.planId,
-              planName: subscriptionData.planName,
-              planPrice: subscriptionData.planPrice,
-              planFrequency: subscriptionData.planFrequency,
-              customerInfo: {
-                name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
-                email: order.email || customerInfo.email,
-                phone: customerInfo.mobileNumber || customerInfo.phone,
-                ...customerInfo
-              },
-              selectedJuices: subscriptionData.selectedJuices || [],
-              subscriptionDuration: subscriptionData.subscriptionDuration || 3,
-              basePrice: subscriptionData.basePrice || 120
-            };
+      const subscriptionPayload = {
+        userId: order.user_id,
+        planId: subscriptionData.planId,
+        planName: subscriptionData.planName || subscriptionItem?.name,
+        planPrice: subscriptionItem?.price,
+        planFrequency: subscriptionData.planFrequency,
+        customerInfo: {
+          name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
+          email: order.email || customerInfo.email,
+          phone: customerInfo.mobileNumber || customerInfo.phone,
+          ...customerInfo
+        },
+        selectedJuices: subscriptionData.selectedJuices || [],
+        subscriptionDuration: subscriptionData.subscriptionDuration || 3,
+        basePrice: subscriptionData.basePrice || subscriptionItem?.price || 120
+      };
 
-            console.log('Creating subscription with payload:', subscriptionPayload);
+      console.log('Creating subscription with payload:', subscriptionPayload);
 
-            // Call the subscription creation API
-            const apiUrl = process.env.SUBSCRIPTION_CREATE_API_URL || 'https://develixr.netlify.app/api/subscriptions/create';
+      // Call the subscription creation API
+      const apiUrl = process.env.SUBSCRIPTION_CREATE_API_URL || 'https://develixr.netlify.app/api/subscriptions/create';
 
-            const subscriptionRes = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(subscriptionPayload),
-            });
+      const subscriptionRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscriptionPayload),
+      });
 
-            const subscriptionResult = await subscriptionRes.json();
-            console.log('Subscription creation result:', subscriptionResult);
+      const subscriptionResult = await subscriptionRes.json();
+      console.log('Subscription creation result:', subscriptionResult);
 
-            if (!subscriptionResult.success) {
-              console.error('Failed to create subscription:', subscriptionResult.message);
-              // Continue with the webhook processing even if subscription creation fails
-            } else {
-              console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);              console.log('DEBUG: About to enter email try block');
-              try {
-                console.log('DEBUG: Inside email try block, preparing to send subscription confirmation email...');
-                const emailApiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
-                const emailPayload = {
-                  orderId: order.id,
-                  userEmail: order.email || order.customer_email || order.shipping_address?.email,
-                  orderDetails: {
-                    subscriptiondetails: subscriptionData.planName,
-                    price: subscriptionData.planPrice,
-                    // Add more details as needed
-                  }
-                };
-                console.log('DEBUG: Calling send-order-email API for subscription with payload:', emailPayload);
-                const emailRes = await fetch(emailApiUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(emailPayload),
-                });
-                const emailResult = await emailRes.json();
-                console.log('DEBUG: Subscription email API response:', emailResult);
-                if (!emailResult.success) {
-                  console.error('Subscription email sending failed:', emailResult.errors || emailResult.error);
-                }
-              } catch (emailError) {
-                console.error('DEBUG: Error calling send-order-email API for subscription:', emailError);
-              }
+      if (!subscriptionResult.success) {
+        console.error('Failed to create subscription:', subscriptionResult.message);
+        // Continue with the webhook processing even if subscription creation fails
+      } else {
+        console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);
+        try {
+          const emailApiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
+          const emailPayload = {
+            orderId: order.id,
+            userEmail: order.email || order.customer_email || order.shipping_address?.email,
+            orderDetails: {
+              subscriptiondetails: subscriptionData.planName,
+              price: subscriptionData.planPrice,
+              // Add more details as needed
             }
-          } catch (subscriptionError) {
-            console.error('Error creating subscription in webhook:', subscriptionError);
-            // Continue with the webhook processing even if subscription creation fails
+          };
+          const emailRes = await fetch(emailApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailPayload),
+          });
+          const emailResult = await emailRes.json();
+          console.log('Subscription email API response:', emailResult);
+          if (!emailResult.success) {
+            console.error('Subscription email sending failed:', emailResult.errors || emailResult.error);
           }
+        } catch (emailError) {
+          console.error('Error calling send-order-email API for subscription:', emailError);
         }
+      }
+    } catch (subscriptionError) {
+      console.error('Error creating subscription in webhook:', subscriptionError);
+      // Continue with the webhook processing even if subscription creation fails
+    }
+  }
+}
         // Return success regardless of email result
         return {
           statusCode: 200,

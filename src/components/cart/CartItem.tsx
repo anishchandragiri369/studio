@@ -100,7 +100,7 @@ const CartItem = ({ item }: CartItemProps) => {
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {item.subscriptionData.planFrequency || 'weekly'} delivery for {item.subscriptionData.subscriptionDuration || 4} weeks
+                  {item.subscriptionData.planFrequency || 'weekly'} delivery for {item.subscriptionData.subscriptionDuration || 4} {item.subscriptionData.planFrequency === 'monthly' ? (item.subscriptionData.subscriptionDuration === 1 ? 'month' : 'months') : (item.subscriptionData.subscriptionDuration === 1 ? 'week' : 'weeks')}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Juices: {item.subscriptionData.selectedJuices?.length || 0} items selected
