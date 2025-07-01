@@ -11,11 +11,17 @@ import SessionValidator from '@/components/auth/SessionValidator';
 import AppClientProviders from './AppClientProviders';
 import GoogleMapsApiLoaderWrapper from '@/components/GoogleMapsApiLoaderWrapper';
 import DirectGoogleMapsLoader from '@/components/DirectGoogleMapsLoader';
+import CacheBuster from '@/components/CacheBuster';
 
 export const metadata: Metadata = {
   title: 'Elixr - Fresh Juices Delivered',
   description: 'Discover a variety of fresh juices and subscription plans. Healthy, delicious, and convenient.',
   keywords: ['juice', 'fresh juice', 'subscription', 'healthy drinks', 'juice delivery'],
+  other: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,6 +32,44 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {  return (    <html lang="en" suppressHydrationWarning><head><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" /><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" /><script type="module" src="https://unpkg.com/@googlemaps/extended-component-library@latest" async></script></head><body className="font-body antialiased flex flex-col min-h-screen"><DirectGoogleMapsLoader /><GoogleMapsApiLoaderWrapper /><AppClientProviders><CartProvider><AuthProvider><SessionValidator /><Navbar /><main className="flex-1">{children}</main><Footer /><WhatsAppFloatingButton /><Toaster /></AuthProvider></CartProvider></AppClientProviders></body></html>
+}>) {  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Cache control meta tags */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+        
+        {/* Fonts and external resources */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" 
+          rel="stylesheet" 
+        />
+        <script 
+          type="module" 
+          src="https://unpkg.com/@googlemaps/extended-component-library@latest" 
+          async
+        />
+      </head>
+      <body className="font-body antialiased flex flex-col min-h-screen">
+        <CacheBuster />
+        <DirectGoogleMapsLoader />
+        <GoogleMapsApiLoaderWrapper />
+        <AppClientProviders>
+          <CartProvider>
+            <AuthProvider>
+              <SessionValidator />
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <WhatsAppFloatingButton />
+              <Toaster />
+            </AuthProvider>
+          </CartProvider>
+        </AppClientProviders>
+      </body>
+    </html>
   );
 }
