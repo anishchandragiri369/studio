@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import OrderSuccessPage from '../page';
+import { CartProvider } from '@/context/CartContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -24,7 +26,30 @@ jest.mock('next/link', () => ({
   default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
 }));
 
+// Mock Supabase
+jest.mock('@/lib/supabaseClient', () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          order: jest.fn(() => Promise.resolve({ data: [], error: null }))
+        }))
+      }))
+    }))
+  }
+}));
+
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      <CartProvider>
+        {component}
+      </CartProvider>
+    </AuthProvider>
+  );
+};
 
 describe('OrderSuccessPage', () => {
   beforeEach(() => {
@@ -40,21 +65,21 @@ describe('OrderSuccessPage', () => {
   });
 
   it('renders order success page with confirmation message', () => {
-    render(<OrderSuccessPage />);
+    renderWithProviders(<OrderSuccessPage />);
     
     expect(screen.getByText('Order Successful!')).toBeInTheDocument();
     expect(screen.getByText('Thank you for your purchase! Your order has been confirmed and is being processed.')).toBeInTheDocument();
   });
 
   it('displays return home and view orders buttons', () => {
-    render(<OrderSuccessPage />);
+    renderWithProviders(<OrderSuccessPage />);
     
     expect(screen.getByText('Return Home')).toBeInTheDocument();
     expect(screen.getByText('View Orders')).toBeInTheDocument();
   });
 
   it('renders confirmation icon and success message', () => {
-    render(<OrderSuccessPage />);
+    renderWithProviders(<OrderSuccessPage />);
     
     expect(screen.getByText('Order Successful!')).toBeInTheDocument();
     expect(screen.getByText(/We'll send you an email confirmation/)).toBeInTheDocument();

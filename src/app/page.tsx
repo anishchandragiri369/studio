@@ -43,10 +43,10 @@ export default function HomePage() {
           <Image
             src="/images/Welcome-to-the-world-of-elixirs_page.jpg"
             alt="Welcome to the world of elixrs"
-            fill
+            fill={true}
             sizes="100vw"
             className="object-cover object-center"
-            priority
+            priority={true}
             quality={90}
           />          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"></div>
             {/* Enhanced Floating Bubbles - More variety and quantity */}

@@ -25,9 +25,11 @@ jest.mock('@/lib/supabaseClient', () => ({
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
-          order: jest.fn(() => ({
-            data: [],
-            error: null,
+          in: jest.fn(() => ({
+            order: jest.fn(() => ({
+              data: [],
+              error: null,
+            })),
           })),
         })),
       })),
