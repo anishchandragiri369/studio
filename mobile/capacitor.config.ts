@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.elixr.app',
   appName: 'Elixr',
-  webDir: 'out', // Use Next.js static export output
+  webDir: '../out', // Use Next.js static export output - updated path
   server: {
     androidScheme: 'https',
     // For development with live reload:
