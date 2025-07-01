@@ -9,12 +9,12 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function DebugPage() {
   const { user } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchUserData = async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
     
     setIsLoading(true);
     try {
@@ -56,11 +56,11 @@ export default function DebugPage() {
     }
   }, [user]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatJson = (obj) => {
+  const formatJson = (obj: any) => {
     return JSON.stringify(obj, null, 2);
   };
 
@@ -72,6 +72,22 @@ export default function DebugPage() {
             <CardTitle>Debug Dashboard</CardTitle>
             <CardDescription>Please log in to view your data</CardDescription>
           </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!supabase) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Dashboard</CardTitle>
+            <CardDescription>Database connection not available</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">Supabase client is not configured. Please check your environment variables.</p>
+          </CardContent>
         </Card>
       </div>
     );
