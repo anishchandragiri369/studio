@@ -25,5 +25,5 @@
     "types": ["node", "@types/google.maps", "jest"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "mobile"]
 }
