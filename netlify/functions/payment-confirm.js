@@ -161,20 +161,55 @@ exports.handler = async (event) => {
 if (
   type === 'PAYMENT_SUCCESS_WEBHOOK' &&
   (order.order_type === 'subscription' || order.order_type === 'mixed') &&
-  order.subscription_info &&
-  Array.isArray(order.subscription_info.subscriptionItems)
+  order.subscription_info
 ) {
   console.log('Creating subscriptions for successful payment...');
-  for (const subscriptionItem of order.subscription_info.subscriptionItems) {
+  
+  // Handle both old and new subscription data structures
+  let subscriptionItems = [];
+  
+  if (Array.isArray(order.subscription_info.subscriptionItems)) {
+    // New structure: array of subscription items
+    subscriptionItems = order.subscription_info.subscriptionItems;
+  } else if (order.subscription_info.planId) {
+    // Old structure: direct subscription data
+    subscriptionItems = [order.subscription_info];
+  }
+  
+  console.log('Found subscription items:', subscriptionItems.length);
+  console.log('Subscription items details:', JSON.stringify(subscriptionItems, null, 2));
+  
+  for (const subscriptionItem of subscriptionItems) {
     try {
-      const subscriptionData = subscriptionItem?.subscriptionData || {};
+      console.log('Processing subscription item:', JSON.stringify(subscriptionItem, null, 2));
+      
+      // Extract subscription data - handle both old and new structures
+      let subscriptionData = {};
+      
+      if (subscriptionItem.subscriptionData) {
+        // New structure: subscription data is nested
+        subscriptionData = subscriptionItem.subscriptionData;
+        console.log('Using nested subscriptionData:', JSON.stringify(subscriptionData, null, 2));
+      } else {
+        // Old structure or direct mapping
+        subscriptionData = {
+          planId: subscriptionItem.planId || subscriptionItem.id,
+          planName: subscriptionItem.planName || subscriptionItem.name,
+          planFrequency: subscriptionItem.planFrequency || 'weekly',
+          selectedJuices: subscriptionItem.selectedJuices || [],
+          subscriptionDuration: subscriptionItem.subscriptionDuration || 3,
+          basePrice: subscriptionItem.basePrice || subscriptionItem.price || 120
+        };
+        console.log('Using mapped subscriptionData:', JSON.stringify(subscriptionData, null, 2));
+      }
+      
       const customerInfo = order.shipping_address || {};
 
       const subscriptionPayload = {
         userId: order.user_id,
         planId: subscriptionData.planId,
         planName: subscriptionData.planName || subscriptionItem?.name,
-        planPrice: subscriptionItem?.price,
+        planPrice: subscriptionItem?.price || subscriptionData.planPrice,
         planFrequency: subscriptionData.planFrequency,
         customerInfo: {
           name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
@@ -191,6 +226,8 @@ if (
 
       // Call the subscription creation API
       const apiUrl = process.env.SUBSCRIPTION_CREATE_API_URL || 'https://develixr.netlify.app/api/subscriptions/create';
+      
+      console.log('Calling subscription API at:', apiUrl);
 
       const subscriptionRes = await fetch(apiUrl, {
         method: 'POST',
@@ -199,6 +236,7 @@ if (
       });
 
       const subscriptionResult = await subscriptionRes.json();
+      console.log('Subscription API response status:', subscriptionRes.status);
       console.log('Subscription creation result:', subscriptionResult);
 
       if (!subscriptionResult.success) {

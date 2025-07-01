@@ -9,16 +9,19 @@ import {
   type SubscriptionDeliveryDates 
 } from '@/lib/deliveryScheduler';
 import { validatePincode } from '@/lib/pincodeValidation';
+import { logger, createLoggedResponse } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
+    logger.error('Supabase client not initialized', {}, 'Subscriptions API');
     return NextResponse.json(
-      { success: false, message: 'Database connection not available.' },
+      createLoggedResponse(false, 'Database connection not available.', {}, 503, 'error'),
       { status: 503 }
     );
   }
 
   try {
+    logger.info('Subscription creation request received', {}, 'Subscriptions API');
     const body = await req.json();
     const { 
       userId, 
@@ -54,15 +57,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate pincode for delivery area
-    if (!customerInfo.address?.zipCode) {
+    // Validate pincode for delivery area - handle different address structures
+    const zipCode = customerInfo.address?.zipCode || customerInfo.zipCode;
+    if (!zipCode) {
       return NextResponse.json({ 
         success: false, 
         message: 'Pincode is required for delivery.' 
       }, { status: 400 });
     }
     
-    const pincodeValidation = validatePincode(customerInfo.address.zipCode);
+    const pincodeValidation = validatePincode(zipCode);
     if (!pincodeValidation.isServiceable) {
       return NextResponse.json({ 
         success: false, 
@@ -137,6 +141,14 @@ export async function POST(req: NextRequest) {
       }
     };
 
+    logger.info('Attempting to create subscription', { 
+      userId, 
+      planId, 
+      planName, 
+      frequency: planFrequency,
+      totalAmount: planPrice 
+    }, 'Subscriptions API');
+
     const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
       .insert([subscriptionData])
@@ -144,12 +156,23 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (subscriptionError) {
-      console.error('Error creating subscription:', subscriptionError);
+      logger.error('Failed to create subscription', {
+        error: subscriptionError.message,
+        code: subscriptionError.code,
+        userId,
+        planId
+      }, 'Subscriptions API');
       return NextResponse.json(
-        { success: false, message: 'Failed to create subscription.', error: subscriptionError.message },
+        createLoggedResponse(false, 'Failed to create subscription.', { error: subscriptionError.message }, 500, 'error'),
         { status: 500 }
       );
-    }    // Generate delivery schedule using new delivery scheduling system
+    }
+
+    logger.info('Subscription created successfully', { 
+      subscriptionId: subscription.id, 
+      userId, 
+      planId 
+    }, 'Subscriptions API');    // Generate delivery schedule using new delivery scheduling system
     const deliveryRecords = subscriptionDeliveryDates.deliveryDates.map(deliveryDate => {
       const deliveryDateTime = new Date(deliveryDate);
       deliveryDateTime.setHours(10, 0, 0, 0); // Set delivery time to 10 AM

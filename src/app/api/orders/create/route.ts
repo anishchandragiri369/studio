@@ -8,21 +8,33 @@ import {
   type SubscriptionDeliveryDates 
 } from '@/lib/deliveryScheduler';
 import { validatePincode } from '@/lib/pincodeValidation';
+import { logger, createLoggedResponse } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
-    console.error('/api/orders/create: Supabase client not initialized.');
+    logger.error('Supabase client not initialized', {}, 'Orders API');
     return NextResponse.json(
-      { success: false, message: 'Database connection not available.' },
+      createLoggedResponse(false, 'Database connection not available.', {}, 503, 'error'),
       { status: 503 }
     );
   }
-  try {    const body = await req.json();
+  
+  try {
+    logger.info('Order creation request received', {}, 'Orders API');
+    const body = await req.json();
     const { orderAmount, originalAmount, appliedCoupon, appliedReferral, orderItems, customerInfo, userId, subscriptionData, hasSubscriptions, hasRegularItems } = body;
+
+    logger.debug('Order request data', { 
+      orderAmount, 
+      itemCount: orderItems?.length, 
+      hasSubscriptions, 
+      hasRegularItems,
+      userId: userId ? '[PROVIDED]' : '[MISSING]'
+    }, 'Orders API');
 
     // Validation
     if (!orderAmount || typeof orderAmount !== 'number' || orderAmount <= 0) {
-      return NextResponse.json({ success: false, message: 'Invalid order amount.' }, { status: 400 });
+      return NextResponse.json(createLoggedResponse(false, 'Invalid order amount.', {}, 400, 'error'), { status: 400 });
     }
     
     if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
@@ -121,27 +133,37 @@ export async function POST(req: NextRequest) {
         deliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString()),
         totalDeliveries: subscriptionDeliveryDates.totalDeliveries
       } : null,
-    };const { data, error } = await supabase
+    };
+
+    logger.info('Attempting to insert order', { 
+      orderId: 'PENDING', 
+      orderType, 
+      totalAmount: orderAmount,
+      containsSubscriptions,
+      hasDeliverySchedule: !!deliverySchedule
+    }, 'Orders API');
+
+    const { data, error } = await supabase
       .from('orders')
       .insert([orderToInsert])
       .select('id')
       .single();
 
     if (error) {
-      console.error('[API /orders/create] Error inserting order into Supabase:', error);
-      console.error('[API /orders/create] Error details:', {
-        message: error.message,
+      logger.error('Failed to insert order into database', {
+        error: error.message,
         code: error.code,
         details: error.details,
         hint: error.hint,
-      });
+      }, 'Orders API');
       return NextResponse.json(
-        { success: false, message: 'Failed to create order in database.' },
+        createLoggedResponse(false, 'Failed to create order in database.', { error }, 500, 'error'),
         { status: 500 }
       );
     }
 
     const orderId = data.id;
+    logger.info('Order created successfully', { orderId, orderType }, 'Orders API');
 
     // Process coupon usage if coupon was applied
     if (appliedCoupon && userId) {
@@ -157,10 +179,10 @@ export async function POST(req: NextRequest) {
           }]);
 
         if (couponError) {
-          console.error('Error recording coupon usage:', couponError);
+          logger.warn('Error recording coupon usage', { couponError }, 'Orders API');
         }
       } catch (couponError) {
-        console.error('Error processing coupon usage:', couponError);
+        logger.warn('Error processing coupon usage', { couponError }, 'Orders API');
       }
     }
 
@@ -172,23 +194,29 @@ export async function POST(req: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId })
         });
+        logger.debug('User rewards initialization requested', { userId }, 'Orders API');
       } catch (rewardError) {
-        console.error('Error initializing user rewards:', rewardError);
+        logger.warn('Error initializing user rewards', { rewardError }, 'Orders API');
       }
     }
 
-    return NextResponse.json({ success: true, data: { id: orderId } });
+    logger.info('Order creation completed successfully', { orderId, orderType }, 'Orders API');
+    return NextResponse.json(createLoggedResponse(true, 'Order created successfully', { id: orderId }));
 
   } catch (error: any) {
-    console.error('[API /orders/create] General error in POST handler:', error);
+    logger.error('General error in order creation', { 
+      error: error.message, 
+      stack: error.stack?.substring(0, 500) 
+    }, 'Orders API');
+    
     if (error instanceof SyntaxError) {
       return NextResponse.json(
-        { success: false, message: `Invalid JSON payload: ${error.message}` },
+        createLoggedResponse(false, `Invalid JSON payload: ${error.message}`, {}, 400, 'error'),
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { success: false, message: error.message || 'An unexpected server error occurred.' },
+      createLoggedResponse(false, error.message || 'An unexpected server error occurred.', {}, 500, 'error'),
       { status: 500 }
     );
   }

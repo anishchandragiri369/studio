@@ -1,10 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { logger, createLoggedResponse } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   if (!supabase) {
+    logger.error('Database connection not available', {}, 'User Subscriptions API');
     return NextResponse.json(
-      { success: false, message: 'Database connection not available.' },
+      createLoggedResponse(false, 'Database connection not available.', {}, 503, 'error'),
       { status: 503 }
     );
   }
@@ -14,11 +16,14 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get('userId');
 
     if (!userId) {
+      logger.warn('User ID missing in request', {}, 'User Subscriptions API');
       return NextResponse.json(
-        { success: false, message: 'User ID is required.' },
+        createLoggedResponse(false, 'User ID is required.', {}, 400, 'error'),
         { status: 400 }
       );
     }
+
+    logger.info('Fetching subscriptions for user', { userId }, 'User Subscriptions API');
 
 
     // Fetch user subscriptions from user_subscriptions table
@@ -37,28 +42,38 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (subError) {
-      console.error('Error fetching subscriptions:', subError);
+      logger.error('Error fetching native subscriptions', { error: subError.message }, 'User Subscriptions API');
       return NextResponse.json(
-        { success: false, message: 'Failed to fetch subscriptions.' },
+        createLoggedResponse(false, 'Failed to fetch subscriptions.', { error: subError }, 500, 'error'),
         { status: 500 }
       );
     }
 
+    logger.info('Native subscriptions fetched', { count: subscriptions?.length || 0 }, 'User Subscriptions API');
+
     // Fetch subscription items from orders table (order_type = 'subscription' or 'mixed')
+    // Only include orders that have completed payment (not payment_pending)
     const { data: orderSubs, error: orderError } = await supabase
       .from('orders')
       .select(`id, user_id, order_type, items, subscription_info, status, created_at, first_delivery_date, delivery_schedule, shipping_address`)
       .eq('user_id', userId)
       .in('order_type', ['subscription', 'mixed'])
+      .not('status', 'eq', 'payment_pending') // Exclude payment pending orders
+      .in('status', ['completed', 'confirmed', 'active', 'processing']) // Only include successful payment statuses
       .order('created_at', { ascending: false });
 
     if (orderError) {
-      console.error('Error fetching subscription orders:', orderError);
+      logger.error('Error fetching subscription orders', { error: orderError.message }, 'User Subscriptions API');
       return NextResponse.json(
-        { success: false, message: 'Failed to fetch subscription orders.' },
+        createLoggedResponse(false, 'Failed to fetch subscription orders.', { error: orderError }, 500, 'error'),
         { status: 500 }
       );
     }
+
+    logger.info('Subscription orders fetched', { 
+      count: orderSubs?.length || 0,
+      statuses: orderSubs?.map(o => o.status) || []
+    }, 'User Subscriptions API');
 
     // Extract only subscription items from each order, merging subscription_info fields
     const extractedOrderSubscriptions = (orderSubs || []).flatMap(order => {
@@ -95,19 +110,29 @@ export async function GET(req: NextRequest) {
         });
     });
 
+    logger.info('Order-based subscriptions extracted', { 
+      count: extractedOrderSubscriptions.length,
+      planIds: extractedOrderSubscriptions.map(s => s.plan_id)
+    }, 'User Subscriptions API');
+
+    const totalResults = [
+      ...(subscriptions || []),
+      ...extractedOrderSubscriptions
+    ];
+
+    logger.info('Subscriptions fetch completed', { 
+      nativeCount: subscriptions?.length || 0,
+      orderBasedCount: extractedOrderSubscriptions.length,
+      totalCount: totalResults.length
+    }, 'User Subscriptions API');
+
     // Combine both sources
-    return NextResponse.json({
-      success: true,
-      data: [
-        ...(subscriptions || []),
-        ...extractedOrderSubscriptions
-      ]
-    });
+    return NextResponse.json(createLoggedResponse(true, 'Subscriptions fetched successfully', totalResults));
 
   } catch (error: any) {
-    console.error('Error in get subscriptions API:', error);
+    logger.error('Error in get subscriptions API', { error: error.message }, 'User Subscriptions API');
     return NextResponse.json(
-      { success: false, message: error.message || 'An unexpected error occurred.' },
+      createLoggedResponse(false, error.message || 'An unexpected error occurred.', {}, 500, 'error'),
       { status: 500 }
     );
   }
