@@ -1,14 +1,17 @@
 {
   "name": "nextn",
   "version": "0.1.0",
-  "private": true,  "scripts": {
+  "private": true,
+  "scripts": {
     "dev": "next dev --turbopack -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "prebuild": "node scripts/prebuild.js",
     "build": "npm run prebuild && next build",
+    "build:production": "npm run cleanup:production && npm run prebuild && next build",
     "build:server": "npm run prebuild && npx cross-env MOBILE_BUILD=false STATIC_EXPORT=false NEXT_PUBLIC_BUILD_MODE=server next build",
     "build:static": "npm run prebuild && npm run static:prepare && npx cross-env MOBILE_BUILD=true NEXT_PUBLIC_BUILD_MODE=static next build && npm run static:restore",
+    "cleanup:production": "node cleanup-production.js",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -73,7 +76,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "exceljs": "^4.4.0",
     "firebase": "^11.8.1",
     "genkit": "^1.8.0",

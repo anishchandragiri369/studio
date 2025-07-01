@@ -291,6 +291,8 @@ function CheckoutPageContents() {
 
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
+    let internalOrderId: string | null = null;
+    
     toast({
       duration: 6000, // Extend duration for async process
       title: "Processing Payment...",
@@ -438,7 +440,7 @@ function CheckoutPageContents() {
         throw new Error(orderCreationResult.message || `Failed to create internal order. Server responded with status ${orderCreationResponse.status}`);
       }
 
-      const internalOrderId = orderCreationResult.data.id;
+      internalOrderId = orderCreationResult.data.id;
 
       // 2. Use the internalOrderId to create a Cashfree order session
       const cashfreeOrderPayload = {
@@ -504,10 +506,32 @@ function CheckoutPageContents() {
           statusText: cashfreeOrderResponse.statusText,
           result: cashfreeOrderResult
         });
+        
+        // If the API response includes a redirect URL for payment failure, use it
+        if (cashfreeOrderResult.redirectTo) {
+          console.log("Redirecting to payment failure page:", cashfreeOrderResult.redirectTo);
+          window.location.href = cashfreeOrderResult.redirectTo;
+          return;
+        }
+        
         throw new Error(cashfreeOrderResult.message || `Failed to create payment session. Status: ${cashfreeOrderResponse.status}`);
       }
     } catch (error) {
       console.error("Payment error:", error);
+      
+      // Check if it's a payment gateway failure and redirect to failure page
+      if (error instanceof Error && (
+        error.message.includes('payment') || 
+        error.message.includes('gateway') ||
+        error.message.includes('Cashfree')
+      )) {
+        // Redirect to payment failure page with error details
+        const failureUrl = `/payment-failed?${internalOrderId ? `order_id=${internalOrderId}&` : ''}amount=${currentOrderTotal}&reason=${encodeURIComponent(error.message)}`;
+        console.log("Redirecting to payment failure page due to payment error:", failureUrl);
+        router.push(failureUrl);
+        return;
+      }
+      
       toast({
         title: "Payment Error",
         description: error instanceof Error ? error.message : "Failed to process payment",

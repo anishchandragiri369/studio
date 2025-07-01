@@ -6,8 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DevProtectionWrapper } from '@/lib/dev-protection';
 
 export default function TestEmailPage() {
+  return (
+    <DevProtectionWrapper>
+      <TestEmailContent />
+    </DevProtectionWrapper>
+  );
+}
+
+function TestEmailContent() {
   const [orderId, setOrderId] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);

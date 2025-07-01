@@ -4,8 +4,17 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { DevProtectionWrapper } from '@/lib/dev-protection';
 
 export default function TestSubscriptionCartPage() {
+  return (
+    <DevProtectionWrapper>
+      <TestSubscriptionCartContent />
+    </DevProtectionWrapper>
+  );
+}
+
+function TestSubscriptionCartContent() {
   const { addSubscriptionToCart, cartItems, getRegularItems, getSubscriptionItems } = useCart();
 
   const testAddSubscription = () => {

@@ -7,8 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useLogger } from '@/hooks/useLogger';
+import { DevProtectionWrapper } from '@/lib/dev-protection';
 
 export default function TestSubscriptionPage() {
+  return (
+    <DevProtectionWrapper>
+      <TestSubscriptionContent />
+    </DevProtectionWrapper>
+  );
+}
+
+function TestSubscriptionContent() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { logApiResponse, logInfo, logError } = useLogger();

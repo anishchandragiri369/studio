@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
     const cashfreeOrderId = `elixr_${internalOrderId}`; // Prefixing to ensure uniqueness and identification
 
     // Construct return and notify URLs including the internalOrderId
-    // const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/order-success?order_id=${internalOrderId}`;
-    // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
-    // const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.exlir.in'}/order-success?order_id=${internalOrderId}`;
-    // const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://dev.elixr.in'}/api/webhook/payment-confirm?order_id=${internalOrderId}`;
+    // Success URL - will be used for successful payments
     const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/order-success?order_id=${internalOrderId}`;
+    // Failure URL - Cashfree will redirect here on payment failure
+    const failureUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/payment-failed?order_id=${internalOrderId}&amount=${orderAmount}`;
+    // Webhook URL for server-to-server notifications
     const notifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/.netlify/functions/payment-confirm?order_id=${internalOrderId}`;
     const customer_id = `${customerInfo.name?.substring(0, 4) || ""}_${customerInfo.phoneNumber?.replace(/\D/g, '').substring(0, 5) || ""}`;
 
@@ -158,19 +158,56 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.error("[Cashfree Create Order API] Cashfree API call succeeded but response data is invalid or missing payment_session_id. Response Data:", cfOrder.data);
-        // TODO: Potentially update Supabase order status to 'Payment Failed' or similar
+        
+        // Update Supabase order status to 'Payment Failed'
+        if (supabase) {
+          try {
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({ status: 'Payment Failed' })
+              .eq('id', internalOrderId);
+            
+            if (updateError) {
+              console.error("[Cashfree Create Order API] Failed to update order status to Payment Failed:", updateError);
+            } else {
+              console.log("[Cashfree Create Order API] Order status updated to Payment Failed for order:", internalOrderId);
+            }
+          } catch (dbError) {
+            console.error("[Cashfree Create Order API] Database error while updating order status:", dbError);
+          }
+        }
+        
         return NextResponse.json(
           { 
             success: false, 
             message: 'Failed to create Cashfree order: Invalid response from gateway.',
-            errorDetails: cfOrder.data 
+            errorDetails: cfOrder.data,
+            redirectTo: failureUrl
           }, 
           { status: 500 }
         );
       }
     } catch (sdkError: any) {
       console.error("[Cashfree Create Order API] Error calling Cashfree PGCreateOrder:", sdkError);
-      // TODO: Potentially update Supabase order status to 'Payment Failed' or similar
+      
+      // Update Supabase order status to 'Payment Failed'
+      if (supabase) {
+        try {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ status: 'Payment Failed' })
+            .eq('id', internalOrderId);
+          
+          if (updateError) {
+            console.error("[Cashfree Create Order API] Failed to update order status to Payment Failed:", updateError);
+          } else {
+            console.log("[Cashfree Create Order API] Order status updated to Payment Failed for order:", internalOrderId);
+          }
+        } catch (dbError) {
+          console.error("[Cashfree Create Order API] Database error while updating order status:", dbError);
+        }
+      }
+      
       let errorMessage = "An unexpected error occurred while creating the payment order with Cashfree.";
       let errorDetails = null;
 
@@ -183,7 +220,12 @@ export async function POST(request: NextRequest) {
       }
       
       return NextResponse.json(
-        { success: false, message: errorMessage, errorDetails },
+        { 
+          success: false, 
+          message: errorMessage, 
+          errorDetails,
+          redirectTo: failureUrl
+        },
         { status: sdkError.response?.status || 500 }
       );
     }

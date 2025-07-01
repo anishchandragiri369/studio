@@ -41,29 +41,17 @@ function verifyWebhookSignature(signature, rawBody, timestamp, clientSecret) {
 
 exports.handler = async (event) => {
   console.log('Webhook POST handler invoked');
-
+  
   try {
-
-    const crypto = require('crypto');
-
-    const nodemailer = require('nodemailer');
-
-    const { createClient } = require('@supabase/supabase-js');
+    // Test environment variables
+    console.log('Environment check:');
+    console.log('SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('SUPABASE_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    console.log('CASHFREE_SECRET exists:', !!process.env.CASHFREE_SECRET_KEY);
     
     // Test Supabase client creation
     console.log('Creating Supabase client...');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('Supabase client created successfully');
-    
-    // Try to parse the body
-    if (event.body) {
-      console.log('Parsing body...');
-      const webhookData = JSON.parse(event.body);
-      console.log('Body parsed successfully:', typeof webhookData);
-      console.log('Webhook type:', webhookData.type);
-    }
     
     // Extract signature, timestamp, and raw body for verification
     const signature = event.headers['x-webhook-signature'] || '';
@@ -100,17 +88,21 @@ exports.handler = async (event) => {
     console.log('Webhook data:', data);
     console.log('Webhook event_time:', event_time);
 
-    // Only process successful payment events
-    if (type === 'PAYMENT_SUCCESS_WEBHOOK' && data?.order?.order_id) {
+    // Process both successful and failed payment events
+    if ((type === 'PAYMENT_SUCCESS_WEBHOOK' || type === 'PAYMENT_FAILED_WEBHOOK') && data?.order?.order_id) {
       const cashfreeOrderId = data.order.order_id;
       const internalOrderId = cashfreeOrderId.replace(/^elixr_/, '');
-      console.log('Processing PAYMENT_SUCCESS_WEBHOOK for internalOrderId:', internalOrderId);
+      console.log(`Processing ${type} for internalOrderId:`, internalOrderId);
 
       try {
-        // Update order status to 'Payment Success' in Supabase
+        // Determine order status based on webhook type
+        const orderStatus = type === 'PAYMENT_SUCCESS_WEBHOOK' ? 'Payment Success' : 'Payment Failed';
+        console.log('Updating order status to:', orderStatus);
+        
+        // Update order status in Supabase
         const { data: updateResult, error: updateError } = await supabase
           .from('orders')
-          .update({ status: 'Payment Success' })
+          .update({ status: orderStatus })
           .eq('id', internalOrderId)
           .select();
         console.log('Order status update result:', updateResult, updateError);
@@ -135,34 +127,63 @@ exports.handler = async (event) => {
             body: JSON.stringify({ success: false, message: 'Order not found' }),
           };
         }
-        // If order found and updated, send confirmation email
+        // If order found and updated, send appropriate notifications
         try {
-          const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
-          const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
-          const emailPayload = {
-            orderId: order.id,
-            userEmail: order.email || order.customer_email || order.shipping_address?.email
-          };
-          console.log('Calling send-order-email API with payload:', emailPayload);
-          const emailRes = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(emailPayload),
-          });
-          const emailResult = await emailRes.json();
-          console.log('Email API response:', emailResult);
-          if (!emailResult.success) {
-            console.error('Email sending failed:', emailResult.errors || emailResult.error);
+          // For Netlify functions, we'll use a different approach for fetch
+          const fetch = require('node-fetch');
+          
+          if (orderStatus === 'Payment Success') {
+            // Send success confirmation email
+            const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'http://localhost:9002/api/send-order-email';
+            const emailPayload = {
+              orderId: order.id,
+              userEmail: order.email || order.customer_email || order.shipping_address?.email
+            };
+            console.log('Calling send-order-email API with payload:', emailPayload);
+            const emailRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(emailPayload),
+            });
+            const emailResult = await emailRes.json();
+            console.log('Email API response:', emailResult);
+            if (!emailResult.success) {
+              console.error('Email sending failed:', emailResult.errors || emailResult.error);
+            }
+          } else {
+            // Send payment failure notification
+            console.log('Sending payment failure notification for order:', order.id);
+            const failureApiUrl = process.env.SEND_PAYMENT_FAILURE_EMAIL_API_URL || 'http://localhost:9002/api/send-payment-failure-email';
+            const failureEmailPayload = {
+              orderId: order.id,
+              userEmail: order.email || order.customer_email || order.shipping_address?.email,
+              reason: data?.payment?.payment_message || 'Payment processing failed'
+            };
+            console.log('Calling send-payment-failure-email API with payload:', failureEmailPayload);
+            try {
+              const failureEmailRes = await fetch(failureApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(failureEmailPayload),
+              });
+              const failureEmailResult = await failureEmailRes.json();
+              console.log('Payment failure email API response:', failureEmailResult);
+              if (!failureEmailResult.success) {
+                console.error('Payment failure email sending failed:', failureEmailResult.errors || failureEmailResult.error);
+              }
+            } catch (failureEmailError) {
+              console.error('Error calling send-payment-failure-email API:', failureEmailError);
+            }
           }
         } catch (emailError) {
-          console.error('Error calling send-order-email API:', emailError);
+          console.error('Error calling email APIs:', emailError);
         }
         // Create subscription ONLY if payment was successful and order has subscription data
-if (
-  type === 'PAYMENT_SUCCESS_WEBHOOK' &&
-  (order.order_type === 'subscription' || order.order_type === 'mixed') &&
-  order.subscription_info
-) {
+        if (
+          orderStatus === 'Payment Success' &&
+          (order.order_type === 'subscription' || order.order_type === 'mixed') &&
+          order.subscription_info
+        ) {
   console.log('Creating subscriptions for successful payment...');
   
   // Handle both old and new subscription data structures
@@ -278,7 +299,11 @@ if (
         // Return success regardless of email result
         return {
           statusCode: 200,
-          body: JSON.stringify({ success: true, message: 'Order updated to Payment Success, webhook processed, email attempted.' }),
+          body: JSON.stringify({ 
+            success: true, 
+            message: `Order updated to ${orderStatus}, webhook processed, notifications attempted.`,
+            orderStatus: orderStatus
+          }),
         };
       } catch (err) {
         console.error('Error updating/fetching order:', err);

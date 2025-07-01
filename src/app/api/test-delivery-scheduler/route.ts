@@ -6,8 +6,15 @@ import {
   type DeliverySchedule,
   type SubscriptionDeliveryDates 
 } from '@/lib/deliveryScheduler';
+import { checkDevAccess } from '@/lib/dev-protection';
 
 export async function GET(request: NextRequest) {
+  // Check if development access is allowed
+  const accessCheck = checkDevAccess();
+  if (!accessCheck.allowed) {
+    return accessCheck.response;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const frequency = searchParams.get('frequency') || 'weekly';
@@ -64,6 +71,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Check if development access is allowed
+  const accessCheck = checkDevAccess();
+  if (!accessCheck.allowed) {
+    return accessCheck.response;
+  }
+
   try {
     const body = await request.json();
     const { frequency = 'daily', duration = 2, orderTime } = body; // Default to 2 months for testing
