@@ -64,7 +64,7 @@ describe('MenuPage', () => {
   })
   it('renders the menu page content', () => {
     renderWithProviders(<MenuPage />)
-    expect(screen.getByText('Our Fresh Elixirs')).toBeInTheDocument()
+    expect(screen.getByText('Our Fresh Elixrs')).toBeInTheDocument()
     expect(screen.getByText('Discover a world of flavor with our handcrafted elixirs, made from the freshest ingredients')).toBeInTheDocument()
   })
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -37,7 +36,7 @@ type SubscriptionCartItem = {
   image?: string;
 };
 
-type UnifiedCartItem = RegularCartItem | SubscriptionCartItem;
+export type UnifiedCartItem = RegularCartItem | SubscriptionCartItem;
 
 interface CartItemProps {
   item: UnifiedCartItem;
@@ -60,10 +59,10 @@ const CartItem = ({ item }: CartItemProps) => {
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/30 transition-colors rounded-md">
-      {/* Item Image */}
+      {/* Item Image and Details */}
       <div className="flex-shrink-0 self-center sm:self-auto">
         {item.type === 'regular' ? (
-          <Link href={`/menu#${item.id}`} aria-label={`View ${item.name} details`}>
+          <Link href={`/menu#${item.id}`} aria-label={`View ${item.name} details`} className="flex items-center gap-2">
             <Image
               src={item.image}
               alt={item.name}
@@ -71,7 +70,9 @@ const CartItem = ({ item }: CartItemProps) => {
               height={80}
               className="rounded-md object-contain border"
               data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
+              role="img"
             />
+            <h3 className="font-headline text-lg text-primary hover:text-primary/80 transition-colors">{item.name}</h3>
           </Link>
         ) : (
           <div className="w-20 h-20 rounded-md border bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
@@ -81,38 +82,11 @@ const CartItem = ({ item }: CartItemProps) => {
       </div>
 
       <div className="flex-grow w-full sm:w-auto">
-        {/* Item Details */}
-        {item.type === 'regular' ? (
+        {/* Item Flavor and Price */}
+        {item.type === 'regular' && (
           <>
-            <Link href={`/menu#${item.id}`}>
-              <h3 className="font-headline text-lg text-primary hover:text-primary/80 transition-colors">{item.name}</h3>
-            </Link>
             <p className="text-sm text-muted-foreground">{item.flavor}</p>
             <p className="text-sm font-semibold text-accent">Rs.{item.price.toFixed(2)} each</p>
-          </>
-        ) : (
-          <>
-            <h3 className="font-headline text-lg text-primary flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {item.name}
-            </h3>
-            {item.subscriptionData ? (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {item.subscriptionData.planFrequency || 'weekly'} delivery for {item.subscriptionData.subscriptionDuration || 4} {item.subscriptionData.planFrequency === 'monthly' ? (item.subscriptionData.subscriptionDuration === 1 ? 'month' : 'months') : (item.subscriptionData.subscriptionDuration === 1 ? 'week' : 'weeks')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Juices: {item.subscriptionData.selectedJuices?.length || 0} items selected
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Subscription Plan</p>
-                <p className="text-xs text-muted-foreground">Details loading...</p>
-              </div>
-            )}
-            <p className="text-sm font-semibold text-accent">Rs.{item.price.toFixed(2)} total</p>
           </>
         )}
       </div>

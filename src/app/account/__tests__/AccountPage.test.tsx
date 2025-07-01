@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import AccountPage from '../page';
@@ -39,7 +40,12 @@ jest.mock('@/lib/supabaseClient', () => ({
 
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ asChild, children, ...props }: any) => {
+    if (asChild) {
+      return React.cloneElement(children, props);
+    }
+    return <button {...props}>{children}</button>;
+  },
 }));
 
 jest.mock('@/components/ui/card', () => ({
@@ -116,6 +122,9 @@ describe('AccountPage', () => {
       clearCart: jest.fn(),
       getCartTotal: jest.fn(() => 0),
       getItemCount: jest.fn(() => 0),
+      addSubscriptionToCart: jest.fn(),
+      getRegularItems: jest.fn(() => []),
+      getSubscriptionItems: jest.fn(() => []),
     });
   });
 

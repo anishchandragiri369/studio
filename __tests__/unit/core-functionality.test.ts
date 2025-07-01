@@ -203,13 +203,16 @@ describe('Cart Utility Functions', () => {
 });
 
 describe('Subscription Utility Functions', () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
   const mockSubscriptionData = {
     plan: 'daily',
     duration: 30,
     items: [
       { id: 1, name: 'Morning Detox', price: 200 }
     ],
-    startDate: new Date('2025-01-01'), // Future date
+    startDate: tomorrow, // Future date
     customer: {
       name: 'Jane Doe',
       email: 'jane@example.com',
@@ -258,7 +261,14 @@ describe('Subscription Utility Functions', () => {
 
   describe('calculateNextDeliveryDate', () => {
     test('calculates next delivery for daily plan', () => {
-      const subscription = { ...mockSubscriptionData, lastDelivery: new Date('2024-12-01') };
+      const subscription = { 
+        ...mockSubscriptionData, 
+        id: 'SUB123',
+        status: 'active',
+        endDate: new Date('2025-12-31'),
+        isActive: true,
+        lastDelivery: new Date('2024-12-01') 
+      };
       const nextDate = calculateNextDeliveryDate(subscription);
       
       expect(nextDate.getDate()).toBe(2); // Next day
@@ -267,6 +277,10 @@ describe('Subscription Utility Functions', () => {
     test('calculates next delivery for weekly plan', () => {
       const subscription = { 
         ...mockSubscriptionData, 
+        id: 'SUB124',
+        status: 'active',
+        endDate: new Date('2025-12-31'),
+        isActive: true,
         plan: 'weekly',
         lastDelivery: new Date('2024-12-01') 
       };
@@ -281,6 +295,7 @@ describe('Subscription Utility Functions', () => {
       const subscription = {
         id: 'SUB123',
         plan: 'daily',
+        status: 'active',
         startDate: new Date('2024-11-01'),
         endDate: new Date('2025-12-31'),
         isActive: true
@@ -294,6 +309,7 @@ describe('Subscription Utility Functions', () => {
       const subscription = {
         id: 'SUB124',
         plan: 'daily',
+        status: 'expired',
         startDate: new Date('2024-10-01'),
         endDate: new Date('2024-10-31'),
         isActive: true // Still active but past end date
