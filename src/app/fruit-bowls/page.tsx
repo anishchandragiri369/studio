@@ -1,14 +1,62 @@
-import { JUICES } from '@/lib/constants';
-import JuiceCard from '@/components/menu/JuiceCard';
-import type { Metadata } from 'next';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Fresh Fruit Bowls - Elixr',
-  description: 'Enjoy our delicious and healthy fruit bowls, packed with natural goodness.',
-};
+import React, { useEffect, useState } from 'react';
+import FruitBowlCard from '@/components/menu/FruitBowlCard';
+import type { FruitBowl } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 export default function FruitBowlsPage() {
-  const fruitBowls = JUICES.filter(juice => juice.category === 'Fruit Bowls');
+  const [fruitBowls, setFruitBowls] = useState<FruitBowl[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFruitBowls = async () => {
+      try {
+        const response = await fetch('/api/fruit-bowls');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch fruit bowls');
+        }
+
+        setFruitBowls(data.fruitBowls);
+      } catch (err) {
+        console.error('Error fetching fruit bowls:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFruitBowls();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 mobile-container">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading fruit bowls...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 mobile-container">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">
+            Fresh Fruit Bowls
+          </h1>
+          <p className="text-lg text-destructive max-w-2xl mx-auto">
+            {error}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 mobile-container">
@@ -25,7 +73,7 @@ export default function FruitBowlsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {fruitBowls.map((bowl, index) => (
             <div key={bowl.id} className="animate-slide-in-up" style={{ animationDelay: `${index * 100}ms`}}>
-              <JuiceCard juice={bowl} />
+              <FruitBowlCard fruitBowl={bowl} />
             </div>
           ))}
         </div>

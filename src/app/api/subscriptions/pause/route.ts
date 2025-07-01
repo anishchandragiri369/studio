@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Prevent users from pausing if subscription is admin-paused
+    if (subscription.status === 'admin_paused') {
+      return NextResponse.json(
+        { success: false, message: 'Cannot pause subscription - currently under admin pause.' },
+        { status: 423 }
+      );
+    }
+
     // Check if subscription can be paused (24 hours notice)
     const pauseCheck = SubscriptionManager.canPauseSubscription(subscription.next_delivery_date);
     

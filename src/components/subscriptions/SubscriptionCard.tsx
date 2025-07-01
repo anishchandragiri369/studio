@@ -327,6 +327,36 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
           </Alert>
         )}
 
+        {subscription.status === 'admin_paused' && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Admin Pause - Service Temporarily Unavailable</AlertTitle>
+            <AlertDescription>
+              Your subscription has been temporarily paused by the administration.
+              {subscription.pause_reason && (
+                <>
+                  <br />
+                  <strong>Reason:</strong> {subscription.pause_reason}
+                </>
+              )}
+              {subscription.admin_pause_start && (
+                <>
+                  <br />
+                  <strong>Since:</strong> {SubscriptionManager.formatDate(subscription.admin_pause_start)}
+                </>
+              )}
+              {subscription.admin_pause_end && (
+                <>
+                  <br />
+                  <strong>Expected Resume:</strong> {SubscriptionManager.formatDate(subscription.admin_pause_end)}
+                </>
+              )}
+              <br />
+              <em>Your subscription will be automatically reactivated when services resume, and your subscription period will be extended accordingly.</em>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {subscription.status === 'expired' && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -375,7 +405,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
               <DialogHeader>
                 <DialogTitle>Pause Subscription</DialogTitle>
                 <DialogDescription>
-                  You can pause your subscription with 24 hours notice before the next delivery.
+                  You can pause your subscription before 6 PM for next-day delivery.
                   You'll be able to reactivate it within 3 months.
                 </DialogDescription>
               </DialogHeader>
@@ -427,14 +457,30 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                   {(() => {
                     const now = new Date();
                     const deliveryDate = new Date(subscription.next_delivery_date);
-                    const hoursUntilDelivery = (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
                     
-                    if (hoursUntilDelivery <= 0) {
-                      return "Your delivery is overdue or happening today. You can pause after the delivery.";
-                    } else if (hoursUntilDelivery < 24) {
-                      const nextPauseTime = new Date(deliveryDate.getTime() + 24 * 60 * 60 * 1000);
-                      return `Next delivery is in ${Math.round(hoursUntilDelivery)} hour${Math.round(hoursUntilDelivery) !== 1 ? 's' : ''}. You can pause after ${nextPauseTime.toLocaleDateString()} at ${nextPauseTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`;
+                    // Set delivery date to beginning of day for comparison
+                    const deliveryDay = new Date(deliveryDate);
+                    deliveryDay.setHours(0, 0, 0, 0);
+                    
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(today.getDate() + 1);
+                    
+                    // If delivery is today or already passed
+                    if (deliveryDay <= today) {
+                      return "Your delivery is today or overdue. You can pause after the delivery.";
                     }
+                    
+                    // If delivery is tomorrow, check if it's after 6 PM
+                    if (deliveryDay.getTime() === tomorrow.getTime()) {
+                      const currentHour = now.getHours();
+                      if (currentHour >= 18) { // 6 PM or later
+                        return "It's after 6 PM and next delivery is tomorrow. You can pause after the delivery.";
+                      }
+                    }
+                    
                     return "Pause is currently unavailable.";
                   })()}
                 </AlertDescription>

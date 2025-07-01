@@ -100,7 +100,7 @@ export interface UserSubscription {
   id: string;
   user_id: string;
   plan_id: string;
-  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  status: 'active' | 'paused' | 'cancelled' | 'expired' | 'admin_paused';
   created_at: string;
   updated_at: string;
   next_delivery_date: string;
@@ -120,6 +120,12 @@ export interface UserSubscription {
   discount_amount: number;
   final_price: number;
   renewal_notification_sent?: boolean;
+  // Admin pause fields
+  admin_pause_id?: string;
+  admin_pause_start?: string;
+  admin_pause_end?: string;
+  admin_reactivated_at?: string;
+  admin_reactivated_by?: string;
 }
 
 // Subscription duration options with discount tiers
@@ -157,4 +163,140 @@ export type SuggestSubscriptionPlanInput = {
   availableJuiceFlavors?: string[];
   // Add more fields as needed for your AI flow/component
 };
+
+// Fruit Bowl Types
+export interface FruitBowl {
+  id: string;
+  name: string;
+  description: string;
+  ingredients: {
+    fruits: Array<{
+      name: string;
+      quantity: string;
+      organic: boolean;
+    }>;
+    toppings?: Array<{
+      name: string;
+      quantity: string;
+    }>;
+    greens?: Array<{
+      name: string;
+      quantity: string;
+      organic: boolean;
+    }>;
+  };
+  nutritional_info: {
+    calories: number;
+    protein: string;
+    carbs: string;
+    fiber: string;
+    sugar: string;
+    fat: string;
+    vitamins: Record<string, string>;
+  };
+  price: number;
+  image_url?: string;
+  category: string;
+  serving_size: string;
+  preparation_time: number;
+  allergen_info: string[];
+  dietary_tags: string[];
+  seasonal_availability: boolean;
+  stock_quantity: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FruitBowlSubscriptionPlan {
+  id: string;
+  name: string;
+  description: string;
+  frequency: 'weekly' | 'monthly';
+  duration_weeks: number;
+  min_bowls_per_delivery: number;
+  max_bowls_per_delivery: number;
+  price_per_week: number;
+  total_price: number;
+  deliveries_per_week: number;
+  customization_allowed: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserFruitBowlSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  plan?: FruitBowlSubscriptionPlan;
+  status: 'active' | 'paused' | 'cancelled' | 'expired';
+  start_date: string;
+  end_date: string;
+  next_delivery_date: string;
+  delivery_address: CheckoutAddressFormData;
+  selected_bowls: {
+    [date: string]: {
+      bowl_ids: string[];
+      quantities: number[];
+      time_slot: string;
+    };
+  };
+  special_instructions?: string;
+  pause_date?: string;
+  pause_reason?: string;
+  reactivation_deadline?: string;
+  total_amount: number;
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FruitBowlSubscriptionDelivery {
+  id: string;
+  subscription_id: string;
+  delivery_date: string;
+  time_slot: string;
+  bowls: Array<{
+    bowl_id: string;
+    bowl?: FruitBowl;
+    quantity: number;
+  }>;
+  quantity_per_bowl: Record<string, number>;
+  status: 'scheduled' | 'preparing' | 'out_for_delivery' | 'delivered' | 'skipped' | 'failed';
+  delivery_notes?: string;
+  delivered_at?: string;
+  delivery_person?: string;
+  tracking_info?: any;
+  customer_rating?: number;
+  customer_feedback?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FruitBowlCustomization {
+  id: string;
+  user_id: string;
+  bowl_id: string;
+  bowl?: FruitBowl;
+  customizations: {
+    ingredient_modifications?: Array<{
+      ingredient: string;
+      action: 'add' | 'remove' | 'substitute';
+      substitute_with?: string;
+      extra_quantity?: string;
+    }>;
+    dietary_preferences?: string[];
+    preparation_notes?: string;
+  };
+  notes?: string;
+  is_favorite: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CartFruitBowl extends FruitBowl {
+  quantity: number;
+  customizations?: FruitBowlCustomization['customizations'];
+}
 

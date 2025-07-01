@@ -27,7 +27,21 @@ export async function POST(request: NextRequest) {
     const tomorrowEnd = new Date(tomorrowStart);
     tomorrowEnd.setHours(23, 59, 59, 999);
 
-    console.log('Running delivery scheduler cron job for:', tomorrowStart.toISOString());    // Get all active subscriptions (check all, not just due ones)
+    console.log('Running delivery scheduler cron job for:', tomorrowStart.toISOString());    
+    
+    // First, cleanup expired admin pauses
+    try {
+      const { error: cleanupError } = await supabase.rpc('cleanup_expired_admin_pauses');
+      if (cleanupError) {
+        console.error('Error cleaning up expired admin pauses:', cleanupError);
+      } else {
+        console.log('Admin pause cleanup completed');
+      }
+    } catch (cleanupError) {
+      console.error('Error in admin pause cleanup:', cleanupError);
+    }
+
+    // Get all active subscriptions (exclude admin_paused subscriptions)
     const { data: subscriptions, error: subError } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -50,46 +64,55 @@ export async function POST(request: NextRequest) {
         // Check if delivery needs scheduling update
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-          let needsUpdate = false;
+        
+        const deliveryDay = new Date(nextDeliveryDate);
+        deliveryDay.setHours(0, 0, 0, 0);
+        
+        let needsUpdate = false;
         let newNextDelivery: Date | undefined;
         
-        // Check if delivery date is in the past or too far in the future (more than 10 days)
-        const daysDifference = Math.floor((nextDeliveryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-          if (nextDeliveryDate <= today || daysDifference > 10) {
+        // If delivery date is today or in the past, definitely needs update
+        if (deliveryDay <= today) {
           needsUpdate = true;
-          // Use SubscriptionManager to calculate proper next delivery
+          // Calculate next delivery from current date
           newNextDelivery = SubscriptionManager.getNextScheduledDelivery(
             currentDate,
             subscription.delivery_frequency as 'weekly' | 'monthly',
             nextDeliveryDate
           );
-          newNextDelivery.setHours(10, 0, 0, 0);
-        }else if (daysDifference <= 1 && daysDifference >= 0) {
-          // If delivery is due today or tomorrow, calculate next one after delivery
-          needsUpdate = true;
+          newNextDelivery.setHours(8, 0, 0, 0);
           
-          if (subscription.delivery_frequency === 'monthly') {
-            // Use smart scheduling for monthly deliveries
+          console.log(`Subscription ${subscription.id} delivery is overdue (${deliveryDay.toDateString()} <= ${today.toDateString()}), moving to ${newNextDelivery.toDateString()}`);
+        } else {
+          // Check if delivery date is too far in the future (more than expected interval)
+          const daysDifference = Math.floor((deliveryDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // For monthly: should be within 10 days, for weekly: should be within 14 days
+          const maxDays = subscription.delivery_frequency === 'weekly' ? 14 : 10;
+          
+          if (daysDifference > maxDays) {
+            needsUpdate = true;
             newNextDelivery = SubscriptionManager.getNextScheduledDelivery(
-              nextDeliveryDate,
-              'monthly',
-              nextDeliveryDate
+              currentDate,
+              subscription.delivery_frequency as 'weekly' | 'monthly',
+              undefined // Start fresh from current date
             );
-          } else {
-            // Weekly delivery - next week
-            newNextDelivery = SubscriptionManager.getNextScheduledDelivery(
-              nextDeliveryDate,
-              'weekly',
-              nextDeliveryDate
-            );
+            newNextDelivery.setHours(8, 0, 0, 0);
+            
+            console.log(`Subscription ${subscription.id} delivery is too far in future (${daysDifference} days), resetting to ${newNextDelivery.toDateString()}`);
           }
         }
         
         if (needsUpdate && newNextDelivery) {
           console.log(`Updating subscription ${subscription.id}: from ${nextDeliveryDate.toISOString()} to ${newNextDelivery.toISOString()}`);
           
-          // Create delivery record for the current due date if it's due
-          if (daysDifference <= 1 && daysDifference >= 0) {
+          // Create delivery record for the current due date if it's overdue or due today
+          const deliveryDay = new Date(nextDeliveryDate);
+          deliveryDay.setHours(0, 0, 0, 0);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (deliveryDay <= today) {
             const deliveryRecord = {
               subscription_id: subscription.id,
               delivery_date: nextDeliveryDate.toISOString(),

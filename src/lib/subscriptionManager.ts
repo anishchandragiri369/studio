@@ -5,24 +5,37 @@ import { SUBSCRIPTION_DURATION_OPTIONS, WEEKLY_SUBSCRIPTION_DURATION_OPTIONS, RE
 export class SubscriptionManager {
   
   /**
-   * Check if a subscription can be paused (24 hours notice required)
+   * Check if a subscription can be paused (6 PM cutoff for next-day delivery)
    */
   static canPauseSubscription(nextDeliveryDate: string): { canPause: boolean; reason?: string } {
     const now = new Date();
     const deliveryDate = new Date(nextDeliveryDate);
-    const hoursUntilDelivery = (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     
-    if (hoursUntilDelivery < 24) {
-      const hoursRemaining = Math.round(hoursUntilDelivery);
-      if (hoursRemaining <= 0) {
+    // Set delivery date to beginning of day for comparison
+    const deliveryDay = new Date(deliveryDate);
+    deliveryDay.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    // If delivery is today or already passed, cannot pause
+    if (deliveryDay <= today) {
+      return {
+        canPause: false,
+        reason: `Cannot pause subscription. Next delivery is today or overdue. You can pause after the delivery.`
+      };
+    }
+    
+    // If delivery is tomorrow, check if it's before 6 PM
+    if (deliveryDay.getTime() === tomorrow.getTime()) {
+      const currentHour = now.getHours();
+      if (currentHour >= 18) { // 6 PM or later
         return {
           canPause: false,
-          reason: `Cannot pause subscription. Next delivery is overdue or happening today. You can pause after the delivery.`
-        };
-      } else {
-        return {
-          canPause: false,
-          reason: `Cannot pause subscription. Next delivery is in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}. Minimum 24 hours notice required.`
+          reason: `Cannot pause subscription. It's after 6 PM and next delivery is tomorrow. You can pause after the delivery.`
         };
       }
     }
@@ -72,6 +85,7 @@ export class SubscriptionManager {
   private static calculateNextWeeklyDelivery(currentDate: Date): Date {
     const nextDate = new Date(currentDate);
     nextDate.setDate(nextDate.getDate() + 7);
+    nextDate.setHours(8, 0, 0, 0); // Set delivery time to 8 AM
     
     // If it falls on Sunday (0), move to Monday
     if (nextDate.getDay() === 0) {
@@ -87,6 +101,7 @@ export class SubscriptionManager {
     
     // Add 2 days to skip one day in between
     nextDate.setDate(nextDate.getDate() + 2);
+    nextDate.setHours(8, 0, 0, 0); // Set delivery time to 8 AM
     
     // If it falls on Sunday, move to Monday
     if (nextDate.getDay() === 0) {
@@ -100,6 +115,7 @@ export class SubscriptionManager {
   static generateMonthlyDeliverySchedule(startDate: Date, monthsCount: number = 1): Date[] {
     const deliveries: Date[] = [];
     let currentDate = new Date(startDate);
+    currentDate.setHours(8, 0, 0, 0); // Set delivery time to 8 AM
     
     // Calculate end date for the period
     const endDate = new Date(startDate);
@@ -109,7 +125,9 @@ export class SubscriptionManager {
     while (currentDate < endDate) {
       // Skip Sundays
       if (currentDate.getDay() !== 0) {
-        deliveries.push(new Date(currentDate));
+        const deliveryDate = new Date(currentDate);
+        deliveryDate.setHours(8, 0, 0, 0); // Ensure each delivery is at 8 AM
+        deliveries.push(deliveryDate);
       }
       
       // Move to next delivery date (skip 1 day in between)
@@ -403,5 +421,105 @@ export class SubscriptionManager {
     }
     
     return deliveries;
+  }
+
+  /**
+   * Calculate reactivation delivery scheduling with 6 PM cutoff logic
+   * If reactivated before 6 PM: next delivery is next day
+   * If reactivated after 6 PM: next delivery is day after next
+   * Maintains alternate day pattern and excludes Sundays
+   */
+  static calculateReactivationDeliverySchedule(
+    reactivationDate: Date, 
+    frequency: 'weekly' | 'monthly' = 'monthly',
+    previousDeliveryDates: Date[] = []
+  ): { nextDeliveryDate: Date; adjustedSchedule: Date[] } {
+    const now = new Date(reactivationDate);
+    const currentHour = now.getHours();
+    
+    // Determine starting point based on 6 PM cutoff
+    let startDate = new Date(now);
+    if (currentHour >= 18) { // 6 PM or later
+      // Schedule delivery for day after tomorrow
+      startDate.setDate(startDate.getDate() + 2);
+    } else {
+      // Schedule delivery for tomorrow
+      startDate.setDate(startDate.getDate() + 1);
+    }
+    
+    // Set delivery time to 8 AM
+    startDate.setHours(8, 0, 0, 0);
+    
+    // Skip Sunday if needed
+    if (startDate.getDay() === 0) {
+      startDate.setDate(startDate.getDate() + 1);
+    }
+    
+    if (frequency === 'weekly') {
+      return {
+        nextDeliveryDate: startDate,
+        adjustedSchedule: this.getUpcomingDeliveries(startDate, 'weekly', 4)
+      };
+    }
+    
+    // For monthly subscriptions, maintain alternate day pattern
+    const nextDeliveryDate = startDate;
+    
+    // Generate new schedule maintaining alternate day pattern (skip 1 day between deliveries)
+    const newSchedule: Date[] = [];
+    let currentScheduleDate = new Date(nextDeliveryDate);
+    let deliveriesAdded = 0;
+    
+    // Generate delivery dates maintaining alternate day pattern with Sunday exclusion
+    while (deliveriesAdded < 10) {
+      // Skip Sundays
+      if (currentScheduleDate.getDay() !== 0) {
+        newSchedule.push(new Date(currentScheduleDate));
+        deliveriesAdded++;
+      }
+      
+      // Move to next delivery date (alternate day pattern: skip 1 day)
+      currentScheduleDate.setDate(currentScheduleDate.getDate() + 2);
+      
+      // If we land on Sunday, move to Monday
+      if (currentScheduleDate.getDay() === 0) {
+        currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
+      }
+    }
+    
+    return {
+      nextDeliveryDate,
+      adjustedSchedule: newSchedule
+    };
+  }
+
+  /**
+   * Update delivery schedule after reactivation
+   * Maintains alternate day pattern while adjusting for reactivation timing
+   */
+  static updateDeliveryScheduleAfterReactivation(
+    subscription: any,
+    reactivationDate: Date
+  ): { nextDeliveryDate: Date; extendedEndDate: Date; pauseDurationDays: number } {
+    const now = new Date(reactivationDate);
+    const pauseStartDate = new Date(subscription.pause_date);
+    const pauseDurationMs = now.getTime() - pauseStartDate.getTime();
+    const pauseDurationDays = Math.round(pauseDurationMs / (1000 * 60 * 60 * 24));
+    
+    // Calculate new delivery schedule
+    const deliverySchedule = this.calculateReactivationDeliverySchedule(
+      now, 
+      subscription.delivery_frequency || 'monthly'
+    );
+    
+    // Extend subscription end date by pause duration
+    const currentEndDate = new Date(subscription.subscription_end_date);
+    const extendedEndDate = new Date(currentEndDate.getTime() + pauseDurationMs);
+    
+    return {
+      nextDeliveryDate: deliverySchedule.nextDeliveryDate,
+      extendedEndDate,
+      pauseDurationDays
+    };
   }
 }

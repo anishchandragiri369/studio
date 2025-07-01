@@ -283,8 +283,9 @@ export const NAV_LINKS = [
     href: '/subscriptions', // Base href for highlighting
     basePath: '/subscriptions', // Base path for highlighting
     subLinks: [
-      { href: '/subscriptions/subscribe?plan=weekly', label: 'Weekly Plans' },
-      { href: '/subscriptions/subscribe?plan=monthly', label: 'Monthly Plans' },
+      { href: '/subscriptions/subscribe?plan=weekly', label: 'Weekly Juice Plans' },
+      { href: '/subscriptions/subscribe?plan=monthly', label: 'Monthly Juice Plans' },
+      { href: '/subscribe/fruit-bowls', label: 'Fruit Bowl Plans' },
       { href: '/subscriptions', label: 'View All Plans' },
     ]
   },

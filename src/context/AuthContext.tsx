@@ -214,12 +214,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: credentials.email,
         password: credentials.password,
       });
-      // Even if data.user exists, an error might be present if email confirmation is required but something else went wrong.
-      // Or if data.user is null but error is also null (edge case, but good to be defensive).
-      if (error) return { data: null, error };
+      
+      // Handle specific Supabase signup errors
+      if (error) {
+        // Check for various ways Supabase might indicate duplicate email
+        if (error.message.includes("User already registered") || 
+            error.message.includes("Email address is already registered") ||
+            error.message.includes("already been registered") ||
+            error.message.includes("Email rate limit exceeded") ||
+            (error.status === 422 && error.message.includes("email"))) {
+          return { 
+            data: null, 
+            error: { 
+              name: "UserAlreadyExistsError", 
+              message: "An account with this email already exists. Please log in instead." 
+            } as SupabaseAuthError 
+          };
+        }
+        return { data: null, error };
+      }
+      
       if (!data.user && !error) return {data: null, error: {name: "SignUpNoUserError", message: "Sign up did not return a user and no error."} as SupabaseAuthError}
       return { data: { user: data.user, session: data.session }, error: null };
     } catch (e: any) {
+      // Handle network or other unexpected errors
+      if (e.message && (e.message.includes("already registered") || e.message.includes("already exists"))) {
+        return { 
+          data: null, 
+          error: { 
+            name: "UserAlreadyExistsError", 
+            message: "An account with this email already exists. Please log in instead." 
+          } as SupabaseAuthError 
+        };
+      }
       return { data: null, error: { name: 'SignUpUnexpectedError', message: e.message || "An unexpected error occurred during sign up." } as SupabaseAuthError };
     }
   };

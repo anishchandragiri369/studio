@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         // Set next delivery to tomorrow (or Monday if tomorrow is Sunday)
         newNextDelivery = new Date(currentDate);
         newNextDelivery.setDate(currentDate.getDate() + 1);
-        newNextDelivery.setHours(10, 0, 0, 0);
+        newNextDelivery.setHours(8, 0, 0, 0);
         
         // If it's Sunday, move to Monday
         if (newNextDelivery.getDay() === 0) {

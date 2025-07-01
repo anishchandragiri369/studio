@@ -10,6 +10,7 @@ import {
 } from '@/lib/deliveryScheduler';
 import { validatePincode } from '@/lib/pincodeValidation';
 import { logger, createLoggedResponse } from '@/lib/logger';
+import { validateAdminPauseForSubscription } from '@/lib/adminPauseHelper';
 
 export async function POST(req: NextRequest) {
   if (!supabase) {
@@ -40,6 +41,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, message: 'User ID is required.' },
         { status: 400 }
+      );
+    }
+
+    // Check for admin pause before allowing subscription creation
+    const adminPauseValidation = await validateAdminPauseForSubscription(userId);
+    if (!adminPauseValidation.canProceed) {
+      return NextResponse.json(
+        { success: false, message: adminPauseValidation.message, adminPause: true },
+        { status: 423 } // 423 Locked
       );
     }
 
@@ -112,7 +122,7 @@ export async function POST(req: NextRequest) {
     
     // Set first delivery time to 10 AM
     const nextDeliveryDate = new Date(deliverySchedule.firstDeliveryDate);
-    nextDeliveryDate.setHours(10, 0, 0, 0);
+    nextDeliveryDate.setHours(8, 0, 0, 0);
 
     // Create subscription record with delivery schedule
     const subscriptionData = {
@@ -179,7 +189,7 @@ export async function POST(req: NextRequest) {
     }, 'Subscriptions API');    // Generate delivery schedule using new delivery scheduling system
     const deliveryRecords = subscriptionDeliveryDates.deliveryDates.map(deliveryDate => {
       const deliveryDateTime = new Date(deliveryDate);
-      deliveryDateTime.setHours(10, 0, 0, 0); // Set delivery time to 10 AM
+      deliveryDateTime.setHours(8, 0, 0, 0); // Set delivery time to 8 AM
       
       return {
         subscription_id: subscription.id,

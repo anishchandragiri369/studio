@@ -68,6 +68,14 @@ export default function AdminDashboardPage() {
   }
 
   const adminFeatures = [    {
+      title: "Subscription Management",
+      description: "Admin pause/reactivate controls for all or selected user subscriptions (holidays, emergencies)",
+      icon: Users,
+      href: "/admin/subscriptions",
+      color: "text-red-600",
+      bgColor: "bg-red-50"
+    },
+    {
       title: "Analytics Dashboard",
       description: "View comprehensive analytics for coupons, referrals, and rewards system performance",
       icon: BarChart,

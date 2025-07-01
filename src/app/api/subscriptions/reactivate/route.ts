@@ -52,25 +52,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate next delivery date
+    // Calculate reactivation delivery schedule with proper logic
+    const now = new Date();
+    const reactivationResult = SubscriptionManager.updateDeliveryScheduleAfterReactivation(
+      subscription, 
+      now
+    );
+    
+    // Use provided delivery date if specified, otherwise use calculated date
     const nextDelivery = newDeliveryDate ? 
       new Date(newDeliveryDate) : 
-      SubscriptionManager.calculateNextDeliveryDate(new Date(), subscription.delivery_frequency);    // Ensure next delivery is at least 24 hours from now
-    const minDeliveryDate = new Date();
-    minDeliveryDate.setHours(minDeliveryDate.getHours() + 24);
-
-    if (nextDelivery < minDeliveryDate) {
-      nextDelivery.setTime(minDeliveryDate.getTime());
-    }
-
-    // Calculate pause duration and extend subscription end date
-    const now = new Date();
-    const pauseStartDate = new Date(subscription.pause_date);
-    const pauseDurationMs = now.getTime() - pauseStartDate.getTime();
+      reactivationResult.nextDeliveryDate;
     
-    // Extend the subscription end date by the pause duration
-    const currentEndDate = new Date(subscription.subscription_end_date);
-    const extendedEndDate = new Date(currentEndDate.getTime() + pauseDurationMs);
+    const extendedEndDate = reactivationResult.extendedEndDate;
+    const pauseDurationDays = reactivationResult.pauseDurationDays;
 
     // Update subscription status to active with extended end date
     const { data: updatedSubscription, error: updateError } = await supabase
@@ -123,7 +118,7 @@ export async function POST(req: NextRequest) {
           nextDeliveryDate: nextDelivery.toISOString(),
           nextDeliveryFormatted: SubscriptionManager.formatDate(nextDelivery),
           extendedEndDate: extendedEndDate.toISOString(),
-          pauseDurationDays: Math.round(pauseDurationMs / (1000 * 60 * 60 * 24))
+          pauseDurationDays: pauseDurationDays
         }
       };
 
@@ -153,7 +148,7 @@ export async function POST(req: NextRequest) {
         nextDeliveryDate: nextDelivery.toISOString(),
         nextDeliveryFormatted: SubscriptionManager.formatDate(nextDelivery),
         extendedEndDate: extendedEndDate.toISOString(),
-        pauseDurationDays: Math.round(pauseDurationMs / (1000 * 60 * 60 * 24))
+        pauseDurationDays: pauseDurationDays
       }
     });
 

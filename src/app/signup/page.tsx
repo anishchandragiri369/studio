@@ -53,8 +53,10 @@ export default function SignUpPage() {
 
     if ('error' in result && result.error) {
       const supabaseError = result.error as SupabaseAuthError;
-      if (supabaseError.message.includes("User already registered")) {
-        setError("This email is already registered. Try logging in.");
+      if (supabaseError.name === "UserAlreadyExistsError" || 
+          supabaseError.message.includes("already exists") ||
+          supabaseError.message.includes("User already registered")) {
+        setError("This email is already registered. Please log in instead or use a different email address.");
       } else if (result.error.code === 'supabase/not-configured') {
         setError(result.error.message);
       } else {
@@ -100,7 +102,16 @@ export default function SignUpPage() {
           {error && (
             <Alert variant="destructive" className="mb-6">
               <AlertTitle>Sign Up Failed</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {error}
+                {error.includes("already registered") && (
+                  <div className="mt-2">
+                    <Link href="/login" className="font-semibold underline hover:no-underline">
+                      Go to Login Page
+                    </Link>
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
