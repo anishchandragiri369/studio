@@ -36,6 +36,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
   useEffect(() => {
+    // Version-based cache invalidation to prevent auth issues after deployments
+    if (typeof window !== 'undefined') {
+      const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || Date.now().toString();
+      const storedVersion = localStorage.getItem('app_version');
+      
+      if (storedVersion !== currentVersion) {
+        console.log('[AuthContext] App version changed, clearing cache and storage');
+        
+        // Clear all storage that might cause auth conflicts
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Set new version
+          localStorage.setItem('app_version', currentVersion);
+          
+          // Force a page reload to ensure clean state
+          window.location.reload();
+          return;
+        } catch (error) {
+          console.warn('[AuthContext] Failed to clear storage during version update:', error);
+        }
+      }
+    }
+
     if (!isActuallyConfiguredAndAuthReady) {
       setUser(null);
       setIsAdmin(false);

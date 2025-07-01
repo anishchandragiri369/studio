@@ -24,6 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 import CouponInput from '@/components/checkout/CouponInputWithDropdown';
 import ReferralInput from '@/components/checkout/ReferralInput';
 import { validateCoupon, type Coupon } from '@/lib/coupons';
+import { validatePincode, getContactInfo } from '@/lib/pincodeValidation';
 
 
 interface SubscriptionOrderItem {
@@ -83,8 +84,13 @@ function CheckoutPageContents() {
   } | null>(null);
   const [shouldLoadMaps, setShouldLoadMaps] = useState(false);
   const [proceedToCheckout, setProceedToCheckout] = useState(false);
+  const [pincodeValidation, setPincodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    area?: string;
+  } | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
     defaultValues: {
       country: 'India',
@@ -97,6 +103,27 @@ function CheckoutPageContents() {
       setValue('email', user.email);
     }
   }, [user, setValue]);
+
+  // Watch pincode changes for real-time validation
+  const watchedPincode = watch('zipCode');
+  
+  useEffect(() => {
+    if (watchedPincode && watchedPincode.length === 6) {
+      const validation = validatePincode(watchedPincode);
+      setPincodeValidation({
+        isValid: validation.isServiceable,
+        message: validation.message,
+        area: validation.area
+      });
+    } else if (watchedPincode && watchedPincode.length > 0) {
+      setPincodeValidation({
+        isValid: false,
+        message: 'Please enter a 6-digit pincode',
+      });
+    } else {
+      setPincodeValidation(null);
+    }
+  }, [watchedPincode]);
 
   // Coupon handlers
   const handleCouponApply = (coupon: Coupon, discountAmount: number) => {
@@ -320,10 +347,13 @@ function CheckoutPageContents() {
           code: appliedReferral.code,
           referrerId: appliedReferral.referrerId
         } : null,
-        orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
+        orderItems: cartItems.map(item => ({
           ...item,
-          juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name // Ensure juiceName is always present
+          juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name,
+          type: item.type // Ensure type is always present
         })),
+        hasSubscriptions: cartItems.some(item => item.type === 'subscription'),
+        hasRegularItems: cartItems.some(item => item.type === 'regular'),
         customerInfo: {
           name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
           email: (formData as CheckoutAddressFormData).email,
@@ -507,7 +537,9 @@ function CheckoutPageContents() {
     }
   };
 
-  const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
+  const isCheckoutDisabled = isLoadingSummary || 
+    (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0) ||
+    (pincodeValidation !== null && !pincodeValidation.isValid);
 
   return (
     <>
@@ -692,14 +724,57 @@ function CheckoutPageContents() {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="zipCode" className="text-sm font-medium">ZIP / Postal Code *</Label>
+                            <Label htmlFor="zipCode" className="text-sm font-medium">Pincode *</Label>
                             <Input 
                               id="zipCode" 
                               {...register("zipCode")} 
-                              placeholder="123456" 
+                              placeholder="500001" 
+                              maxLength={6}
                               className="glass border-border/50 focus:border-primary/50 transition-all"
                             />
                             {errors.zipCode && <p className="text-sm text-destructive">{errors.zipCode.message}</p>}
+                            
+                            {/* Real-time pincode validation feedback */}
+                            {pincodeValidation && (
+                              <div className={`text-sm p-2 rounded-md ${
+                                pincodeValidation.isValid 
+                                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  {pincodeValidation.isValid ? (
+                                    <span className="text-green-600">✓</span>
+                                  ) : (
+                                    <span className="text-red-600">✗</span>
+                                  )}
+                                  <span>{pincodeValidation.message}</span>
+                                </div>
+                                
+                                {!pincodeValidation.isValid && watchedPincode?.length === 6 && (
+                                  <div className="mt-2 pt-2 border-t border-red-200">
+                                    <p className="text-xs text-red-600 mb-2">
+                                      We'll be expanding to your area soon! Contact us for updates:
+                                    </p>
+                                    <div className="flex flex-col gap-1">
+                                      <a 
+                                        href={`https://wa.me/${getContactInfo().whatsapp.replace(/[^\d]/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-green-600 hover:text-green-700 underline flex items-center gap-1"
+                                      >
+                                        📱 WhatsApp: {getContactInfo().whatsapp}
+                                      </a>
+                                      <a 
+                                        href={`mailto:${getContactInfo().email}`}
+                                        className="text-xs text-blue-600 hover:text-blue-700 underline flex items-center gap-1"
+                                      >
+                                        ✉️ Email: {getContactInfo().email}
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="country" className="text-sm font-medium">Country *</Label>

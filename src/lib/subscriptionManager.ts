@@ -239,7 +239,7 @@ export class SubscriptionManager {
   }  /**
    * Calculate subscription pricing with discount
    */
-  static calculateSubscriptionPricing(basePrice: number, durationMonths: 1 | 2 | 3 | 4 | 6 | 12, frequency: 'weekly' | 'monthly' = 'monthly'): {
+  static calculateSubscriptionPricing(basePrice: number, durationMonths: number, frequency: 'weekly' | 'monthly' = 'monthly'): {
     originalPrice: number;
     discountPercentage: number;
     discountAmount: number;
@@ -267,10 +267,13 @@ export class SubscriptionManager {
       let discountType = 'bronze';
       
       if (frequency === 'monthly') {
-        // Apply discount logic for monthly subscriptions
+        // Apply discount logic for monthly subscriptions with smooth progression
         if (durationMonths >= 12) {
           discountPercentage = 20;
           discountType = 'platinum';
+        } else if (durationMonths >= 9) {
+          discountPercentage = 16;
+          discountType = 'gold';
         } else if (durationMonths >= 6) {
           discountPercentage = 12;
           discountType = 'gold';
@@ -280,7 +283,10 @@ export class SubscriptionManager {
         } else if (durationMonths >= 3) {
           discountPercentage = 5;
           discountType = 'bronze';
-        }
+        } else if (durationMonths >= 2) {
+          discountPercentage = 2;
+          discountType = 'bronze';
+        } // 1 month = 0% discount (no else clause needed)
       } else {
         // Apply discount logic for weekly subscriptions
         if (durationMonths >= 3) {

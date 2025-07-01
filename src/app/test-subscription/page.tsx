@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { useLogger } from '@/hooks/useLogger';
 
 export default function TestSubscriptionPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { logApiResponse, logInfo, logError } = useLogger();
   const [isCreating, setIsCreating] = useState(false);
 
   const testSubscriptionCreation = async () => {
@@ -36,9 +38,9 @@ export default function TestSubscriptionPage() {
           phone: '1234567890',
           address: {
             line1: '123 Test Street',
-            city: 'Test City',
-            state: 'Test State',
-            zipCode: '12345',
+            city: 'Hyderabad',
+            state: 'Telangana',
+            zipCode: '500001',
             country: 'India'
           }
         },
@@ -50,7 +52,9 @@ export default function TestSubscriptionPage() {
         basePrice: 120
       };
 
+      logInfo('Starting subscription creation test', testPayload, 'Test Page');
       const result = await apiPost('/api/subscriptions/create', testPayload);
+      logApiResponse(result, '/api/subscriptions/create');
 
       if (result.success) {
         toast({
@@ -66,7 +70,7 @@ export default function TestSubscriptionPage() {
         });
       }
     } catch (error) {
-      console.error('Error testing subscription creation:', error);
+      logError('Error testing subscription creation', { error: error instanceof Error ? error.message : error }, 'Test Page');
       toast({
         title: "Error",
         description: "Failed to test subscription creation.",
@@ -99,6 +103,13 @@ export default function TestSubscriptionPage() {
           name: 'Test User',
           email: user.email,
           phone: '1234567890',
+          address: {
+            street: '123 Test Street',
+            city: 'Hyderabad',
+            state: 'Telangana',
+            zipCode: '500001',
+            country: 'India'
+          }
         },
         userId: user.id,
         subscriptionData: {
@@ -115,7 +126,9 @@ export default function TestSubscriptionPage() {
         }
       };
 
+      logInfo('Starting order creation test', testOrderPayload, 'Test Page');
       const result = await apiPost('/api/orders/create', testOrderPayload);
+      logApiResponse(result, '/api/orders/create');
 
       if (result.success) {
         toast({
@@ -131,7 +144,7 @@ export default function TestSubscriptionPage() {
         });
       }
     } catch (error) {
-      console.error('Error testing order creation:', error);
+      logError('Error testing order creation', { error: error instanceof Error ? error.message : error }, 'Test Page');
       toast({
         title: "Error",
         description: "Failed to test order creation.",
@@ -190,8 +203,10 @@ export default function TestSubscriptionPage() {
               </div>
 
               <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h4 className="font-semibold mb-2">After testing:</h4>
+                <h4 className="font-semibold mb-2">Debugging & Monitoring:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• View real-time logs in the <a href="/logs" className="text-primary hover:underline font-semibold">Browser Log Viewer</a></li>
+                  <li>• Check detailed data in the <a href="/debug" className="text-primary hover:underline font-semibold">Debug Dashboard</a></li>
                   <li>• Check your <a href="/my-subscriptions" className="text-primary hover:underline">subscriptions page</a></li>
                   <li>• Check your <a href="/orders" className="text-primary hover:underline">orders page</a></li>
                   <li>• Verify data in Supabase dashboard</li>
