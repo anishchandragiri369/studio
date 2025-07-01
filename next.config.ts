@@ -8,6 +8,21 @@ const nextConfig: NextConfig = {
   // Only set output export if explicitly building for mobile
   ...(isMobileBuild ? { output: 'export' } : {}),
   
+  // Explicitly exclude mobile directory from webpack compilation
+  webpack: (config, { dev, isServer }) => {
+    // Ignore mobile directory entirely
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        ...(Array.isArray(config.watchOptions?.ignored) ? config.watchOptions.ignored : []),
+        '**/mobile/**',
+        '**/node_modules/**'
+      ]
+    };
+    
+    return config;
+  },
+  
   // Add selective cache control headers to prevent auth caching issues
   headers: async () => {
     return [
