@@ -29,11 +29,27 @@ const checkGoogleMapsReady = (): boolean => {
     // @ts-ignore
     const infoWindow = window.google?.maps?.InfoWindow;
     
-    // Very basic check - just need Google Maps API
-    const isReady = !!(windowGoogle && maps && typeof infoWindow === 'function');
+    // Enhanced check for mobile compatibility
+    if (typeof window !== 'undefined' && windowGoogle && maps && infoWindow) {
+      // Additional mobile-specific checks
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        // Ensure essential mobile features are available
+        // @ts-ignore
+        const placesService = window.google?.maps?.places?.PlacesService;
+        if (!placesService) {
+          console.log('Google Maps Places service not ready for mobile');
+          return false;
+        }
+      }
+      
+      console.log('Google Maps API is ready for', isMobile ? 'mobile' : 'desktop');
+      return true;
+    }
     
-    return isReady;
+    return false;
   } catch (error) {
+    console.error('Error checking Google Maps readiness:', error);
     return false;
   }
 };
@@ -67,9 +83,10 @@ const initializeGoogleMaps = () => {
       timeoutId = null;
     }
     window.removeEventListener('google-maps-loaded', handleDirectApiReady);
+    window.removeEventListener('google-maps-error', handleDirectApiError);
   };
 
-  // Listen for direct API loader event
+  // Listen for direct API loader event and error event
   const handleDirectApiReady = () => {
     if (checkGoogleMapsReady()) {
       globalState.isLoaded = true;
@@ -80,7 +97,16 @@ const initializeGoogleMaps = () => {
     }
   };
 
+  const handleDirectApiError = (event: any) => {
+    globalState.isLoaded = false;
+    globalState.isLoading = false;
+    globalState.error = 'Failed to load Google Maps API. Please check your internet connection and try again.';
+    notify();
+    cleanup();
+  };
+
   window.addEventListener('google-maps-loaded', handleDirectApiReady);
+  window.addEventListener('google-maps-error', handleDirectApiError);
 
   // Simple polling approach - more reliable than events
   pollInterval = setInterval(() => {
@@ -93,14 +119,17 @@ const initializeGoogleMaps = () => {
     }
   }, 1000); // Check every 1 second
 
-  // Reduce timeout to 8 seconds since we have direct loading now
+  // Increase timeout for mobile devices since they may load slower
+  const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const timeout = isMobile ? 15000 : 8000; // 15s for mobile, 8s for desktop
+  
   timeoutId = setTimeout(() => {
     globalState.isLoaded = false;
     globalState.isLoading = false;
-    globalState.error = 'Google Maps API loading timed out. Please check your internet connection and API key.';
+    globalState.error = `Google Maps API loading timed out after ${timeout/1000}s. Please check your internet connection and API key.`;
     notify();
     cleanup();
-  }, 8000);
+  }, timeout);
 };
 
 export const useGoogleMapsApi = () => {
@@ -112,10 +141,13 @@ export const useGoogleMapsApi = () => {
 
     // Initialize if not already done
     if (typeof window !== 'undefined') {
-      // Small delay to ensure DOM is ready
+      // Longer delay for mobile devices to ensure DOM stability
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const delay = isMobile ? 300 : 100;
+      
       setTimeout(() => {
         initializeGoogleMaps();
-      }, 100);
+      }, delay);
     }
 
     return () => {

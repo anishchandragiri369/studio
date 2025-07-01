@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import { validatePincode } from './pincodeValidation';
 
 export const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -28,7 +29,15 @@ export const checkoutAddressSchema = z.object({
   addressLine2: z.string().optional(),
   city: z.string().min(1, { message: "City is required." }),
   state: z.string().min(1, { message: "State / Province is required." }),
-  zipCode: z.string().min(1, { message: "ZIP / Postal code is required." }),
+  zipCode: z.string()
+    .min(1, { message: "Pincode is required." })
+    .regex(/^\d{6}$/, { message: "Please enter a valid 6-digit pincode." })
+    .refine((pincode) => {
+      const validation = validatePincode(pincode);
+      return validation.isServiceable;
+    }, {
+      message: "Sorry, we don't deliver to this pincode yet. Please contact us for delivery updates!"
+    }),
   country: z.string().min(1, { message: "Country is required." }),
 });
 

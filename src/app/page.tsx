@@ -36,17 +36,17 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section - Glassmorphic Design */}
-      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[50vh] md:min-h-[80vh] flex items-center justify-center overflow-hidden mobile-section hero-mobile">{/* ...existing code... */}
         {/* Ultra HD Background with multiple layers */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-purple-900/20 to-blue-900/20"></div>
           <Image
             src="/images/Welcome-to-the-world-of-elixirs_page.jpg"
             alt="Welcome to the world of elixrs"
-            fill
+            fill={true}
             sizes="100vw"
             className="object-cover object-center"
-            priority
+            priority={true}
             quality={90}
           />          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"></div>
             {/* Enhanced Floating Bubbles - More variety and quantity */}
@@ -78,53 +78,39 @@ export default function HomePage() {
           <div className="absolute bottom-3/4 right-1/2 w-4 h-4 bg-gradient-to-r from-purple-300 to-violet-300 rounded-full opacity-30 animate-float-ultra-fast" style={{ animationDelay: '4.8s' }}></div>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-3 md:px-4 relative z-10 text-center mobile-container">
           <div className="max-w-3xl mx-auto text-center">
             {/* Tagline and Premium Badge */}
-            <div className="mb-4">
-              <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-sm font-medium mb-4 border border-white/50">
-                <Zap className="w-4 h-4 mr-2" />
+            <div className="mb-1 md:mb-4"> {/* Reduced mb-2 to mb-1 for mobile */}
+              <span className="inline-flex items-center px-2 md:px-4 py-1 md:py-2 rounded-full bg-gradient-to-r from-primary/50 to-accent/50 text-white text-xs md:text-sm font-medium mb-1 md:mb-4 border border-white/50">
+                <Zap className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Premium Cold-Pressed elixrs
               </span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-headline font-bold mb-6 leading-tight">
+            <h1 className="text-2xl md:text-5xl lg:text-7xl font-headline font-bold mb-2 md:mb-6 leading-tight mobile-text"> {/* Reduced text-3xl to text-2xl and mb-3 to mb-2 for mobile */}
               <span className="gradient-text">Taste the Freshness</span><br />
               {/* <span className="gradient-text">Freshness</span> */}
             </h1>
             
-            <p className="text-xl md:text-2xl text-black/80 max-w-3xl mx-auto mb-8 leading-relaxed font-medium drop-shadow-md">
-              Experience the ultimate fusion of taste and wellness with our 
+            <p className="text-sm md:text-xl lg:text-2xl text-black/80 max-w-3xl mx-auto mb-2 md:mb-8 leading-relaxed font-medium drop-shadow-md mobile-text"> {/* Reduced text-base to text-sm and mb-4 to mb-2 for mobile */}
+              Experience the ultimate fusion of taste and wellness with our
               <br className="hidden md:block" />
               <span className="text-orange-900 font-semibold">handcrafted elixrs</span> delivered fresh to your door.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
-              <Button 
-                asChild 
-                size="lg" 
-                className="bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-8 py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold"
-              >
-                <Link href="/menu">
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Explore elixrs
-                </Link>
-              </Button>
-              
-              <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-8 py-4 text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
-              >
-                <Link href="/subscriptions">
-                  <Gift className="mr-2 h-5 w-5" />
-                  Premium Plans
-                </Link>
-              </Button>
-            </div>            {/* Social Proof */}
-            <div className="flex items-center justify-center gap-6 text-base text-white/90">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 md:gap-4 mb-2 md:mb-8"> {/* Reduced gap-3 to gap-2 and mb-4 to mb-2 for mobile */}
+              <a className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white px-4 md:px-8 py-2 md:py-4 text-sm md:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold mobile-btn" href="/menu"> {/* Reduced h-11 to h-10, px-6 to px-4, py-3 to py-2, text-base to text-sm for mobile */}
+                <Sparkles className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+                Explore elixrs
+              </a>
+              <a className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:text-accent-foreground h-10 border-2 border-white/40 bg-grey/05 backdrop-blur-sm hover:bg-white/10 text-black px-4 md:px-8 py-2 md:py-4 text-sm md:text-lg rounded-xl hover:shadow-lg transition-all duration-300 font-semibold mobile-btn" href="/subscriptions"> {/* Reduced h-11 to h-10, px-6 to px-4, py-3 to py-2, text-base to text-sm for mobile */}
+                <Gift className="mr-2 h-5 w-5" />
+                Premium Plans
+              </a>
+            </div>
+            <div className="flex items-center justify-center gap-4 text-sm text-white/90"> {/* Reduced gap-6 to gap-4 and text-base to text-sm for mobile */}
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1,2,3,4,5].map(i => (
@@ -146,7 +132,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Actions Bar */}
-      <section className="bg-white/80 backdrop-blur-sm border-b border-border/50 py-4">        <div className="container mx-auto px-4">
+      <section className="bg-white/80 backdrop-blur-sm border-b border-border/50 py-2 md:py-4 mobile-section">        <div className="container mx-auto px-3 md:px-4 mobile-container">
           <div className="flex items-center justify-center gap-8 text-sm">
             <WhatsAppLink className="flex items-center gap-2 text-green-600 hover:text-green-700 transition-colors">
               <MessageCircle className="w-4 h-4" />
@@ -165,7 +151,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>      {/* Categories Section */}
-      <section className="py-5 bg-gradient-to-br from-background to-muted/30">
+      <section className="py-3 md:py-5 bg-gradient-to-br from-background to-muted/30 mobile-section">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-block pb-4 w-full">
@@ -187,18 +173,34 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
-      <section className="py-4 bg-background">
+      <section className="py-2 md:py-4 bg-background mobile-section">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold gradient-text mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-xl md:text-3xl lg:text-5xl font-headline font-bold gradient-text mb-2 md:mb-4 leading-tight" style={{ lineHeight: 1.20 }}>
               Zero Sugar Fruit Juice From ₹120
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Our most popular cold-pressed juices, crafted with love and delivered fresh
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Mobile: Horizontal scroll, Desktop: Grid */}
+          <div className="block md:hidden mobile-juice-scroll">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
+              {featuredJuices.map((juice, index) => (
+                <div 
+                  key={juice.id} 
+                  className="flex-none w-64 h-[420px] animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <JuiceCard juice={juice} />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Desktop: Grid layout */}
+          <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredJuices.map((juice, index) => (
               <div 
                 key={juice.id} 
@@ -210,7 +212,7 @@ export default function HomePage() {
             ))}
           </div>
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-6 md:mt-12">
             <Button asChild size="lg" variant="outline" className="btn-hover-lift">
               <Link href="/menu">
                 View All Products
@@ -223,7 +225,7 @@ export default function HomePage() {
 
       {/* Subscription Plans */}
       {(weeklyKickstarterPlan || monthlyWellnessPlan) && (
-        <section className="py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background">
+        <section className="py-8 md:py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background mobile-section">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
@@ -266,9 +268,9 @@ export default function HomePage() {
       )}
 
       {/* Quality Features */}
-      <section className="py-16 bg-gradient-to-br from-muted/30 to-background">        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-4" style={{ 
+      <section className="py-8 md:py-16 bg-gradient-to-br from-muted/30 to-background mobile-section">        <div className="container mx-auto px-3 md:px-4 mobile-container">
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold mb-2 md:mb-4" style={{ 
               background: "linear-gradient(135deg, #1f2937 0%, #374151 25%, #0f172a 50%, #1e293b 75%, #0c1821 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -276,35 +278,35 @@ export default function HomePage() {
             }}>
               High Standard Quality And Taste
             </h2>
-            <p className="text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
+            <p className="text-xs md:text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
               We follow hygienic and natural processes to maintain freshness and flavor 
               without adding artificial additives to get that natural fruit drink feeling.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Leaf className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Rich Protein</h3>
-                <p className="text-muted-foreground">
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-8">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Leaf className="w-6 h-6 md:w-12 md:h-12 text-green-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">Rich Protein</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Packed with natural proteins from fresh fruits and vegetables
                 </p>
               </CardContent>
             </Card>
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Body Care</h3>
-                <p className="text-muted-foreground">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Heart className="w-6 h-6 md:w-12 md:h-12 text-red-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">Body Care</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Nourish your body with essential vitamins and minerals
                 </p>
               </CardContent>
             </Card>
-            <Card className="glass-card text-center p-8">
-              <CardContent className="pt-6">
-                <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">0% Trans Fat</h3>
-                <p className="text-muted-foreground">
+            <Card className="glass-card text-center p-2 md:p-8">
+              <CardContent className="pt-2 md:pt-6">
+                <Shield className="w-6 h-6 md:w-12 md:h-12 text-blue-500 mx-auto mb-1 md:mb-4" />
+                <h3 className="text-xs md:text-xl font-semibold mb-1 md:mb-2">0% Trans Fat</h3>
+                <p className="text-muted-foreground text-xs md:text-base">
                   Pure, natural ingredients with no artificial additives
                 </p>
               </CardContent>

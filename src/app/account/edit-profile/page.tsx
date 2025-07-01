@@ -3,14 +3,14 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertTriangle, User, Save, ArrowLeft, Info, KeyRound } from 'lucide-react';
+import { Loader2, AlertTriangle, User, Save, ArrowLeft, Info, KeyRound, Camera, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 import { editProfileSchema } from '@/lib/zod-schemas';
 import type { EditProfileFormData } from '@/lib/types';
@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient'; // Import supabase client for direct auth method
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 
 export default function EditProfilePage() {
@@ -25,6 +26,9 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<EditProfileFormData>({
     resolver: zodResolver(editProfileSchema),
@@ -41,6 +45,8 @@ export default function EditProfilePage() {
     }
     if (user) {
       setValue('fullName', user.user_metadata?.full_name || user.email?.split('@')[0] || '');
+      // Load existing profile photo URL
+      setProfilePhotoUrl(user.user_metadata?.profile_photo_url || null);
     }
   }, [user, authLoading, router, isSupabaseConfigured, setValue]);
   
@@ -49,6 +55,85 @@ export default function EditProfilePage() {
       document.title = 'Edit Profile - Elixr';
     }
   }, []);
+
+  const uploadProfilePhoto = async (file: File): Promise<string | null> => {
+    if (!user || !supabase) return null;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `profile-photos/${fileName}`;
+
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return null;
+      }
+
+      // Get the public URL
+      const { data } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select a valid image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const photoUrl = await uploadProfilePhoto(file);
+    if (photoUrl) {
+      setProfilePhotoUrl(photoUrl);
+      toast({
+        title: "Photo Uploaded",
+        description: "Your profile photo has been uploaded successfully.",
+      });
+    } else {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload profile photo. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeProfilePhoto = () => {
+    setProfilePhotoUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const onSubmit: SubmitHandler<EditProfileFormData> = async (data) => {
     if (!user || !isSupabaseConfigured || !supabase) { // also check for supabase client instance
@@ -74,6 +159,17 @@ export default function EditProfilePage() {
         profileUpdated = true;
         // Update user context (optional, as onAuthStateChange should eventually catch it)
         if (user && user.user_metadata) user.user_metadata.full_name = data.fullName;
+      }
+
+      // Update profile photo if it has changed
+      if (profilePhotoUrl !== (user.user_metadata?.profile_photo_url || null)) {
+        const { error: photoError } = await supabase.auth.updateUser({
+            data: { profile_photo_url: profilePhotoUrl } 
+        });
+        if (photoError) throw photoError;
+        profileUpdated = true;
+        // Update user context
+        if (user && user.user_metadata) user.user_metadata.profile_photo_url = profilePhotoUrl;
       }
 
       // Update password if new password is provided and valid
@@ -185,9 +281,73 @@ export default function EditProfilePage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
+            {/* Profile Photo Section */}
+            <div className="space-y-4">
+              <Label>Profile Photo</Label>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {profilePhotoUrl ? (
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted">
+                      <Image
+                        src={profilePhotoUrl}
+                        alt="Profile photo"
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeProfilePhoto}
+                        className="absolute -top-1 -right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                        aria-label="Remove photo"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploading || submitLoading || !isSupabaseConfigured}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || submitLoading || !isSupabaseConfigured}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {profilePhotoUrl ? 'Change Photo' : 'Upload Photo'}
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG or GIF. Max size 5MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted/50" />
+              <Input id="email" type="email" value={user.email || ''} autoComplete="email" disabled className="bg-muted/50" />
               <p className="text-xs text-muted-foreground">Your email address cannot be changed here.</p>
             </div>
             
@@ -197,6 +357,7 @@ export default function EditProfilePage() {
                 id="fullName" 
                 type="text" 
                 placeholder="Enter your full name" 
+                autoComplete="name"
                 {...register("fullName")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />
@@ -219,6 +380,7 @@ export default function EditProfilePage() {
                 id="newPassword" 
                 type="password" 
                 placeholder="Enter new password (min. 6 characters)" 
+                autoComplete="new-password"
                 {...register("newPassword")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />
@@ -231,6 +393,7 @@ export default function EditProfilePage() {
                 id="confirmNewPassword" 
                 type="password" 
                 placeholder="Confirm new password" 
+                autoComplete="new-password"
                 {...register("confirmNewPassword")}
                 disabled={submitLoading || !isSupabaseConfigured}
               />

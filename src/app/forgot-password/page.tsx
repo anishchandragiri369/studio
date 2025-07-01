@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
             {!message && ( 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
             )}

@@ -21,8 +21,8 @@ export default function CartPage() {
 
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <section className="text-center mb-12">
+    <div className="container mx-auto px-4 py-8 mobile-container">
+      <section className="text-center mb-12 mobile-section">
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4">Your Shopping Cart</h1>
         {cartItems.length > 0 ? (
           <p className="text-lg text-muted-foreground">Review your items and proceed to checkout.</p>

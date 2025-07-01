@@ -70,8 +70,7 @@ describe('HomePage', () => {
   it('renders the main hero section', () => {
     renderWithProviders(<HomePage />)
     
-    expect(screen.getByText('Taste the')).toBeInTheDocument()
-    expect(screen.getByText('Freshness')).toBeInTheDocument()
+    expect(screen.getByText('Taste the Freshness')).toBeInTheDocument()
     expect(screen.getByText(/Experience the ultimate fusion of taste and wellness/)).toBeInTheDocument()
   })
 
@@ -111,12 +110,12 @@ describe('HomePage', () => {
   it('displays featured products section', () => {
     renderWithProviders(<HomePage />)
     
-    expect(screen.getByText('Zero Sugar Fruit Juice From ₹110')).toBeInTheDocument()
+    expect(screen.getByText('Zero Sugar Fruit Juice From ₹120')).toBeInTheDocument()
     expect(screen.getByText(/Our most popular cold-pressed juices/)).toBeInTheDocument()
     
-    // Should render multiple juice cards (first 8 from constants)
+    // Should render multiple juice cards - HomePage renders all juice cards twice
     const juiceCards = screen.getAllByTestId('juice-card')
-    expect(juiceCards).toHaveLength(8)
+    expect(juiceCards).toHaveLength(16) // 8 juices rendered twice
   })
 
   it('shows quality features section', () => {

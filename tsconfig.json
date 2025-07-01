@@ -22,8 +22,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node", "@types/google.maps", "jest"]
+    "types": ["node", "@types/google.maps"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "mobile"]
 }

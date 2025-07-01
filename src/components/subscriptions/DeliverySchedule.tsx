@@ -27,7 +27,7 @@ export default function DeliverySchedule({ subscriptionId }: DeliverySchedulePro
     if (!user || !subscriptionId) return;
 
     try {
-      const response = await fetch('/api/subscriptions/delivery-management', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/delivery-management`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

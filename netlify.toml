@@ -12,7 +12,13 @@
 
 [build]
   functions = "netlify/functions"
-  command = "npm run build"
+  command = "npm run build:server"
+
+[build.environment]
+  MOBILE_BUILD = "false"
+  NEXT_PUBLIC_BUILD_MODE = "server"
+  NODE_VERSION = "18"
+  NEXT_TELEMETRY_DISABLED = "1"
 
 [functions]
   external_node_modules = ["exceljs", "nodemailer"]
@@ -21,3 +27,62 @@
 # This function will run daily at 6 PM (18:00 UTC)
 [functions."daily-subscription-report-cron"]
   schedule = "0 18 * * *"
+
+# Cache control headers
+[[headers]]
+  # Only apply aggressive no-cache to auth pages
+  for = "/login"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/signup"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/reset-password"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  # Allow normal caching for most pages but with some control
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  # API routes should never be cached
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  # Next.js internal routes should be cacheable
+  for = "/_next/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  # Static assets can be cached longer
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  # Images can be cached for a day
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

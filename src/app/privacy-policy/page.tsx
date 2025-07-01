@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative py-16 overflow-hidden">
+      <section className="relative py-16 overflow-hidden hero-mobile">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-green-900/20 to-blue-900/20"></div>
           <Image
@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
           <div className="absolute bottom-20 left-16 w-12 h-12 bg-gradient-to-r from-secondary/20 to-primary/20 rounded-full opacity-25 animate-float" style={{ animationDelay: '1s' }}></div>
         </div>
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-4 relative z-10 mobile-container">
           <Button variant="outline" asChild className="mb-6 glass-card border-0 btn-hover-lift">
             <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -64,8 +64,8 @@ export default function PrivacyPolicyPage() {
 
       {/* Privacy Policy Content */}
       <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="space-y-8">
+        <div className="container mx-auto px-4 py-12 mobile-container">
+          <div className="max-w-4xl mx-auto space-y-8">
             
             {/* Introduction */}
             <Card className="glass-card border-0 shadow-soft">

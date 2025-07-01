@@ -15,7 +15,7 @@ import type { CheckoutAddressFormData, Juice as JuiceType } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import GoogleMapPicker from '@/components/checkout/GoogleMapPicker';
+import LazyGoogleMapPicker from '@/components/checkout/LazyGoogleMapPicker';
 import { useCart } from '@/hooks/useCart';
 import { JUICES } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
@@ -24,6 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 import CouponInput from '@/components/checkout/CouponInputWithDropdown';
 import ReferralInput from '@/components/checkout/ReferralInput';
 import { validateCoupon, type Coupon } from '@/lib/coupons';
+import { validatePincode, getContactInfo } from '@/lib/pincodeValidation';
 
 
 interface SubscriptionOrderItem {
@@ -81,8 +82,15 @@ function CheckoutPageContents() {
     code: string;
     referrerId: string;
   } | null>(null);
+  const [shouldLoadMaps, setShouldLoadMaps] = useState(false);
+  const [proceedToCheckout, setProceedToCheckout] = useState(false);
+  const [pincodeValidation, setPincodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    area?: string;
+  } | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<CheckoutAddressFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
     defaultValues: {
       country: 'India',
@@ -95,6 +103,27 @@ function CheckoutPageContents() {
       setValue('email', user.email);
     }
   }, [user, setValue]);
+
+  // Watch pincode changes for real-time validation
+  const watchedPincode = watch('zipCode');
+  
+  useEffect(() => {
+    if (watchedPincode && watchedPincode.length === 6) {
+      const validation = validatePincode(watchedPincode);
+      setPincodeValidation({
+        isValid: validation.isServiceable,
+        message: validation.message,
+        area: validation.area
+      });
+    } else if (watchedPincode && watchedPincode.length > 0) {
+      setPincodeValidation({
+        isValid: false,
+        message: 'Please enter a 6-digit pincode',
+      });
+    } else {
+      setPincodeValidation(null);
+    }
+  }, [watchedPincode]);
 
   // Coupon handlers
   const handleCouponApply = (coupon: Coupon, discountAmount: number) => {
@@ -193,8 +222,12 @@ function CheckoutPageContents() {
   }, []);
 
   const handleFormSubmit: SubmitHandler<CheckoutAddressFormData> = (data) => {
-    // Remove conceptual logging and toast
-    // Instead, trigger the real Cashfree payment flow
+    // Trigger maps loading if not already loaded
+    if (!shouldLoadMaps && !proceedToCheckout) {
+      setShouldLoadMaps(true);
+      setProceedToCheckout(true);
+    }
+    // Trigger the real Cashfree payment flow
     handleCashfreePayment();
   };
 
@@ -240,15 +273,17 @@ function CheckoutPageContents() {
     };
     try {
       cashfree.checkout(checkoutOptions).then((result: any) => {
-      if (result.error) {
-        // Only log error to console, no secrets or sensitive data
-        console.error("Checkout error:", result.error.message);
-      } 
-      // No debug logs or secrets
-      if(result.paymentDetails){
-        // Payment completed, no logs
-      }
-    });
+        if (result.error) {
+          // Only log error to console, no secrets or sensitive data
+          console.error("Checkout error:", result.error.message);
+        } 
+        // No debug logs or secrets
+        if (result.paymentDetails) {
+          // Payment completed successfully
+          // Clear cart after successful payment
+          clearCart(false); // Clear without toast since user will be redirected
+        }
+      });
     } catch (error) {
       console.error("Error during checkout:", error);
     }
@@ -256,23 +291,21 @@ function CheckoutPageContents() {
 
   const handleCashfreePayment = async () => {
     setIsProcessingPayment(true);
+    let internalOrderId: string | null = null;
+    
     toast({
- duration: 6000, // Extend duration for async process
+      duration: 6000, // Extend duration for async process
       title: "Processing Payment...",
- description: "Creating order and initializing payment gateway...",
+      description: "Creating order and initializing payment gateway...",
     });
+    
     try {
-    //    if (isAuthLoading) {
-    //      toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
-    //      setIsProcessingPayment(false);
-    //      return;
-    //    }
-    //   if (!user) {
-    //     toast({ title: "Authentication Required", description: "Please log in to complete your order.", variant: "destructive" });
-    //     setIsProcessingPayment(false);
-    //     // Optionally redirect to login page: router.push('/login');
-    //     return;
-    //   }
+      // Pre-flight checks
+      if (isAuthLoading) {
+        toast({ title: "Authentication Loading", description: "Please wait while we verify your login status.", });
+        setIsProcessingPayment(false);
+        return;
+      }
       let cashfreeInstance = await load({ mode: "sandbox" });
       // Initialize Cashfree SDK asynchronously
       initializeSDK(); // Ensure the script is loaded
@@ -304,8 +337,6 @@ function CheckoutPageContents() {
         throw new Error("Order amount must be at least ₹1.");
       }
       
-      console.log("Order validation passed. Current order total:", currentOrderTotal);
-      
       const orderPayload = {
         orderAmount: currentOrderTotal,
         originalAmount: originalOrderTotal,
@@ -318,10 +349,13 @@ function CheckoutPageContents() {
           code: appliedReferral.code,
           referrerId: appliedReferral.referrerId
         } : null,
-        orderItems: (isSubscriptionCheckout ? subscriptionOrderItems : cartItems).map(item => ({
+        orderItems: cartItems.map(item => ({
           ...item,
-          juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name // Ensure juiceName is always present
+          juiceName: 'juiceName' in item && item.juiceName ? item.juiceName : item.name,
+          type: item.type // Ensure type is always present
         })),
+        hasSubscriptions: cartItems.some(item => item.type === 'subscription'),
+        hasRegularItems: cartItems.some(item => item.type === 'regular'),
         customerInfo: {
           name: `${(formData as CheckoutAddressFormData).firstName} ${(formData as CheckoutAddressFormData).lastName || ''}`.trim(),
           email: (formData as CheckoutAddressFormData).email,
@@ -350,27 +384,63 @@ function CheckoutPageContents() {
           basePrice: subscriptionDetails?.basePrice || 120
         } : null
       };
-      console.log("Preparing to send order data to /api/orders/create:", JSON.stringify(orderPayload));
-      // const userId = user.id;
-      // 1. Create order in your backend
-      const orderCreationResponse = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers:
-         {
-          // Correcting header for JSON content
-
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderPayload),
-      });
       
-      const orderCreationResult = await orderCreationResponse.json();
-
-      if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
-        throw new Error(orderCreationResult.message || "Failed to create internal order.");
+      // Get the API base URL and construct the full URL
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      
+      // If no API base URL is set, use the current origin
+      const effectiveBaseUrl = apiBaseUrl || window.location.origin;
+      const orderCreateUrl = `${effectiveBaseUrl}/api/orders/create`;
+      
+      // 1. Create order in your backend with enhanced error handling
+      let orderCreationResponse;
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        );
+        
+        const fetchPromise = fetch(orderCreateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(orderPayload),
+        });
+        
+        orderCreationResponse = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      } catch (fetchError) {
+        console.error("Fetch error creating order:", fetchError);
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+        if (errorMessage.includes('timeout')) {
+          throw new Error(`Request timed out: The server is taking too long to respond. Please try again.`);
+        }
+        throw new Error(`Network error: Unable to connect to the server. Please check your internet connection and try again. Details: ${errorMessage}`);
+      }
+      
+      if (!orderCreationResponse) {
+        throw new Error("No response received from server");
+      }
+      
+      let orderCreationResult;
+      try {
+        orderCreationResult = await orderCreationResponse.json();
+      } catch (jsonError) {
+        console.error("JSON parse error:", jsonError);
+        throw new Error(`Server response error: Unable to parse server response. Status: ${orderCreationResponse.status}`);
       }
 
-      const internalOrderId = orderCreationResult.data.id;
+      if (!orderCreationResponse.ok || !orderCreationResult.success || !orderCreationResult.data?.id) {
+        console.error("Order creation failed:", {
+          status: orderCreationResponse.status,
+          statusText: orderCreationResponse.statusText,
+          result: orderCreationResult
+        });
+        throw new Error(orderCreationResult.message || `Failed to create internal order. Server responded with status ${orderCreationResponse.status}`);
+      }
+
+      internalOrderId = orderCreationResult.data.id;
 
       // 2. Use the internalOrderId to create a Cashfree order session
       const cashfreeOrderPayload = {
@@ -382,28 +452,86 @@ function CheckoutPageContents() {
           phone: (formData as CheckoutAddressFormData).mobileNumber,
        }
       };
-      const cashfreeOrderResponse = await fetch('/api/cashfree/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cashfreeOrderPayload),
-      });
+      
+      const cashfreeCreateUrl = `${effectiveBaseUrl}/api/cashfree/create-order`;
+      
+      let cashfreeOrderResponse;
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        );
+        
+        const fetchPromise = fetch(cashfreeCreateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(cashfreeOrderPayload),
+        });
+        
+        cashfreeOrderResponse = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      } catch (fetchError) {
+        console.error("Fetch error creating Cashfree order:", fetchError);
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+        if (errorMessage.includes('timeout')) {
+          throw new Error(`Payment service timeout: The payment service is taking too long to respond. Please try again.`);
+        }
+        throw new Error(`Network error: Unable to connect to payment service. Please check your internet connection and try again. Details: ${errorMessage}`);
+      }
 
-      const cashfreeOrderResult = await cashfreeOrderResponse.json();
+      if (!cashfreeOrderResponse) {
+        throw new Error("No response received from payment service");
+      }
+      
+      let cashfreeOrderResult;
+      try {
+        cashfreeOrderResult = await cashfreeOrderResponse.json();
+      } catch (jsonError) {
+        console.error("JSON parse error:", jsonError);
+        throw new Error(`Payment service response error: Unable to parse response. Status: ${cashfreeOrderResponse.status}`);
+      }
 
       if (cashfreeOrderResponse.ok && cashfreeOrderResult.success && cashfreeOrderResult.data?.orderToken) {
          // Now that the SDK is loaded and order created, initiate checkout
-         if (cashfreeInstance  && typeof cashfreeInstance .checkout === 'function') {
-             createCheckout(cashfreeInstance , cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`); // Replace with your actual success page URL
+         if (cashfreeInstance && typeof cashfreeInstance.checkout === 'function') {
+             createCheckout(cashfreeInstance, cashfreeOrderResult.data.orderToken, `${window.location.origin}/order-success`);
          } else {
              throw new Error("Cashfree SDK not available for checkout.");
          }
       } else {
-        throw new Error(cashfreeOrderResult.message || "Failed to create Cashfree order session.");
+        console.error("Cashfree order creation failed:", {
+          status: cashfreeOrderResponse.status,
+          statusText: cashfreeOrderResponse.statusText,
+          result: cashfreeOrderResult
+        });
+        
+        // If the API response includes a redirect URL for payment failure, use it
+        if (cashfreeOrderResult.redirectTo) {
+          console.log("Redirecting to payment failure page:", cashfreeOrderResult.redirectTo);
+          window.location.href = cashfreeOrderResult.redirectTo;
+          return;
+        }
+        
+        throw new Error(cashfreeOrderResult.message || `Failed to create payment session. Status: ${cashfreeOrderResponse.status}`);
       }
     } catch (error) {
       console.error("Payment error:", error);
+      
+      // Check if it's a payment gateway failure and redirect to failure page
+      if (error instanceof Error && (
+        error.message.includes('payment') || 
+        error.message.includes('gateway') ||
+        error.message.includes('Cashfree')
+      )) {
+        // Redirect to payment failure page with error details
+        const failureUrl = `/payment-failed?${internalOrderId ? `order_id=${internalOrderId}&` : ''}amount=${currentOrderTotal}&reason=${encodeURIComponent(error.message)}`;
+        console.log("Redirecting to payment failure page due to payment error:", failureUrl);
+        router.push(failureUrl);
+        return;
+      }
+      
       toast({
         title: "Payment Error",
         description: error instanceof Error ? error.message : "Failed to process payment",
@@ -433,7 +561,9 @@ function CheckoutPageContents() {
     }
   };
 
-  const isCheckoutDisabled = isLoadingSummary || (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0);
+  const isCheckoutDisabled = isLoadingSummary || 
+    (isSubscriptionCheckout ? !subscriptionDetails : cartItems.length === 0) ||
+    (pincodeValidation !== null && !pincodeValidation.isValid);
 
   return (
     <>
@@ -451,7 +581,7 @@ function CheckoutPageContents() {
           <div className="absolute bottom-40 left-8 w-8 h-8 bg-secondary/8 rounded-full opacity-20 animate-float" style={{ animationDelay: '5s' }}></div>
         </div>
         <div className="relative z-10">
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 py-8 mobile-container">
             <Button variant="outline" asChild className="mb-6 glass-card border-0 btn-hover-lift">
               <Link href={isSubscriptionCheckout ? `/subscriptions/subscribe?plan=${subscriptionDetails?.planId}` : "/cart"}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -459,7 +589,7 @@ function CheckoutPageContents() {
               </Link>
             </Button>
 
-        <section className="text-center mb-8">
+        <section className="text-center mb-8 mobile-section">
           <h1 className="text-4xl md:text-6xl font-headline font-bold gradient-text mb-4">
             Checkout
           </h1>
@@ -496,12 +626,35 @@ function CheckoutPageContents() {
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="rounded-xl overflow-hidden border border-border/50">
-                          <GoogleMapPicker 
+                          <LazyGoogleMapPicker 
                             location={selectedLocation} 
                             mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID} 
-                            onPlaceSelected={handlePlaceSelected} 
+                            onPlaceSelected={handlePlaceSelected}
+                            forceLoad={shouldLoadMaps || proceedToCheckout}
+                            autoLoadOnDesktop={true}
                           />
                         </div>
+                        
+                        {/* Helper button for mobile users to load maps */}
+                        {!shouldLoadMaps && !proceedToCheckout && (
+                          <div className="text-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShouldLoadMaps(true);
+                                setProceedToCheckout(true);
+                              }}
+                              className="gap-2"
+                            >
+                              <MapPin className="h-4 w-4" />
+                              Load Interactive Map
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Or fill the address fields manually below
+                            </p>
+                          </div>
+                        )}
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -532,6 +685,7 @@ function CheckoutPageContents() {
                             type="email" 
                             {...register("email")} 
                             placeholder="you@example.com" 
+                            autoComplete="email"
                             className="glass border-border/50 focus:border-primary/50 transition-all"
                           />
                           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
@@ -594,14 +748,57 @@ function CheckoutPageContents() {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="zipCode" className="text-sm font-medium">ZIP / Postal Code *</Label>
+                            <Label htmlFor="zipCode" className="text-sm font-medium">Pincode *</Label>
                             <Input 
                               id="zipCode" 
                               {...register("zipCode")} 
-                              placeholder="123456" 
+                              placeholder="500001" 
+                              maxLength={6}
                               className="glass border-border/50 focus:border-primary/50 transition-all"
                             />
                             {errors.zipCode && <p className="text-sm text-destructive">{errors.zipCode.message}</p>}
+                            
+                            {/* Real-time pincode validation feedback */}
+                            {pincodeValidation && (
+                              <div className={`text-sm p-2 rounded-md ${
+                                pincodeValidation.isValid 
+                                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  {pincodeValidation.isValid ? (
+                                    <span className="text-green-600">✓</span>
+                                  ) : (
+                                    <span className="text-red-600">✗</span>
+                                  )}
+                                  <span>{pincodeValidation.message}</span>
+                                </div>
+                                
+                                {!pincodeValidation.isValid && watchedPincode?.length === 6 && (
+                                  <div className="mt-2 pt-2 border-t border-red-200">
+                                    <p className="text-xs text-red-600 mb-2">
+                                      We'll be expanding to your area soon! Contact us for updates:
+                                    </p>
+                                    <div className="flex flex-col gap-1">
+                                      <a 
+                                        href={`https://wa.me/${getContactInfo().whatsapp.replace(/[^\d]/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-green-600 hover:text-green-700 underline flex items-center gap-1"
+                                      >
+                                        📱 WhatsApp: {getContactInfo().whatsapp}
+                                      </a>
+                                      <a 
+                                        href={`mailto:${getContactInfo().email}`}
+                                        className="text-xs text-blue-600 hover:text-blue-700 underline flex items-center gap-1"
+                                      >
+                                        ✉️ Email: {getContactInfo().email}
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="country" className="text-sm font-medium">Country *</Label>
@@ -697,7 +894,7 @@ function CheckoutPageContents() {
                     >
                       <CreditCard className="mr-2 h-5 w-5" /> 
                       Complete Order
-                    </Button>
+                    </Button>                    
                   </form>
                 </CardContent>
               </Card>
@@ -919,7 +1116,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Suspense fallback={
-        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-10rem)] mobile-container">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Loading checkout...</p>
         </div>

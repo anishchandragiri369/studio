@@ -13,15 +13,29 @@ jest.mock('@/context/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
-// Mock supabase client
+// Mock supabase client with successful response
 jest.mock('@/lib/supabaseClient', () => ({
   supabase: {
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
-          order: jest.fn(() => Promise.resolve({
-            data: [],
-            error: null,
+          in: jest.fn(() => ({
+            order: jest.fn(() => ({
+              range: jest.fn(() => Promise.resolve({
+                data: [
+                  {
+                    id: '1',
+                    created_at: '2024-12-01T10:00:00Z',
+                    status: 'payment_success',
+                    total_amount: 299,
+                    order_type: 'regular',
+                    items: [{ name: 'Fresh Orange Juice', quantity: 2, price: 149.50 }],
+                    shipping_address: '123 Test St, Test City'
+                  }
+                ],
+                error: null,
+              })),
+            })),
           })),
         })),
       })),
@@ -31,7 +45,12 @@ jest.mock('@/lib/supabaseClient', () => ({
 
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, asChild, ...props }: any) => {
+    if (asChild) {
+      return <>{children}</>;
+    }
+    return <button {...props}>{children}</button>;
+  },
 }));
 
 jest.mock('@/components/ui/card', () => ({
@@ -45,6 +64,13 @@ jest.mock('@/components/ui/card', () => ({
 
 jest.mock('@/components/ui/separator', () => ({
   Separator: (props: any) => <hr {...props} />,
+}));
+
+// Mock useToast hook
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
 }));
 
 jest.mock('@/components/ui/alert', () => ({
@@ -105,7 +131,7 @@ describe('OrdersPage', () => {
     });
   });
 
-  it('redirects to login when user is not authenticated', () => {
+  it('shows guest order form when user is not authenticated', () => {
     mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
@@ -119,7 +145,8 @@ describe('OrdersPage', () => {
 
     render(<OrdersPage />);
 
-    expect(mockPush).toHaveBeenCalledWith('/login?redirect=/orders');
+    expect(screen.getByText('View Your Orders')).toBeInTheDocument();
+    expect(screen.getByText('Enter your email address to view your order history, or log in for a personalized experience.')).toBeInTheDocument();
   });
 
   it('shows loading state while authentication is in progress', () => {

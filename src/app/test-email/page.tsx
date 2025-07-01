@@ -1,12 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { apiPost } from '@/lib/apiUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DevProtectionWrapper } from '@/lib/dev-protection';
 
 export default function TestEmailPage() {
+  return (
+    <DevProtectionWrapper>
+      <TestEmailContent />
+    </DevProtectionWrapper>
+  );
+}
+
+function TestEmailContent() {
   const [orderId, setOrderId] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -21,19 +31,11 @@ export default function TestEmailPage() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/send-order-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: orderId.trim(),
-          userEmail: '', // Will be fetched from database
-          orderDetails: {}
-        }),
+      const data = await apiPost('/api/send-order-email', {
+        orderId: orderId.trim(),
+        userEmail: '', // Will be fetched from database
+        orderDetails: {}
       });
-
-      const data = await response.json();
       setResult(data);
     } catch (error) {
       setResult({ success: false, error: 'Failed to send email request' });

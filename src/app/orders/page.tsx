@@ -26,6 +26,9 @@ export default function OrdersPage() {
   const [guestEmail, setGuestEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [hasSearchedByEmail, setHasSearchedByEmail] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMoreOrders, setHasMoreOrders] = useState(true);
+  const ORDERS_PER_PAGE = 10;
   // Remove the redirect for non-authenticated users - allow them to access the page
   // useEffect(() => {
   //   if (!authLoading && !user && isSupabaseConfigured) {
@@ -52,26 +55,46 @@ export default function OrdersPage() {
       }
 
       setLoadingOrders(true);
-      setErrorFetchingOrders(null);      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('status', ['payment_success', 'Payment Success', 'delivered', 'shipped', 'processing']) // Only show successful/processed orders
-        .order('created_at', { ascending: false });
+      setErrorFetchingOrders(null);
 
-      if (error) {
-        console.error('Error fetching orders:', error);
-        setErrorFetchingOrders('Failed to fetch orders. Please try again.');
-        setOrders([]);      } else {
-        setOrders(data as any[]);
+      try {
+        // Optimize query - only fetch essential fields for initial load
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            created_at,
+            total_amount,
+            status,
+            order_type,
+            items,
+            shipping_address
+          `)
+          .eq('user_id', user.id)
+          .in('status', ['payment_success', 'Payment Success', 'delivered', 'shipped', 'processing'])
+          .order('created_at', { ascending: false })
+          .range(0, ORDERS_PER_PAGE - 1); // Pagination: first page
+
+        if (error) {
+          setErrorFetchingOrders('Failed to fetch orders. Please try again.');
+          setOrders([]);
+        } else {
+          setOrders(data || []);
+          setHasMoreOrders((data?.length || 0) === ORDERS_PER_PAGE);
+          setCurrentPage(0);
+        }
+      } catch (error) {
+        setErrorFetchingOrders('An unexpected error occurred.');
+        setOrders([]);
+      } finally {
+        setLoadingOrders(false);
       }
-      setLoadingOrders(false);
     };
 
     if (user && isSupabaseConfigured) {
       fetchOrders();
     }
-  }, [user, isSupabaseConfigured]);
+  }, [user, isSupabaseConfigured, ORDERS_PER_PAGE]);
 
   // Function to fetch orders by email for non-authenticated users
   const fetchOrdersByEmail = async (email: string) => {
@@ -97,22 +120,33 @@ export default function OrdersPage() {
     setErrorFetchingOrders(null);
     setHasSearchedByEmail(true);
 
-    try {      const { data, error } = await supabase
+    try {
+      // Optimize query for guest lookups too
+      const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          id,
+          created_at,
+          total_amount,
+          status,
+          order_type,
+          items,
+          shipping_address
+        `)
         .eq('email', email.toLowerCase().trim())
-        .in('status', ['payment_success', 'delivered', 'shipped', 'processing']) // Only show successful/processed orders
-        .order('created_at', { ascending: false });
+        .in('status', ['payment_success', 'delivered', 'shipped', 'processing'])
+        .order('created_at', { ascending: false })
+        .limit(20); // Limit guest searches to recent 20 orders
 
       if (error) {
-        console.error('Error fetching orders by email:', error);
         setErrorFetchingOrders('Failed to fetch orders. Please try again.');
         setOrders([]);
         toast({
           title: "Error",
           description: "Failed to fetch orders. Please try again.",
           variant: "destructive",
-        });      } else {
+        });
+      } else {
         setOrders(data as any[]);
         if (data.length === 0) {
           toast({
@@ -129,12 +163,62 @@ export default function OrdersPage() {
         }
       }
     } catch (error) {
-      console.error('Error in fetchOrdersByEmail:', error);
       setErrorFetchingOrders('An unexpected error occurred.');
       setOrders([]);
       toast({
         title: "Error",
         description: "An unexpected error occurred while fetching orders.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Function to load more orders (pagination)
+  const loadMoreOrders = async () => {
+    if (!user || !isSupabaseConfigured || !supabase || !hasMoreOrders) {
+      return;
+    }
+
+    setLoadingOrders(true);
+    
+    try {
+      const nextPage = currentPage + 1;
+      const startRange = nextPage * ORDERS_PER_PAGE;
+      const endRange = startRange + ORDERS_PER_PAGE - 1;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          created_at,
+          total_amount,
+          status,
+          order_type,
+          items,
+          shipping_address
+        `)
+        .eq('user_id', user.id)
+        .in('status', ['payment_success', 'Payment Success', 'delivered', 'shipped', 'processing'])
+        .order('created_at', { ascending: false })
+        .range(startRange, endRange);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load more orders.",
+          variant: "destructive",
+        });
+      } else {
+        setOrders(prev => [...prev, ...(data || [])]);
+        setCurrentPage(nextPage);
+        setHasMoreOrders((data?.length || 0) === ORDERS_PER_PAGE);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading more orders.",
         variant: "destructive",
       });
     } finally {
@@ -148,7 +232,7 @@ export default function OrdersPage() {
   };
   if (authLoading) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -156,7 +240,7 @@ export default function OrdersPage() {
 
   if (!isSupabaseConfigured && !authLoading) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 mobile-container">
         <Alert variant="destructive" className="max-w-2xl mx-auto">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Order History Unavailable</AlertTitle>
@@ -180,7 +264,7 @@ export default function OrdersPage() {
           <Image src="/images/fruit-bowl-custom.jpg" alt="Juice orders background" fill className="object-cover opacity-60 blur-sm pointer-events-none select-none" priority />
           <div className="absolute inset-0 bg-gradient-to-br from-orange-100/80 via-yellow-50/80 to-pink-100/80 mix-blend-multiply" />
         </div>
-        <div className="relative z-10 container mx-auto px-4 py-12">
+        <div className="relative z-10 container mx-auto px-4 py-12 mobile-container">
           <Button variant="outline" asChild className="mb-8">
             <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -188,7 +272,7 @@ export default function OrdersPage() {
             </Link>
           </Button>
           
-          <section className="text-center mb-10">
+          <section className="text-center mb-10 mobile-section">
             <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-3">
               View Your Orders
             </h1>
@@ -237,6 +321,7 @@ export default function OrdersPage() {
                       placeholder="you@example.com"
                       value={guestEmail}
                       onChange={(e) => setGuestEmail(e.target.value)}
+                      autoComplete="email"
                       required
                       className="w-full"
                     />
@@ -380,6 +465,35 @@ export default function OrdersPage() {
                 {orders.map((order) => (
                   <OrderCard key={order.id} order={order} />
                 ))}
+                
+                {/* Load More Button */}
+                {hasMoreOrders && (
+                  <div className="text-center pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={loadMoreOrders}
+                      disabled={loadingOrders}
+                      className="w-full sm:w-auto"
+                    >
+                      {loadingOrders ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading more orders...
+                        </>
+                      ) : (
+                        <>Load More Orders</>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Orders count indicator */}
+                <div className="text-center text-sm text-muted-foreground">
+                  Showing {orders.length} order{orders.length !== 1 ? 's' : ''}
+                  {!hasMoreOrders && orders.length > ORDERS_PER_PAGE && (
+                    <span> (all orders loaded)</span>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -407,25 +521,29 @@ function formatOrderDate(dateString: string | undefined): string {
       minute: '2-digit'
     });
   } catch (e) {
-    console.error('Error formatting date:', e);
     return 'Error';
   }
 }
 
-// OrderCard component to display individual order details
-function OrderCard({ order }: { order: any }) { // Using any to handle database vs type mismatches
+// OrderCard component to display individual order details (optimized)
+function OrderCard({ order }: { order: any }) {
+  // Memoize expensive calculations
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+  const itemCount = orderItems.length;
+  const totalItems = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+  
   return (
     <Card className="bg-muted/30 hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <CardTitle className="text-lg font-semibold text-primary">Order ID: {order.id}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-primary">Order #{order.id.slice(-8)}</CardTitle>
           <span className={`text-xs font-medium px-2 py-1 rounded-full ${
             order.status === 'Delivered' || order.status === 'payment_success' || order.status === 'Payment Success' ? 'bg-green-100 text-green-700' :
             order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
             order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
             order.status === 'payment_pending' || order.status === 'Payment Pending' || order.status === 'Pending' ? 'bg-gray-100 text-gray-700' :
             order.status === 'payment_failed' || order.status === 'Payment Failed' ? 'bg-red-100 text-red-700' :
-            'bg-orange-100 text-orange-700' // Other statuses
+            'bg-orange-100 text-orange-700'
           }`}>
             {order.status === 'payment_success' ? 'Payment Success' : 
              order.status === 'payment_pending' ? 'Payment Pending' :
@@ -434,54 +552,75 @@ function OrderCard({ order }: { order: any }) { // Using any to handle database 
           </span>
         </div>
         <CardDescription className="text-xs">
-          Date: {formatOrderDate(order.created_at || order.orderDate)}
+          Date: {formatOrderDate(order.created_at)}
           <span className="mx-1">|</span>
-          Total: Rs.{typeof (order.total_amount || order.totalAmount) === 'number' && (order.total_amount || order.totalAmount) > 0 ? (order.total_amount || order.totalAmount).toFixed(2) : '—'}
+          Total: Rs.{typeof order.total_amount === 'number' && order.total_amount > 0 ? order.total_amount.toFixed(2) : '—'}
+          <span className="mx-1">|</span>
+          {totalItems} item{totalItems !== 1 ? 's' : ''}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         <Separator className="my-2" />
         <h4 className="text-sm font-medium mb-1">Items:</h4>
-        {order.items && order.items.map((item: any, idx: number) => (
-          <div key={item.juiceId || idx} className="flex items-center gap-3 text-sm">
-            {item.image && (
-              <Image
-                src={item.image}
-                alt={item.juiceName || item.name || 'Order item image'}
-                width={40}
-                height={40}
-                className="rounded object-contain border"
-                data-ai-hint={(item.juiceName ? item.juiceName.toLowerCase().split(" ").slice(0,2).join(" ") : '')}
-                unoptimized={item.image.startsWith('https://placehold.co')}
-                onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
-              />
+        
+        {/* Show only first 3 items for performance, with option to expand */}
+        {itemCount > 0 ? (
+          <div className="space-y-2">
+            {orderItems.slice(0, 3).map((item: any, idx: number) => (
+              <div key={item.juiceId || idx} className="flex items-center gap-3 text-sm">
+                {item.image && (
+                  <Image
+                    src={item.image}
+                    alt={item.juiceName || item.name || 'Order item'}
+                    width={32}
+                    height={32}
+                    className="rounded object-cover border flex-shrink-0"
+                    unoptimized={item.image.startsWith('https://placehold.co')}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://placehold.co/32x32.png';
+                    }}
+                  />
+                )}
+                <div className="flex-grow min-w-0">
+                  <span className="truncate block">{item.quantity}x {item.juiceName || item.name || 'Unknown Juice'}</span>
+                </div>
+                <span className="text-muted-foreground text-xs flex-shrink-0">
+                  Rs.{typeof item.pricePerItem === 'number' && item.pricePerItem > 0 ? 
+                    (item.quantity * item.pricePerItem).toFixed(2) : 
+                    (typeof item.price === 'number' && item.price > 0 ? 
+                      (item.quantity * item.price).toFixed(2) : '—')}
+                </span>
+              </div>
+            ))}
+            
+            {itemCount > 3 && (
+              <p className="text-xs text-muted-foreground italic">
+                ... and {itemCount - 3} more item{itemCount - 3 !== 1 ? 's' : ''}
+              </p>
             )}
-            <div className="flex-grow">
-              <span>{item.quantity}x {item.juiceName || item.name || 'Unknown Juice'}</span>
-            </div>
-            <span className="text-muted-foreground">
-              Rs.{typeof item.pricePerItem === 'number' && item.pricePerItem > 0 ? 
-                (item.quantity * item.pricePerItem).toFixed(2) : 
-                (typeof item.price === 'number' && item.price > 0 ? 
-                  (item.quantity * item.price).toFixed(2) : '—')}
-            </span>
           </div>
-        ))}
-        {(order.shipping_address || order.shippingAddress) && (
+        ) : (
+          <p className="text-sm text-muted-foreground">No items found</p>
+        )}
+        
+        {/* Simplified address display */}
+        {(order.shipping_address?.name || order.shipping_address?.firstName) && (
           <>
             <Separator className="my-2" />
-            <h4 className="text-sm font-medium mb-1">Shipping Address:</h4>
-            <p className="text-xs text-muted-foreground">
-              {(order.shipping_address?.name || order.shippingAddress?.firstName)} {order.shipping_address?.lastName || order.shippingAddress?.lastName || ''}<br/>
-              {(order.shipping_address?.address?.line1 || order.shipping_address?.addressLine1 || order.shippingAddress?.addressLine1)}{(order.shipping_address?.address?.line2 || order.shipping_address?.addressLine2 || order.shippingAddress?.addressLine2) ? `, ${order.shipping_address?.address?.line2 || order.shipping_address?.addressLine2 || order.shippingAddress?.addressLine2}` : ''}<br/>
-              {(order.shipping_address?.address?.city || order.shipping_address?.city || order.shippingAddress?.city)}, {(order.shipping_address?.address?.state || order.shipping_address?.state || order.shippingAddress?.state)} {(order.shipping_address?.address?.zipCode || order.shipping_address?.zipCode || order.shippingAddress?.zipCode)}<br/>
-              {(order.shipping_address?.address?.country || order.shipping_address?.country || order.shippingAddress?.country)}
+            <h4 className="text-sm font-medium mb-1">Delivery To:</h4>
+            <p className="text-xs text-muted-foreground truncate">
+              {order.shipping_address?.name || order.shipping_address?.firstName} {order.shipping_address?.lastName || ''}
+              {(order.shipping_address?.city || order.shipping_address?.address?.city) && (
+                <span> • {order.shipping_address?.city || order.shipping_address?.address?.city}</span>
+              )}
             </p>
           </>
         )}
       </CardContent>
       <CardFooter className="pt-3">
-        <Button variant="outline" size="sm" disabled>View Details / Reorder (Demo)</Button>
+        <Button variant="outline" size="sm" disabled className="text-xs">
+          Order Details (Coming Soon)
+        </Button>
       </CardFooter>
     </Card>
   );

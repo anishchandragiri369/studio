@@ -32,11 +32,11 @@ const AISubscriptionRecommender = ({
 
     startTransition(async () => {
       try {
-        const input: SuggestSubscriptionPlanInput = {
-          tastePreferences,
-          consumptionHabits,
+        const input = {
           availableJuiceFlavors: availableJuiceFlavors || AVAILABLE_JUICE_NAMES_FOR_AI,
-          ...(orderHistory && { orderHistory }),
+          tastePreferences: tastePreferences || '',
+          consumptionHabits: consumptionHabits || '',
+          orderHistory: orderHistory || '',
         };
         const result = await suggestSubscriptionPlan(input);
         setSuggestion(result);

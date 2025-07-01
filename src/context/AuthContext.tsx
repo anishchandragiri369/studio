@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
   useEffect(() => {
     if (!isActuallyConfiguredAndAuthReady) {
-      console.warn("AuthContext: Supabase Auth is not available or not properly configured. Authentication features will be disabled.");
       setUser(null);
       setIsAdmin(false);
       setLoading(false);
@@ -50,17 +49,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session }, error } = await supabase!.auth.getSession();
         if (error) {
           console.error('[AuthContext] Error getting initial session:', error);
+          
+          // Handle specific refresh token errors
+          if (error.message?.includes('refresh_token_not_found') || 
+              error.message?.includes('Invalid Refresh Token') ||
+              error.message?.includes('JWT expired')) {
+            
+            // Clear local auth state without triggering a server-side sign out
+            await supabase!.auth.signOut({ scope: 'local' });
+            
+            // Clean up any stale localStorage entries
+            if (typeof window !== 'undefined') {
+              const authKeys = Object.keys(localStorage).filter(key => 
+                key.includes('supabase') || key.includes('auth')
+              );
+              authKeys.forEach(key => {
+                try {
+                  localStorage.removeItem(key);
+                } catch (cleanupError) {
+                  console.warn('[AuthContext] Failed to remove localStorage key:', key);
+                }
+              });
+            }
+          }
+          
           setUser(null);
-          setIsAdmin(false);        } else if (session?.user) {
-          console.log('[AuthContext] Initial session found for user:', session.user.email);
+          setIsAdmin(false);
+        } else if (session?.user) {
           setUser(session.user);
-          // Query the 'admins' table for this email
-          const { data: adminData, error: adminError } = await supabase!
-            .from('admins')
-            .select('email')
-            .eq('email', session.user.email)
-            .single();
-          setIsAdmin(!!adminData && !adminError);
+          
+          try {
+            // Query the 'admins' table for this email
+            // Don't use .single() to avoid 406 errors when user is not an admin
+            const { data: adminData, error: adminError } = await supabase!
+              .from('admins')
+              .select('email')
+              .eq('email', session.user.email);
+            
+            // Check if user is admin (data array has results and no error)
+            const isUserAdmin = !adminError && adminData && adminData.length > 0;
+            setIsAdmin(isUserAdmin);
+          } catch (adminCheckError) {
+            console.error('[AuthContext] Error checking initial admin status:', adminCheckError);
+            setIsAdmin(false);
+          }
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -77,24 +109,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     getInitialSession();
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AuthContext] Auth state changed:', event, session?.user?.email || 'no user');
-      
-      const currentUser = session?.user || null;
-      setUser(currentUser);      if (currentUser && currentUser.email) {
-        // Query the 'admins' table for this email
-        const { data: adminData, error: adminError } = await supabase!
-          .from('admins')
-          .select('email')
-          .eq('email', currentUser.email)
-          .single();
-        setIsAdmin(!!adminData && !adminError);
-      } else {
-        setIsAdmin(false);
-      }
-      
-      // If the event is SIGNED_OUT, ensure complete cleanup
-      if (event === 'SIGNED_OUT') {
-        console.log('[AuthContext] Processing SIGNED_OUT event');
+      // Handle specific auth events
+      if (event === 'TOKEN_REFRESHED') {
+        // Token refreshed successfully
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsAdmin(false);
         
@@ -107,19 +125,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               keysToRemove.push(key);
             }
           }
-          keysToRemove.forEach(key => localStorage.removeItem(key));
+          keysToRemove.forEach(key => {
+            try {
+              localStorage.removeItem(key);
+            } catch (e) {
+              console.warn('[AuthContext] Failed to remove localStorage key:', key);
+            }
+          });
         }
+        
+        return; // Early return for SIGNED_OUT
       }
       
-      if (!loading) {
-        setLoading(false);
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      
+      if (currentUser && currentUser.email) {
+        try {
+          // Query the 'admins' table for this email
+          // Don't use .single() to avoid 406 errors when user is not an admin
+          const { data: adminData, error: adminError } = await supabase!
+            .from('admins')
+            .select('email')
+            .eq('email', currentUser.email);
+          
+          // Check if user is admin (data array has results and no error)
+          const isUserAdmin = !adminError && adminData && adminData.length > 0;
+          setIsAdmin(isUserAdmin);
+        } catch (error) {
+          console.error('[AuthContext] Error checking admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
       }
     });
     
     return () => {
       subscription?.unsubscribe();
     };
-  }, [isActuallyConfiguredAndAuthReady, loading]);
+  }, [isActuallyConfiguredAndAuthReady]);
 
   const signUp = async (credentials: SignUpFormData): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
@@ -174,8 +219,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      console.log('[AuthContext] Starting logout process...');
-      
       // Sign out from Supabase
       const { error } = await supabase!.auth.signOut();
         // Clear local state immediately
@@ -207,13 +250,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
       
-      console.log('[AuthContext] Logout completed successfully');
-      
       if (error) {
-        console.warn('[AuthContext] Supabase signOut error (but continuing with cleanup):', error);
+        // Continue with cleanup even if signOut had an error
       }
     } catch (error) {
-      console.error('[AuthContext] Error during logout:', error);
       // Even if there's an error, clear local state
       setUser(null);
       setIsAdmin(false);

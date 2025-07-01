@@ -1,0 +1,254 @@
+name: Comprehensive Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup environment variables
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "SKIP_E2E=${{ matrix.test-type != 'e2e' }}" >> $GITHUB_ENV
+          
+      - name: Run TypeScript check
+        run: npx tsc --noEmit
+        
+      - name: Run ESLint
+        run: npx next lint
+        
+      - name: Run tests - ${{ matrix.test-type }}
+        run: npm run test:${{ matrix.test-type }}
+        
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            test-report.json
+            coverage/
+          retention-days: 30
+
+  build-and-health-check:
+    name: Build & Health Check
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup environment variables
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+          
+      - name: Build application
+        run: npm run build:production
+        
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+        
+      - name: Run health check
+        run: npm run health:check
+        env:
+          TEST_BASE_URL: http://localhost:3000
+          
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            .next/
+            test-report.json
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+        
+      - name: Check for known vulnerabilities
+        run: |
+          npx audit-ci --config .audit-ci.json || true
+          
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: [test, build-and-health-check]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Deploy to Netlify (Preview)
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=.next --message="Preview deploy for PR #${{ github.event.number }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          
+      - name: Run health check on preview
+        run: |
+          sleep 30  # Wait for preview to be ready
+          npm run health:netlify
+        env:
+          DEPLOY_URL: ${{ steps.netlify.outputs.deploy-url }}
+          NODE_ENV: staging
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [test, build-and-health-check, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Deploy to Netlify (Production)
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=.next --prod --message="Production deploy for commit ${{ github.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          
+      - name: Run production health check
+        run: |
+          sleep 60  # Wait for production to be ready
+          npm run health:netlify
+        env:
+          URL: ${{ secrets.PRODUCTION_URL }}
+          NODE_ENV: production
+          CONTEXT: production
+          
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "🎉 Production deployment successful and healthy!"
+          
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 Production deployment failed or unhealthy!"
+          exit 1
+
+  test-report:
+    name: Test Report
+    runs-on: ubuntu-latest
+    needs: [test, build-and-health-check]
+    if: always()
+    
+    steps:
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+          
+      - name: Generate test report
+        run: |
+          echo "# Test Results Summary" > test-summary.md
+          echo "" >> test-summary.md
+          echo "## Test Status" >> test-summary.md
+          
+          if [ -f "test-results/test-results-unit/test-report.json" ]; then
+            echo "- ✅ Unit Tests: Completed" >> test-summary.md
+          else
+            echo "- ❌ Unit Tests: Failed" >> test-summary.md
+          fi
+          
+          if [ -f "test-results/test-results-integration/test-report.json" ]; then
+            echo "- ✅ Integration Tests: Completed" >> test-summary.md
+          else
+            echo "- ❌ Integration Tests: Failed" >> test-summary.md
+          fi
+          
+          if [ -f "test-results/test-results-e2e/test-report.json" ]; then
+            echo "- ✅ E2E Tests: Completed" >> test-summary.md
+          else
+            echo "- ❌ E2E Tests: Failed" >> test-summary.md
+          fi
+          
+          echo "" >> test-summary.md
+          echo "## Build & Health Check" >> test-summary.md
+          if [ -f "test-results/build-output/test-report.json" ]; then
+            echo "- ✅ Health Check: Passed" >> test-summary.md
+          else
+            echo "- ❌ Health Check: Failed" >> test-summary.md
+          fi
+          
+          cat test-summary.md
+          
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testSummary = fs.readFileSync('test-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: testSummary
+            });

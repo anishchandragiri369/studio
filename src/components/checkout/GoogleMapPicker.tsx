@@ -31,6 +31,7 @@ interface GoogleMapPickerProps {
 
 export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: GoogleMapPickerProps) {
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { isLoaded, isLoading, error } = useGoogleMapsApi();
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -38,6 +39,20 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
 
   useEffect(() => {
     setMounted(true);
+    
+    // Detect mobile device for better UX
+    const checkIfMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
+      const isMobileDevice = mobileKeywords.some(keyword => userAgent.includes(keyword)) || 
+                           window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
   useEffect(() => {
     if (!mounted || !isLoaded || !mapRef.current || !markerRef.current || !placePickerRef.current) return;
@@ -47,7 +62,7 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
     const marker = markerRef.current;
     const placePicker = placePickerRef.current;
 
-    // Wait for innerMap to be available
+    // Wait for innerMap to be available with better mobile handling
     const initializeMap = () => {
       // @ts-ignore
       if (!map.innerMap) return false;
@@ -58,14 +73,24 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
       
       // @ts-ignore
       map.center = center;
-      // @ts-ignore
-      map.zoom = 17;
+      // @ts-ignore - Adjust zoom for mobile
+      map.zoom = isMobile ? 15 : 17; // Slightly lower zoom on mobile for better overview
       // @ts-ignore
       marker.position = center;
+      
       // @ts-ignore
       const infowindow = new window.google.maps.InfoWindow();
+      
+      // Enhanced mobile options
       // @ts-ignore
-      map.innerMap.setOptions({ mapTypeControl: false });      const handlePlaceChange = () => {
+      map.innerMap.setOptions({ 
+        mapTypeControl: false,
+        streetViewControl: !isMobile, // Hide street view on mobile to save space
+        fullscreenControl: !isMobile, // Hide fullscreen on mobile
+        zoomControl: true,
+        gestureHandling: isMobile ? 'greedy' : 'auto', // Better touch handling on mobile
+        mapTypeId: 'roadmap'
+      });      const handlePlaceChange = () => {
         console.log('=== Place change event fired ===');
         // @ts-ignore
         const place = placePicker.value;
@@ -206,7 +231,9 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
       observer.disconnect();
     };
 
-  }, [mounted, isLoaded, location, mapId, onPlaceSelected]);  if (!mounted) {
+  }, [mounted, isLoaded, location, mapId, onPlaceSelected, isMobile]); // Added isMobile to dependency array
+
+  if (!mounted) {
     return (
       <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div>Initializing...</div>
@@ -233,8 +260,24 @@ export default function GoogleMapPicker({ location, mapId, onPlaceSelected }: Go
   return (
     <div style={{ minHeight: 270, border: '2px solid #e5e7eb', background: '#f8fafc', borderRadius: 8, marginTop: 8 }}>
       {/* Only render the map and picker when API is ready */}
-      <gmpx-place-picker ref={placePickerRef} style={{ width: "100%", marginBottom: 8 }}></gmpx-place-picker>
-      <gmp-map ref={mapRef} style={{ width: "100%", height: 250, background: '#e0e7ef', borderRadius: 8 }} map-id={mapId}>
+      <gmpx-place-picker 
+        ref={placePickerRef} 
+        style={{ 
+          width: "100%", 
+          marginBottom: 8,
+          fontSize: isMobile ? "16px" : "14px" // Prevent zoom on iOS
+        }}
+      ></gmpx-place-picker>
+      <gmp-map 
+        ref={mapRef} 
+        style={{ 
+          width: "100%", 
+          height: isMobile ? 220 : 250, // Slightly smaller on mobile
+          background: '#e0e7ef', 
+          borderRadius: 8 
+        }} 
+        map-id={mapId}
+      >
         <gmp-advanced-marker ref={markerRef}></gmp-advanced-marker>
       </gmp-map>
     </div>

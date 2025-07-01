@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import CartItem from '../CartItem';
 import { useCart } from '@/hooks/useCart';
-import type { CartItem as CartItemType } from '@/lib/types';
+import type { UnifiedCartItem } from '@/components/cart/CartItem';
 
 // Mock useCart hook
 jest.mock('@/hooks/useCart', () => ({
@@ -24,7 +24,7 @@ jest.mock('@/components/ui/input', () => ({
 // Mock Next.js components
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, role, ...props }: any) => <img src={src} alt={alt} role={role} {...props} />,
 }));
 
 jest.mock('next/link', () => ({
@@ -38,14 +38,32 @@ const mockUseCart = useCart as jest.MockedFunction<typeof useCart>;
 const mockUpdateQuantity = jest.fn();
 const mockRemoveFromCart = jest.fn();
 
+type CartItemType = UnifiedCartItem;
+
 const mockCartItem: CartItemType = {
   id: 'juice-1',
   name: 'Green Detox Juice',
   price: 8.99,
   image: '/images/green-detox.jpg',
   quantity: 2,
-  flavor: 'Original', // Add a mock flavor value
+  flavor: 'Original',
+  type: 'regular',
 };
+
+const mockUseCartReturnValue = {
+  cartItems: [mockCartItem],
+  addToCart: jest.fn(),
+  removeFromCart: jest.fn(),
+  updateQuantity: jest.fn(),
+  clearCart: jest.fn(),
+  getCartTotal: jest.fn(),
+  getItemCount: jest.fn(),
+  addSubscriptionToCart: jest.fn(),
+  getRegularItems: jest.fn(),
+  getSubscriptionItems: jest.fn(),
+};
+
+mockUseCart.mockReturnValue(mockUseCartReturnValue);
 
 describe('CartItem', () => {
   beforeEach(() => {
@@ -58,6 +76,9 @@ describe('CartItem', () => {
       clearCart: jest.fn(),
       getCartTotal: jest.fn(),
       getItemCount: jest.fn(),
+      addSubscriptionToCart: jest.fn(), // Added
+      getRegularItems: jest.fn(),       // Added
+      getSubscriptionItems: jest.fn(), // Added
     });
   });
   it('renders cart item with correct information', () => {

@@ -78,13 +78,11 @@ export const validateReferralCode = async (referralCode: string, userId?: string
   }
 
   try {
-    const response = await fetch('/api/referrals/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ referralCode, userId })
+    const { apiPost } = await import('./apiUtils');
+    const result = await apiPost('/api/referrals/validate', { 
+      referralCode, 
+      userId 
     });
-    
-    const result = await response.json();
     return result;
   } catch (error) {
     console.error('Error validating referral code:', error);

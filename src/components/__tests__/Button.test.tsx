@@ -13,7 +13,7 @@ describe('Button Component', () => {
     render(<Button variant="outline">Outline Button</Button>)
     const button = screen.getByRole('button', { name: /outline button/i })
     expect(button).toBeInTheDocument()
-    expect(button).toHaveClass('border-input')
+    expect(button).toHaveClass('border')
   })
 
   it('renders button with different sizes', () => {

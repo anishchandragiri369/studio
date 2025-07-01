@@ -1,0 +1,1653 @@
+/* 
+=======================================================
+📱 MOBILE APP SPECIFIC STYLES
+=======================================================
+TARGET: iOS and Android app-specific styling
+EFFECT: Handles platform-specific mobile behaviors
+*/
+
+/* 
+=======================================================
+📐 SAFE AREA HANDLING FOR iOS
+=======================================================
+TARGET: Elements with .mobile-app class
+EFFECT: Handles iPhone notch and safe areas
+*/
+.mobile-app {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-right: env(safe-area-inset-right);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+}
+
+/* 
+=======================================================
+🎮 PLATFORM SPECIFIC STYLES
+=======================================================
+TARGET: iOS and Android specific behaviors
+EFFECT: Optimizes scrolling and interactions per platform
+*/
+.platform-ios {
+  /* iOS specific styles */
+  -webkit-overflow-scrolling: touch;
+}
+
+.platform-android {
+  /* Android specific styles */
+  overscroll-behavior: none;
+}
+
+/* 
+=======================================================
+🧭 MOBILE NAVIGATION ADJUSTMENTS
+=======================================================
+TARGET: Navigation bar in mobile native apps
+EFFECT: Handles safe areas and backdrop blur
+*/
+.mobile-native .navbar {
+  padding-top: var(--safe-area-inset-top);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* 
+=======================================================
+📝 MOBILE FORM ADJUSTMENTS
+=======================================================
+TARGET: Input fields, textareas, and select elements
+EFFECT: Prevents iOS zoom on focus and improves UX
+*/
+.mobile-native input,
+.mobile-native textarea,
+.mobile-native select {
+  font-size: 16px; /* Prevent zoom on iOS */
+}
+
+/* 
+=======================================================
+🔘 MOBILE BUTTON ADJUSTMENTS
+=======================================================
+TARGET: All button elements in mobile native
+EFFECT: Ensures minimum touch target size for accessibility
+*/
+.mobile-native button {
+  min-height: 44px; /* iOS touch target size */
+  min-width: 44px;
+}
+
+/* 
+=======================================================
+🃏 MOBILE CARD ADJUSTMENTS
+=======================================================
+TARGET: Card components in mobile view
+EFFECT: Enhanced visual styling with rounded corners and shadows
+*/
+.mobile-native .card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 
+=======================================================
+⌨️ KEYBOARD HANDLING
+=======================================================
+TARGET: Layout adjustment when virtual keyboard appears
+EFFECT: Prevents content from being hidden behind keyboard
+*/
+.mobile-native {
+  padding-bottom: var(--keyboard-height, 0);
+  transition: padding-bottom 0.3s ease;
+}
+
+/* 
+=======================================================
+📜 MOBILE SCROLL IMPROVEMENTS
+=======================================================
+TARGET: Scrolling behavior optimization
+EFFECT: Smooth scrolling with overscroll containment
+*/
+.mobile-native {
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+/* 
+=======================================================
+👆 TOUCH FEEDBACK
+=======================================================
+TARGET: Touchable elements with visual feedback
+EFFECT: Provides subtle highlight on touch/tap
+*/
+.mobile-native .touchable {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  /* tap-highlight-color: rgba(0, 0, 0, 0.1); */ /* Non-standard property */
+}
+
+/* 
+=======================================================
+⏳ MOBILE LOADING STATES
+=======================================================
+TARGET: Elements with .loading class
+EFFECT: Visual indication of loading state with reduced opacity
+*/
+.mobile-native .loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* 
+=======================================================
+📶 MOBILE OFFLINE INDICATOR
+=======================================================
+TARGET: Offline notification element
+EFFECT: Smooth slide-down animation for offline status
+*/
+#offline-notification {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 
+=======================================================
+📱 MOBILE RESPONSIVE ADJUSTMENTS
+=======================================================
+TARGET: Basic mobile layout adjustments
+EFFECT: Font size and container adjustments for screens ≤768px
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  .mobile-native {
+    font-size: 16px; /* Prevent zoom */
+  }
+  
+  .mobile-native .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .mobile-native .modal {
+    margin: 0;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+/* 
+=======================================================
+📏 REDUCE VERTICAL SPACING FOR MOBILE-NATIVE
+=======================================================
+TARGET: Containers and cards with .mobile-native class
+EFFECT: More compact layout for mobile native apps
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  .mobile-native .container {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-native .card {
+    margin-bottom: 0.75rem !important;
+    margin-top: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-native .mb-4,
+  .mobile-native .mb-6,
+  .mobile-native .mb-8,
+  .mobile-native .mb-12 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mobile-native .mt-4,
+  .mobile-native .mt-6,
+  .mobile-native .mt-8,
+  .mobile-native .mt-12 {
+    margin-top: 0.5rem !important;
+  }
+  .mobile-native .py-4,
+  .mobile-native .py-6,
+  .mobile-native .py-8 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mobile-native .gap-4,
+  .mobile-native .gap-6,
+  .mobile-native .gap-8 {
+    gap: 0.5rem !important;
+  }
+}
+
+/* 
+=======================================================
+📐 ADDITIONAL MOBILE SPACING OPTIMIZATIONS
+=======================================================
+TARGET: Common spacing classes (py, text, buttons)
+EFFECT: Reduces section padding and optimizes text/button sizes
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  /* Reduce section padding for more compact mobile layout */
+  .py-16 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .py-12 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .py-8 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce large text margins */
+  .text-3xl,
+  .text-4xl,
+  .text-5xl {
+    line-height: 1.2 !important;
+  }
+  
+  /* Make buttons more compact on mobile */
+  .mobile-btn {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* 
+=======================================================
+⚡ AGGRESSIVE MOBILE SPACING REDUCTIONS
+=======================================================
+TARGET: Footer, contact sections, and general layout elements
+EFFECT: Significant spacing reductions for compact mobile experience
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  /* Reduce all large gaps and spacing */
+  .gap-8 {
+    gap: 1rem !important;
+  }
+  .gap-6 {
+    gap: 0.75rem !important;
+  }
+  
+  /* Reduce text spacing moderately */
+  .text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Make all mobile containers more compact but not ultra-tight */
+  .mobile-container {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* Reduce flex container spacing moderately */
+  .flex.items-center.justify-center {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* Reduce py-2 classes on mobile but keep readable */
+  .py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Compact section spacing globally */
+  section {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* Reduce container padding everywhere */
+  .container {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Make dividers smaller */
+  .w-px.h-4 {
+    height: 0.75rem !important;
+  }
+  
+  /* Reduce icon and text spacing */
+  .flex.items-center.gap-2 {
+    gap: 0.375rem !important;
+  }
+}
+
+/* 
+=======================================================
+🎯 FORCE MOBILE STYLES - HIGH SPECIFICITY
+=======================================================
+TARGET: Common Tailwind spacing classes with balanced approach
+EFFECT: Overrides default spacing with mobile-optimized values
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  /* Target common spacing classes directly - more moderate reductions */
+  .mb-6, .mb-8, .mb-12 {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .mt-6, .mt-8, .mt-12 {
+    margin-top: 0.75rem !important;
+  }
+  
+  .mt-4 {
+    margin-top: 0.5rem !important;
+  }
+  
+  .py-8, .py-12, .py-16 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .py-4, .py-6 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  .gap-6, .gap-8 {
+    gap: 0.75rem !important;
+  }
+  
+  .gap-4 {
+    gap: 0.5rem !important;
+  }
+  
+  /* Target text elements for compact display - less aggressive */
+  .text-4xl, .text-5xl, .text-6xl, .text-7xl {
+    font-size: 1.875rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-3xl {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Override container spacing universally - less aggressive */
+  .container, .max-w-3xl, .max-w-4xl, .max-w-5xl {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* 
+=======================================================
+📱 CAPACITOR SPECIFIC ADJUSTMENTS
+=======================================================
+TARGET: Capacitor app keyboard states
+EFFECT: Handles virtual keyboard appearance/disappearance
+*/
+.capacitor-keyboard-open {
+  padding-bottom: 0 !important;
+}
+
+.capacitor-keyboard-closed {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* 
+=======================================================
+📜 PLATFORM-SPECIFIC SCROLLBAR HIDING
+=======================================================
+TARGET: iOS and Android scrollbar customization
+EFFECT: Hides scrollbars across different platforms
+*/
+.platform-ios::-webkit-scrollbar {
+  display: none;
+}
+
+.platform-android {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.platform-android::-webkit-scrollbar {
+  display: none;
+}
+
+/* 
+=======================================================
+🗂️ MOBILE NAVIGATION DRAWER
+=======================================================
+TARGET: Slide-out navigation drawer component
+EFFECT: Sets width and max-width for mobile drawer
+*/
+.mobile-native .drawer {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* 
+=======================================================
+📋 MOBILE BOTTOM SHEET
+=======================================================
+TARGET: Bottom sheet modal component
+EFFECT: Slide-up modal with smooth animations and safe area handling
+*/
+.mobile-native .bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.mobile-native .bottom-sheet.open {
+  transform: translateY(0);
+}
+
+/* 
+=======================================================
+🔄 MOBILE PULL-TO-REFRESH
+=======================================================
+TARGET: Pull-to-refresh functionality
+EFFECT: Visual indicator and smooth animations for refresh gesture
+*/
+.mobile-native .pull-to-refresh {
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-native .pull-to-refresh-indicator {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: top 0.3s ease;
+}
+
+.mobile-native .pull-to-refresh.pulling .pull-to-refresh-indicator {
+  top: 10px;
+}
+
+/* 
+=======================================================
+👆 MOBILE SWIPE GESTURES
+=======================================================
+TARGET: Elements with swipe functionality
+EFFECT: Enables pan-y touch action and swipe animations
+*/
+.mobile-native .swipeable {
+  touch-action: pan-y;
+}
+
+.mobile-native .swipe-left {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-native .swipe-right {
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+/* 
+=======================================================
+🎮 MOBILE HAPTIC FEEDBACK VISUAL CUES
+=======================================================
+TARGET: Elements with haptic feedback
+EFFECT: Visual pulse animation to accompany haptic feedback
+*/
+.mobile-native .haptic-feedback {
+  animation: hapticPulse 0.1s ease;
+}
+
+@keyframes hapticPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* 
+=======================================================
+🌙 MOBILE DARK MODE ADJUSTMENTS
+=======================================================
+TARGET: Dark mode styling for mobile elements
+EFFECT: Adapts colors and styling for dark theme preference
+*/
+@media (prefers-color-scheme: dark) {
+  .mobile-native {
+    background: #1a1a1a;
+    color: #ffffff;
+  }
+  
+  .mobile-native .navbar {
+    background: rgba(26, 26, 26, 0.95);
+  }
+  
+  .mobile-native .card {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+}
+
+/* 
+=======================================================
+🚫 PREVENT TEXT SELECTION ON MOBILE
+=======================================================
+TARGET: Elements with .no-select class
+EFFECT: Disables text selection for better mobile UX
+*/
+.mobile-native .no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 
+=======================================================
+🎯 MOBILE FOCUS STYLES
+=======================================================
+TARGET: Form inputs with focus state
+EFFECT: Enhanced focus indicators for better accessibility
+*/
+.mobile-native input:focus,
+.mobile-native textarea:focus,
+.mobile-native select:focus {
+  outline: 2px solid #F2994A;
+  outline-offset: 2px;
+}
+
+/* 
+=======================================================
+♿ MOBILE ACCESSIBILITY IMPROVEMENTS
+=======================================================
+TARGET: Interactive elements and screen reader content
+EFFECT: Enhanced accessibility for mobile users
+*/
+.mobile-native [role="button"],
+.mobile-native button {
+  cursor: pointer;
+}
+
+.mobile-native .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 
+=======================================================
+🛠️ DEV TOOLS VIEWPORT ISSUES FIX
+=======================================================
+TARGET: Navigation responsiveness when dev tools are open
+EFFECT: Handles narrow viewport scenarios during development
+BREAKPOINT: 800px and below
+*/
+@media (max-width: 800px) {
+  /* When dev tools are open and viewport is narrow */
+  .navbar-responsive {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  
+  /* Hide text labels in very narrow viewports */
+  .navbar-responsive .nav-text {
+    display: none;
+  }
+  
+  /* Make navbar items smaller */
+  .navbar-responsive .nav-item {
+    padding: 0.25rem;
+    min-width: auto;
+  }
+  
+  /* Ensure flex containers don't overflow */
+  .navbar-responsive .flex {
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
+/* 
+=======================================================
+📂 CATEGORIES HORIZONTAL SCROLLING
+=======================================================
+TARGET: Category scroll elements
+EFFECT: Smooth scrolling with custom scrollbar styling
+*/
+.categories-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.3) transparent;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.categories-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.categories-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.3);
+  border-radius: 2px;
+}
+
+.categories-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+/* 
+=======================================================
+📱 MOBILE CATEGORIES IMPROVEMENTS
+=======================================================
+TARGET: Category scrolling on mobile devices
+EFFECT: Hides scrollbars and adds padding for mobile UX
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  .categories-scroll {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    scrollbar-width: none; /* Hide scrollbar on mobile */
+  }
+  
+  .categories-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar on mobile */
+  }
+}
+
+/* 
+=======================================================
+🏠 HOMEPAGE HERO SECTION - BALANCED MOBILE SPACING
+=======================================================
+TARGET: Hero section elements and containers
+EFFECT: Balanced spacing improvements for mobile homepage
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  .mobile-container {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-container .max-w-3xl {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .mobile-container .mb-2,
+  .mobile-container .mb-3,
+  .mobile-container .mb-4,
+  .mobile-container .mb-6,
+  .mobile-container .mb-8,
+  .mobile-container .mb-12 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mobile-container .gap-3,
+  .mobile-container .gap-4,
+  .mobile-container .gap-6 {
+    gap: 0.5rem !important;
+  }
+  .mobile-container .py-3,
+  .mobile-container .py-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mobile-container .px-6,
+  .mobile-container .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .mobile-container .h-11 {
+    height: 2.5rem !important;
+  }
+  .mobile-container .text-3xl {
+    font-size: 1.75rem !important;
+    line-height: 2rem !important;
+  }
+  .mobile-container .text-base {
+    font-size: 1rem !important;
+  }
+  .mobile-container .text-lg {
+    font-size: 1.125rem !important;
+  }
+}
+
+/* 
+=======================================================
+🎪 HERO SECTION - LEGACY SPACING REMOVAL
+=======================================================
+TARGET: Hero section with aggressive spacing removal (Legacy)
+EFFECT: Eliminates unnecessary spacing for ultra-compact layout
+NOTE: This section may conflict with newer compact spacing above
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  /* Hero section specific - eliminate top/bottom spacing */
+  section.hero-mobile,
+  .min-h-\[60vh\],
+  .min-h-\[80vh\] {
+    min-height: auto !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Reduce section padding moderately for mobile-section */
+  .mobile-section {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.75rem !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* More balanced max-width containers */
+  .max-w-3xl {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Ultra-compact star rating section */
+  .flex.items-center.justify-center.gap-4,
+  .flex.items-center.justify-center {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Ensure no extra spacing from flex containers */
+  .flex.items-center.justify-center.overflow-hidden {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* 
+=======================================================
+🛒 CART BADGE CROPPING FIX
+=======================================================
+TARGET: Shopping cart badge positioning
+EFFECT: Prevents cart badge from being cropped on mobile
+BREAKPOINT: 768px and below
+*/
+@media (max-width: 768px) {
+  /* Ensure cart badge has enough space and doesn't get cropped */
+  .relative button[aria-label="Shopping Cart"] {
+    margin-right: 0.25rem !important;
+    margin-top: 0.125rem !important;
+  }
+  
+  /* Adjust cart badge positioning for mobile to prevent cropping */
+  .relative button[aria-label="Shopping Cart"] .absolute {
+    top: -0.125rem !important;
+    right: -0.125rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    padding: 0.125rem !important;
+  }
+  
+  /* Ensure the button container has enough padding for the badge */
+  .relative button[aria-label="Shopping Cart"] {
+    padding: 0.375rem !important;
+  }
+}
+
+/* 
+=======================================================
+📜 HORIZONTAL SCROLLING UTILITIES
+=======================================================
+TARGET: Elements with .scrollbar-hide class
+EFFECT: Hides scrollbars on horizontal scroll areas
+USAGE: Applied to featured products mobile scroll
+*/
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* 
+=======================================================
+🧃 MOBILE JUICE CARDS CONSISTENT HEIGHT
+=======================================================
+TARGET: Featured products horizontal scroll section
+EFFECT: Ensures all juice cards have same height in mobile scroll
+*/
+@media (max-width: 768px) {
+  /* 
+  ================================================================
+  📱 MOBILE LAYOUT OPTIMIZATION SYSTEM
+  ================================================================
+  
+  This section controls the mobile layout for the main homepage sections:
+  
+  🎯 SECTION ORDER & TARGETS:
+  1. Hero Section (.hero-mobile) - Main banner with "Taste the Freshness"
+  2. Quick Actions Bar (nth-of-type(2)) - WhatsApp/Instagram/Free Delivery
+  3. Categories Section (nth-of-type(3)) - "Shop by Category" 
+  4. Featured Products (nth-of-type(4)) - "Zero Sugar Fruit Juice From ₹120"
+  
+  ⚡ QUICK EDIT GUIDE:
+  - To make sections taller: INCREASE padding values
+  - To make sections shorter: DECREASE padding values  
+  - To add gaps between sections: INCREASE margin values
+  - To remove gaps: KEEP margins at 0
+  - To adjust text spacing: MODIFY line-height and margin-bottom
+  
+  🔧 RESPONSIVE BREAKPOINT: 768px and below
+  ================================================================
+  */
+  
+  .mobile-juice-scroll .glass-card {
+    height: 100%;
+    min-height: 400px; /* ⚡ EDIT HERE: Change card height */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  /* 
+  =======================================================
+  🎯 HERO SECTION (1ST VIEW) - COMPACT SPACING
+  =======================================================
+  TARGET: Main hero section with background image
+  SELECTOR: .hero-mobile class
+  EFFECT: Makes hero more compact but still readable
+  */
+  .hero-mobile {
+    min-height: 47vh !important; /* ⚡ EDIT HERE: Change hero height (compact, was 50vh) */
+    padding-top: 1.5rem !important; /* ⚡ EDIT HERE: Hero top spacing */
+    padding-bottom: 1.5rem !important; /* ⚡ EDIT HERE: Hero bottom spacing */
+  }
+  
+  /* 
+  TARGET: Content container inside hero
+  EFFECT: Reduces inner padding of hero content moderately
+  */
+  .hero-mobile .mobile-container {
+    padding-top: 0.75rem !important; /* ⚡ EDIT HERE: Inner content top spacing */
+    padding-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Inner content bottom spacing */
+  }
+  
+  /* 
+  =======================================================
+  📏 HERO MARGINS & GAPS - ELEMENT SPACING
+  =======================================================
+  TARGET: Spacing between elements inside hero section
+  */
+  
+  /* Badge margin (Premium Cold-Pressed elixrs) */
+  .hero-mobile .mb-1 {
+    margin-bottom: 0.375rem !important; /* ⚡ EDIT HERE: Space below badge */
+  }
+  
+  /* Title and text margins */
+  .hero-mobile .mb-2 {
+    margin-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Space below title/text */
+  }
+  
+  /* Small gaps between elements */
+  .hero-mobile .gap-2 {
+    gap: 0.625rem !important; /* ⚡ EDIT HERE: Small element gaps */
+  }
+  
+  /* Medium gaps between elements */
+  .hero-mobile .gap-4 {
+    gap: 1rem !important; /* ⚡ EDIT HERE: Medium element gaps */
+  }
+  
+  /* 
+  =======================================================
+  📝 HERO TEXT STYLING
+  =======================================================
+  TARGET: Text elements with .mobile-text class in hero
+  EFFECT: Makes text moderately compact with good readability
+  */
+  .hero-mobile .mobile-text {
+    line-height: 1.2 !important; /* ⚡ EDIT HERE: Text line spacing (balanced readability) */
+  }
+  
+  /* 
+  =======================================================
+  🔘 HERO BUTTONS - SIZE & SPACING
+  =======================================================
+  TARGET: "Explore elixrs" and "Premium Plans" buttons
+  EFFECT: Makes buttons moderately compact but still touchable
+  */
+  .hero-mobile .mobile-btn {
+    padding-top: 0.5rem !important; /* ⚡ EDIT HERE: Button top padding */
+    padding-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Button bottom padding */
+    padding-left: 1rem !important; /* ⚡ EDIT HERE: Button left padding */
+    padding-right: 1rem !important; /* ⚡ EDIT HERE: Button right padding */
+    font-size: 0.875rem !important; /* ⚡ EDIT HERE: Button text size */
+    height: 2.5rem !important; /* ⚡ EDIT HERE: Button height (h-10 equivalent) */
+  }
+  
+  /* 
+  =======================================================
+  📂 CATEGORIES SECTION (2ND VIEW) - COMPACT SPACING
+  =======================================================
+  TARGET: "Shop by Category" section (3rd section on page)
+  EFFECT: Reduces top/bottom spacing for more compact layout
+  */
+  .mobile-section:nth-of-type(3) { /* Categories section */
+    padding-top: 1.25rem !important; /* ⚡ EDIT HERE: Categories section top spacing */
+    padding-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Categories section bottom spacing */
+  }
+  
+  /* TARGET: "Shop by Category" heading margin */
+  .mobile-section:nth-of-type(3) .mb-12 {
+    margin-bottom: 2rem !important; /* ⚡ EDIT HERE: Space below category heading */
+  }
+  
+  /* 
+  =======================================================
+  🧃 FEATURED PRODUCTS SECTION - COMPACT SPACING
+  =======================================================
+  TARGET: "Zero Sugar Fruit Juice From ₹120" section (4th section)
+  EFFECT: Reduces spacing around featured products
+  */
+  .mobile-section:nth-of-type(4) { /* Featured products section */
+    padding-top: 1.25rem !important; /* ⚡ EDIT HERE: Featured products top spacing */
+    padding-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Featured products bottom spacing */
+  }
+  
+  /* TARGET: Featured products heading margin */
+  .mobile-section:nth-of-type(4) .mb-6 {
+    margin-bottom: 1.25rem !important; /* ⚡ EDIT HERE: Space below featured products heading */
+  }
+  
+  /* 
+  =======================================================
+  ⚡ QUICK ACTIONS BAR - ULTRA-COMPACT
+  =======================================================
+  TARGET: WhatsApp/Instagram/Free Delivery bar (2nd section)
+  EFFECT: Makes the actions bar very thin
+  */
+  .mobile-section:nth-of-type(2) { /* Quick actions bar */
+    padding-top: 0.75rem !important; /* ⚡ EDIT HERE: Actions bar top spacing */
+    padding-bottom: 0.75rem !important; /* ⚡ EDIT HERE: Actions bar bottom spacing */
+  }
+  
+  /* 
+  =======================================================
+  🌐 GLOBAL MOBILE OPTIMIZATIONS
+  =======================================================
+  TARGET: All sections and general spacing
+  EFFECT: Creates seamless flow between sections
+  */
+  
+  /* Remove gaps between all sections */
+  .mobile-section {
+    margin-bottom: 0 !important; /* ⚡ EDIT HERE: Space between sections (0 = no gaps) */
+  }
+  
+  /* 
+  =======================================================
+  📝 TEXT SPACING OPTIMIZATIONS
+  =======================================================
+  TARGET: All text elements with .mobile-text class
+  */
+  .mobile-text h1 {
+    margin-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Space below headings */
+  }
+  
+  .mobile-text p {
+    margin-bottom: 0.5rem !important; /* ⚡ EDIT HERE: Space below paragraphs */
+  }
+  
+  /* 
+  =======================================================
+  📦 MOBILE CONTAINERS - HORIZONTAL SPACING
+  =======================================================
+  TARGET: All .mobile-container elements
+  EFFECT: Controls how close content gets to screen edges
+  */
+  .mobile-container {
+    padding-left: 0.75rem !important; /* ⚡ EDIT HERE: Left edge spacing */
+    padding-right: 0.75rem !important; /* ⚡ EDIT HERE: Right edge spacing */
+  }
+  
+  /* 
+  =======================================================
+  🎯 ULTRA-COMPACT VIEW FOR INITIAL SECTIONS
+  =======================================================
+  TARGET: First 4 sections (Hero, Actions, Categories, Featured)
+  EFFECT: Removes all margins for seamless mobile experience
+  */
+  .mobile-section:nth-of-type(1), /* Hero section */
+  .mobile-section:nth-of-type(2), /* Quick actions */
+  .mobile-section:nth-of-type(3), /* Categories */
+  .mobile-section:nth-of-type(4) { /* Featured products */
+    margin-top: 0 !important; /* ⚡ EDIT HERE: Top margins (keep at 0 for seamless flow) */
+    margin-bottom: 0 !important; /* ⚡ EDIT HERE: Bottom margins (keep at 0 for seamless flow) */
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🏷️ IN STOCK BADGE: REDUCE SIZE FOR MOBILE                                 */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card span.px-2.py-1.rounded-full.text-xs.font-medium {
+    padding: 0.125rem 0.375rem !important; /* Smaller padding */
+    font-size: 0.6rem !important; /* Smaller text */
+    line-height: 1 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .absolute.top-3.right-3.z-10 {
+    top: 0.5rem !important; /* Move badge closer to edge */
+    right: 0.5rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD SECTION: FURTHER REDUCE SIZE FOR MOBILE (Even More Compact) */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card {
+    min-height: 300px !important; /* Further reduced from 340px */
+    padding: 0.5rem !important;   /* Even less padding */
+  }
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 100px !important; /* Less space for content */
+    margin-bottom: 0.25rem !important;
+  }
+  .mobile-juice-scroll .glass-card .card-footer,
+  .mobile-juice-scroll .glass-card .product-actions,
+  .mobile-juice-scroll .glass-card .flex:last-child {
+    min-height: 36px !important; /* Even smaller action/footer area */
+    padding-top: 0.25rem !important;
+    gap: 0.25rem !important;
+  }
+  /* Make action row container more compact */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    padding: 0.25rem 0 !important;
+    gap: 0.25rem !important;
+    min-height: 32px !important;
+  }
+  /* Make buttons and controls even smaller */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"],
+  .mobile-juice-scroll .glass-card .quantity-btn,
+  .mobile-juice-scroll .glass-card .add-to-cart-btn,
+  .mobile-juice-scroll .glass-card button[aria-label*="Add"],
+  .mobile-juice-scroll .glass-card .btn-primary {
+    min-height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.85rem !important;
+    padding: 0.25rem !important;
+  }
+  .mobile-juice-scroll .glass-card .quantity-display,
+  .mobile-juice-scroll .glass-card span[class*="text"] {
+    min-height: 28px !important;
+    min-width: 1.25rem !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD ACTION ROW: ULTRA COMPACT (Below 120px total)               */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mobile-juice-scroll .glass-card {
+    min-height: 240px !important; /* Reduced to fit under 120px action area */
+    max-height: 240px !important;
+    padding: 0.375rem !important;
+    overflow: hidden !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 80px !important; /* Very compact content area */
+    max-height: 120px !important;
+    margin-bottom: 0.125rem !important;
+  }
+  
+  /* Ultra compact action row - stays within container */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    padding: 0.125rem 0 !important;
+    gap: 0.125rem !important;
+    min-height: 24px !important;
+    max-height: 32px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .card-footer,
+  .mobile-juice-scroll .glass-card .product-actions,
+  .mobile-juice-scroll .glass-card .flex:last-child {
+    min-height: 24px !important;
+    max-height: 32px !important;
+    padding: 0.125rem 0 !important;
+    gap: 0.125rem !important;
+  }
+  
+  /* Ultra small buttons and controls */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"],
+  .mobile-juice-scroll .glass-card .quantity-btn,
+  .mobile-juice-scroll .glass-card .add-to-cart-btn,
+  .mobile-juice-scroll .glass-card button[aria-label*="Add"],
+  .mobile-juice-scroll .glass-card .btn-primary {
+    min-height: 22px !important;
+    max-height: 24px !important;
+    min-width: 22px !important;
+    font-size: 0.7rem !important;
+    padding: 0.125rem 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .quantity-display,
+  .mobile-juice-scroll .glass-card span[class*="text"] {
+    min-height: 22px !important;
+    max-height: 24px !important;
+    min-width: 1rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🧃 JUICE CARD: OVERRIDE CONTAINER HEIGHT & MAKE CONTENT VISIBLE           */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Override the fixed 420px container height */
+  .mobile-juice-scroll .flex-none.w-64.h-\[420px\] {
+    height: auto !important;
+    min-height: 320px !important;
+    max-height: none !important;
+  }
+  
+  .mobile-juice-scroll .glass-card {
+    min-height: 300px !important;
+    max-height: none !important;
+    height: 373px !important;
+    padding: 0.75rem !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex-grow {
+    min-height: 140px !important; /* More space for content to be visible */
+    max-height: none !important;
+    margin-bottom: 0.5rem !important;
+    flex: 1 !important;
+  }
+  
+  /* Ensure image container is visible */
+  .mobile-juice-scroll .glass-card .relative.w-full.overflow-hidden {
+    height: 120px !important; /* Smaller but visible image area */
+    min-height: 120px !important;
+  }
+  
+  /* Make text content visible */
+  .mobile-juice-scroll .glass-card .p-4.flex-grow {
+    padding: 0.5rem !important;
+    min-height: 100px !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .font-semibold.tracking-tight {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .text-sm.text-muted-foreground {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .text-xs.text-foreground {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+    min-height: 2.5em !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.justify-between.items-center {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* Action row - compact but visible */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem 0.5rem 0.25rem 0.5rem !important;
+    min-height: 40px !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.5rem !important;
+    min-height: 36px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  /* Make buttons visible and touchable */
+  .mobile-juice-scroll .glass-card button {
+    min-height: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.8rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  .mobile-juice-scroll .glass-card span.w-10.text-center {
+    min-width: 1.5rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🛒 FIX ADD TO CART CROPPING & QUANTITY NUMBER POSITIONING                 */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Ensure action row has enough space and doesn't crop */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+  }
+  
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.75rem !important;
+    min-height: 42px !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  
+  /* Fix quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.5rem !important;
+    min-width: 100px !important;
+    flex-shrink: 0 !important;
+    align-items: center !important;
+    display: flex !important;
+  }
+  
+  /* Fix quantity buttons */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 36px !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Fix quantity number positioning */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 2rem !important;
+    width: 2rem !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Fix Add to Cart button - prevent cropping */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 36px !important;
+    height: 36px !important;
+    min-width: 90px !important;
+    max-width: 120px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Fix Add to Cart icon */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+    margin-right: 0.25rem !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Ensure container doesn't clip content */
+  .mobile-juice-scroll .glass-card {
+    padding-bottom: 0.75rem !important;
+    overflow: visible !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔢 INCREASE QUANTITY SIZE & ENHANCE ADD TO CART BORDER                    */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Increase quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.375rem !important;
+    min-width: 95px !important;
+    max-width: 95px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Increase quantity buttons size */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 34px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0.25rem !important;
+    border-width: 1px !important;
+    border-radius: 0.375rem !important;
+  }
+  
+  /* Increase quantity number size */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 34px !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Enhance Add to Cart button with better border and fit within boundary */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 34px !important;
+    height: 34px !important;
+    min-width: 75px !important;
+    max-width: 85px !important;
+    width: auto !important;
+    padding: 0.375rem 0.625rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    flex: 1 !important;
+    flex-shrink: 1 !important;
+    box-sizing: border-box !important;
+    
+    /* Enhanced blue border and styling */
+    border: 2px solid hsl(var(--accent)) !important;
+    border-radius: 0.5rem !important;
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  /* Hover state for Add to Cart button */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2:hover {
+    border-color: hsl(var(--accent)) !important;
+    background-color: hsl(var(--accent)/90) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+  }
+  
+  /* Adjust Add to Cart icon size */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  /* Adjust action row spacing to accommodate larger elements */
+  .mobile-juice-scroll .glass-card .flex.flex-col.sm\:flex-row.items-center.justify-between.gap-2.w-full {
+    gap: 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Ensure parent container accommodates larger elements */
+  .mobile-juice-scroll .glass-card .flex.items-center.p-4.pt-0 {
+    padding: 0.5rem 0.5rem 0.375rem 0.5rem !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🔢 COMPACT QUANTITY CONTROLS TO FIT IN REDUCED ACTION AREA               */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Compact quantity controls container */
+  .mobile-juice-scroll .glass-card .flex.items-center.gap-2 {
+    gap: 0.25rem !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    flex-shrink: 0 !important;
+    height: 28px !important;
+  }
+  
+  /* Compact quantity buttons to fit action area */
+  .mobile-juice-scroll .glass-card button[aria-label*="Decrease"],
+  .mobile-juice-scroll .glass-card button[aria-label*="Increase"] {
+    min-height: 28px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0.125rem !important;
+    border-width: 1px !important;
+    border-radius: 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  /* Compact quantity number */
+  .mobile-juice-scroll .glass-card span.w-10.text-center.font-medium {
+    min-width: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 28px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Compact Add to Cart button */
+  .mobile-juice-scroll .glass-card button.inline-flex.h-10.px-4.py-2 {
+    min-height: 28px !important;
+    height: 28px !important;
+    min-width: 70px !important;
+    max-width: 80px !important;
+    width: auto !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1 !important;
+    flex: 1 !important;
+    flex-shrink: 1 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Compact Add to Cart icon */
+  .mobile-juice-scroll .glass-card button.inline-flex svg.lucide-shopping-cart {
+    width: 0.7rem !important;
+    height: 0.7rem !important;
+    margin-right: 0.125rem !important;
+  }
+}
+
+/* 
+=======================================================
+🗺️ MOBILE MAPS OPTIMIZATION
+=======================================================
+TARGET: Google Maps components on mobile devices
+EFFECT: Better mobile performance and UX for maps
+*/
+
+/* Mobile maps container */
+@media (max-width: 768px) {
+  .maps-container {
+    /* Better touch handling */
+    touch-action: pan-x pan-y;
+    /* Improve rendering performance */
+    will-change: transform;
+    /* Better isolation */
+    contain: layout style paint;
+  }
+  
+  /* Maps loading placeholder */
+  .maps-loading-placeholder {
+    min-height: 250px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  /* Lazy loading button for mobile */
+  .maps-lazy-trigger {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .maps-lazy-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.15);
+  }
+  
+  /* Mobile-optimized map picker */
+  gmpx-place-picker {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+  }
+  
+  gmp-map {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    /* Better rendering on mobile */
+    image-rendering: optimizeQuality;
+  }
+  
+  /* Checkout form mobile optimization */
+  .checkout-address-section {
+    /* Stack vertically on mobile */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .checkout-form-row {
+    /* Ensure form fields stack on mobile */
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+}
+
+/* Additional mobile performance improvements */
+@media (max-width: 640px) {
+  .maps-container gmp-map {
+    /* Reduce height on very small screens */
+    height: 200px !important;
+  }
+  
+  /* Optimize touch targets */
+  .maps-lazy-trigger {
+    min-height: 44px; /* iOS recommended minimum */
+    min-width: 44px;
+  }
+}
+
+/* 
+=======================================================
+🎯 MOBILE TOUCH OPTIMIZATION
+=======================================================
+TARGET: Interactive elements in checkout
+EFFECT: Better touch experience and accessibility
+*/
+@media (max-width: 768px) {
+  /* Ensure all interactive elements meet touch guidelines */
+  button, 
+  .btn, 
+  input[type="submit"],
+  .interactive-element {
+    min-height: 44px;
+    min-width: 44px;
+    /* Better touch feedback */
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Improve form field usability */
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  /* Better spacing for form sections */
+  .checkout-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+}

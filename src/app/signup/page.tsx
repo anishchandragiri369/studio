@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -51,23 +50,20 @@ export default function SignUpPage() {
     // Call the signUp function from AuthContext
     const result = await signUp(data);
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       const supabaseError = result.error as SupabaseAuthError;
-      if (supabaseError.message.includes("User already registered")) { // Supabase often returns this specific message
+      if (supabaseError.message.includes("User already registered")) {
         setError("This email is already registered. Try logging in.");
       } else if (result.error.code === 'supabase/not-configured') {
         setError(result.error.message);
       } else {
         setError(supabaseError.message || "An unexpected error occurred during sign up. Please try again.");
       }
+    } else if ('code' in result && 'message' in result) {
+      setError(result.message);
     } else if (result.data?.user) {
-      // User object exists, check if session is null (which might indicate email confirmation needed)
-      // Supabase's signUp returns user data even if confirmation is pending.
-      // The key is that result.error is null.
       setSuccessMessage("Sign up successful! Please check your email to confirm your account. You will be able to log in after confirming.");
-      // Don't redirect here, user needs to confirm email first.
     } else {
-      // This case should ideally not be hit if Supabase returns user or error
       setError("An unexpected issue occurred. User data not received. Please try again.");
     }
     setSubmitLoading(false);
@@ -75,7 +71,7 @@ export default function SignUpPage() {
 
   if (authLoading) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -83,7 +79,7 @@ export default function SignUpPage() {
   if (user && isSupabaseConfigured) return null;
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12">
+    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline text-primary">Create an Account</CardTitle>
@@ -119,17 +115,17 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
+                <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" autoComplete="new-password" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
                 {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
+                <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
               </div>
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>

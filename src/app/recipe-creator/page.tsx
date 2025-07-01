@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function RecipeCreatorPage() {
   return (
-    <div className="container mx-auto px-4 py-16">
-      <section className="text-center mb-12">
+    <div className="container mx-auto px-4 py-16 mobile-container">
+      <section className="text-center mb-12 mobile-section">
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4 animate-fade-in">
           AI Juice Recipe Creator
         </h1>

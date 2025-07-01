@@ -9,7 +9,7 @@ jest.mock('@/hooks/useCart', () => ({
 
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, asChild, ...props }: any) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));
