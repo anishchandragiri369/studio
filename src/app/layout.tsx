@@ -17,11 +17,6 @@ export const metadata: Metadata = {
   title: 'Elixr - Fresh Juices Delivered',
   description: 'Discover a variety of fresh juices and subscription plans. Healthy, delicious, and convenient.',
   keywords: ['juice', 'fresh juice', 'subscription', 'healthy drinks', 'juice delivery'],
-  other: {
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  },
 };
 
 export const viewport: Viewport = {
@@ -35,11 +30,6 @@ export default function RootLayout({
 }>) {  return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Cache control meta tags */}
-        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta httpEquiv="Pragma" content="no-cache" />
-        <meta httpEquiv="Expires" content="0" />
-        
         {/* Fonts and external resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -8,11 +8,12 @@ const nextConfig: NextConfig = {
   // Only set output export if explicitly building for mobile
   ...(isMobileBuild ? { output: 'export' } : {}),
   
-  // Add cache control headers to prevent caching issues
+  // Add selective cache control headers to prevent auth caching issues
   headers: async () => {
     return [
       {
-        source: '/(.*)',
+        // Only apply no-cache to auth-related pages
+        source: '/(login|signup|reset-password|logout)',
         headers: [
           {
             key: 'Cache-Control',

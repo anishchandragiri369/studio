@@ -1,78 +1,37 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * CacheBuster component to handle browser cache issues
- * Forces cache invalidation when app version changes
+ * Less aggressive approach to prevent reload loops
  */
 export default function CacheBuster() {
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const hasRunRef = useRef(false);
 
-    // Generate version from build time or use current timestamp
+  useEffect(() => {
+    // Prevent multiple runs in the same session
+    if (hasRunRef.current || typeof window === 'undefined') return;
+    hasRunRef.current = true;
+
+    // Only run cache busting logic, no automatic reloads
     const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || 
                           process.env.NEXT_PUBLIC_BUILD_TIME || 
                           '1.0.0';
     
     const storedVersion = localStorage.getItem('elixr_app_version');
     
-    // Check if this is the first visit or version has changed
+    // Just update the version without aggressive clearing
     if (!storedVersion || storedVersion !== currentVersion) {
-      console.log('[CacheBuster] Version change detected, clearing browser cache');
-      
-      try {
-        // Clear localStorage but preserve essential items
-        const keysToPreserve = ['elixr_app_version'];
-        const currentData: Record<string, string> = {};
-        
-        // Backup keys we want to preserve
-        keysToPreserve.forEach(key => {
-          const value = localStorage.getItem(key);
-          if (value) currentData[key] = value;
-        });
-        
-        // Clear all storage
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Restore preserved data and set new version
-        Object.entries(currentData).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-        });
-        localStorage.setItem('elixr_app_version', currentVersion);
-        
-        // Clear any cached service worker data
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(registrations => {
-            registrations.forEach(registration => {
-              registration.unregister();
-            });
-          });
-        }
-        
-        // Clear browser cache if possible (modern browsers)
-        if ('caches' in window) {
-          caches.keys().then(names => {
-            names.forEach(name => {
-              caches.delete(name);
-            });
-          });
-        }
-        
-        console.log('[CacheBuster] Cache cleared successfully');
-      } catch (error) {
-        console.warn('[CacheBuster] Error clearing cache:', error);
-      }
+      console.log('[CacheBuster] Version updated from', storedVersion, 'to', currentVersion);
+      localStorage.setItem('elixr_app_version', currentVersion);
     }
 
-    // Check for stale auth tokens and clear them
-    const checkAuthTokens = () => {
+    // Only clean up obviously expired auth tokens
+    const cleanExpiredTokens = () => {
       try {
         const authKeys = Object.keys(localStorage).filter(key => 
-          key.includes('supabase') || 
-          key.includes('sb-') || 
-          key.includes('auth')
+          key.includes('supabase') && key.includes('auth-token')
         );
         
         authKeys.forEach(key => {
@@ -81,17 +40,18 @@ export default function CacheBuster() {
             if (data) {
               const parsed = JSON.parse(data);
               
-              // Check if token is expired (if it has expiry info)
+              // Only remove if clearly expired (with some buffer)
               if (parsed.expires_at) {
-                const expiryTime = parsed.expires_at * 1000; // Convert to milliseconds
-                if (Date.now() > expiryTime) {
+                const expiryTime = parsed.expires_at * 1000;
+                const bufferTime = 5 * 60 * 1000; // 5 minute buffer
+                if (Date.now() > (expiryTime + bufferTime)) {
                   console.log('[CacheBuster] Removing expired auth token:', key);
                   localStorage.removeItem(key);
                 }
               }
             }
           } catch (e) {
-            // If we can't parse the auth data, it might be corrupted
+            // Only remove if completely unparseable
             console.warn('[CacheBuster] Removing corrupted auth data:', key);
             localStorage.removeItem(key);
           }
@@ -101,10 +61,9 @@ export default function CacheBuster() {
       }
     };
 
-    checkAuthTokens();
-    
-    // Periodic cleanup every 5 minutes
-    const interval = setInterval(checkAuthTokens, 5 * 60 * 1000);
+    // Run token cleanup periodically but not aggressively
+    cleanExpiredTokens();
+    const interval = setInterval(cleanExpiredTokens, 10 * 60 * 1000); // Every 10 minutes
     
     return () => clearInterval(interval);
   }, []);

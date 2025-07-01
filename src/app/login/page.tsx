@@ -17,6 +17,7 @@ import type { LoginFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // Corrected import
+import AuthPageCacheBuster from '@/components/auth/AuthPageCacheBuster';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,6 +82,7 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
+      <AuthPageCacheBuster />
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline text-primary">Welcome Back!</CardTitle>
