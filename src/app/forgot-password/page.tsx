@@ -110,12 +110,25 @@ export default function ForgotPasswordPage() {
             {!message && ( 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  autoComplete="email" 
+                  {...register("email")} 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  suppressHydrationWarning
+                />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
             )}
              {!message && (
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  suppressHydrationWarning
+                >
                   {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Send Reset Link
                 </Button>

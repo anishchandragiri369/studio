@@ -140,6 +140,7 @@ export default function CouponInput({
                 onClick={handleRemoveCoupon}
                 disabled={disabled}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                suppressHydrationWarning
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -230,6 +231,7 @@ export default function CouponInput({
                     onKeyPress={handleKeyPress}
                     disabled={disabled || isApplying}
                     className="glass border-border/50 focus:border-primary/50 transition-all"
+                    suppressHydrationWarning
                   />
                   {error && (
                     <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
@@ -244,6 +246,7 @@ export default function CouponInput({
                   onClick={handleApplyCoupon}
                   disabled={disabled || isApplying || !couponCode.trim()}
                   className="glass border-primary/50 text-primary hover:bg-primary/10"
+                  suppressHydrationWarning
                 >
                   {isApplying ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

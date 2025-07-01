@@ -143,6 +143,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onPlaceSelect
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           className="w-full"
+          suppressHydrationWarning
         />
       </Autocomplete>
       <Alert variant="default" className="mt-2 p-3 text-xs bg-muted/30 border-primary/30">

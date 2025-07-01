@@ -94,6 +94,7 @@ export default function ReferralInput({
                 onClick={handleRemoveReferral}
                 disabled={disabled}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                suppressHydrationWarning
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -129,6 +130,7 @@ export default function ReferralInput({
                 onKeyPress={handleKeyPress}
                 disabled={disabled || isValidating}
                 className="glass border-border/50 focus:border-blue-500/50 transition-all"
+                suppressHydrationWarning
               />
               {error && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
@@ -143,6 +145,7 @@ export default function ReferralInput({
               onClick={handleApplyReferral}
               disabled={disabled || isValidating || !referralCode.trim()}
               className="glass border-blue-500/50 text-blue-600 hover:bg-blue-50"
+              suppressHydrationWarning
             >
               {isValidating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

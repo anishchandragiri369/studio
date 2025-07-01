@@ -10,6 +10,8 @@ import {
 import type { User, AuthError as SupabaseAuthError, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
+import AuthEmailService from '@/lib/auth-email-service';
+import GoogleAuthService from '@/lib/google-auth-service';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +21,7 @@ interface AuthContextType {
   logIn: (data: LoginFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logOut: () => Promise<void>;
   sendPasswordReset: (data: ForgotPasswordFormData) => Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   isSupabaseConfigured: boolean;
 }
 
@@ -170,16 +173,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
     try {
-      const { data, error } = await supabase!.auth.signUp({
-        email: credentials.email,
-        password: credentials.password,
-      });
-      // Even if data.user exists, an error might be present if email confirmation is required but something else went wrong.
-      // Or if data.user is null but error is also null (edge case, but good to be defensive).
-      if (error) return { data: null, error };
-      if (!data.user && !error) return {data: null, error: {name: "SignUpNoUserError", message: "Sign up did not return a user and no error."} as SupabaseAuthError}
-      return { data: { user: data.user, session: data.session }, error: null };
+      // Check if custom auth emails are enabled
+      const useCustomEmails = process.env.NEXT_PUBLIC_CUSTOM_AUTH_EMAILS === 'true';
+      
+      if (useCustomEmails) {
+        // Use our custom signup endpoint that has full control over email sending
+        console.log('[AuthContext] Using custom signup flow for:', credentials.email);
+        
+        const customSignupResponse = await fetch('/api/auth/custom-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: credentials.email,
+            password: credentials.password,
+            name: credentials.email.split('@')[0]
+          }),
+        });
+        
+        let customSignupResult;
+        try {
+          customSignupResult = await customSignupResponse.json();
+        } catch (parseError) {
+          console.error('[AuthContext] Failed to parse signup response:', parseError);
+          customSignupResult = { error: 'Failed to process server response', code: 'ParseError' };
+        }
+
+        if (!customSignupResponse.ok) {
+          console.error('[AuthContext] Custom signup failed:', {
+            status: customSignupResponse.status,
+            statusText: customSignupResponse.statusText,
+            body: customSignupResult,
+          });
+
+          // Debug: Log the exact body content
+          console.log('[AuthContext] Response body details:', JSON.stringify(customSignupResult, null, 2));
+
+          // Ensure we have a proper error message
+          const errorMessage = customSignupResult?.error || customSignupResult?.message || 'Custom signup failed';
+          const errorCode = customSignupResult?.code || 'CustomSignupError';
+
+          return {
+            data: null,
+            error: {
+              name: errorCode,
+              message: errorMessage,
+            } as SupabaseAuthError,
+          };
+        }
+        
+        console.log('[AuthContext] Custom signup successful:', customSignupResult.user.email);
+        
+        // Return success without session (user needs to activate first)
+        return { 
+          data: { 
+            user: {
+              id: customSignupResult.user.id,
+              email: customSignupResult.user.email,
+              email_confirmed_at: customSignupResult.user.email_confirmed_at
+            } as User, 
+            session: null 
+          }, 
+          error: null 
+        };
+      } else {
+        // Fall back to standard Supabase signup for non-custom email flows
+        const { data, error } = await supabase!.auth.signUp({
+          email: credentials.email,
+          password: credentials.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        if (error) {
+          console.log('[AuthContext] Standard signup error:', error);
+          return { data: null, error };
+        }
+        
+        if (!data.user && !error) return {data: null, error: {name: "SignUpNoUserError", message: "Sign up did not return a user and no error."} as SupabaseAuthError}
+        
+        return { data: { user: data.user, session: data.session }, error: null };
+      }
     } catch (e: any) {
+      console.error('[AuthContext] Signup error:', e);
       return { data: null, error: { name: 'SignUpUnexpectedError', message: e.message || "An unexpected error occurred during sign up." } as SupabaseAuthError };
     }
   };
@@ -199,77 +275,154 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { data: null, error: { name: 'LoginUnexpectedError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
     }
   };
-  const logOut = async (): Promise<void> => {    if (!isActuallyConfiguredAndAuthReady) {
-      setUser(null);
-      setIsAdmin(false);
+  const logOut = async (): Promise<void> => {
+    console.log('[AuthContext] Starting logout process...');
+    
+    // Immediately clear local state for faster UI response
+    setUser(null);
+    setIsAdmin(false);
+    
+    if (!isActuallyConfiguredAndAuthReady) {
       // Clear any remaining localStorage items
       if (typeof window !== 'undefined') {
-        // Clear localStorage items that might contain auth data
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('supabase') || key.includes('auth'))) {
-            keysToRemove.push(key);
+        try {
+          // Clear localStorage items that might contain auth data
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              keysToRemove.push(key);
+            }
           }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          sessionStorage.clear();
+        } catch (error) {
+          console.warn('[AuthContext] Error clearing storage:', error);
         }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        sessionStorage.clear();
       }
       return Promise.resolve();
     }
     
     try {
-      // Sign out from Supabase
-      const { error } = await supabase!.auth.signOut();
-        // Clear local state immediately
-      setUser(null);
-      setIsAdmin(false);
-      
-      // Clear any remaining session data from browser storage
+      // Clear browser storage immediately (don't wait for Supabase)
       if (typeof window !== 'undefined') {
-        // Clear localStorage items that might contain auth data
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('supabase') || key.includes('auth'))) {
-            keysToRemove.push(key);
+        try {
+          // Clear localStorage items that might contain auth data
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              keysToRemove.push(key);
+            }
           }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          
+          // Clear sessionStorage completely
+          sessionStorage.clear();
+          
+          // Clear any cookies that might contain session data
+          document.cookie.split(";").forEach((c) => {
+            const eqPos = c.indexOf("=");
+            const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+            if (name.trim().includes('supabase') || name.trim().includes('auth')) {
+              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+            }
+          });
+        } catch (storageError) {
+          console.warn('[AuthContext] Error clearing storage:', storageError);
         }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        // Clear sessionStorage completely
-        sessionStorage.clear();
-        
-        // Clear any cookies that might contain session data
-        document.cookie.split(";").forEach((c) => {
-          const eqPos = c.indexOf("=");
-          const name = eqPos > -1 ? c.substr(0, eqPos) : c;
-          if (name.trim().includes('supabase') || name.trim().includes('auth')) {
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-          }
-        });
       }
       
-      if (error) {
-        // Continue with cleanup even if signOut had an error
-      }
+      // Sign out from Supabase (non-blocking - do this in background)
+      supabase!.auth.signOut().then(({ error }) => {
+        if (error) {
+          console.warn('[AuthContext] Supabase signOut error (non-critical):', error);
+        } else {
+          console.log('[AuthContext] Supabase signOut successful');
+        }
+      }).catch((error) => {
+        console.warn('[AuthContext] Supabase signOut failed (non-critical):', error);
+      });
+      
+      console.log('[AuthContext] Logout completed');
+      
     } catch (error) {
-      // Even if there's an error, clear local state
-      setUser(null);
-      setIsAdmin(false);
+      console.error('[AuthContext] Logout error:', error);
+      // Even if there's an error, state is already cleared
     }
   };
 
   const sendPasswordReset = async (data: ForgotPasswordFormData): Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
     
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+    try {
+      console.log('[AuthContext] Sending custom password reset email for:', data.email);
+      
+      // Use our custom email system instead of Supabase's built-in emails
+      const useCustomEmails = process.env.NEXT_PUBLIC_CUSTOM_AUTH_EMAILS === 'true';
+      
+      if (useCustomEmails) {
+        // Generate a custom reset token and send via our SMTP service
+        try {
+          const response = await fetch('/api/auth/send-reset-password-email-smtp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: data.email }),
+          });
 
-    const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
-      redirectTo, 
-    });
-    if (error) return { error };
-    return { error: null };
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to send reset email');
+          }
+
+          console.log('[AuthContext] Custom password reset email sent successfully');
+          return { error: null };
+        } catch (emailError) {
+          console.error('[AuthContext] Custom email error:', emailError);
+          return { 
+            error: { 
+              name: 'CustomEmailError', 
+              message: emailError instanceof Error ? emailError.message : 'Failed to send reset email' 
+            } as SupabaseAuthError 
+          };
+        }
+      } else {
+        // Fallback to Supabase's built-in password reset
+        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+        
+        const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
+          redirectTo,
+        });
+        
+        if (error) {
+          console.error('[AuthContext] Supabase password reset failed:', error);
+          return { error };
+        }
+        
+        console.log('[AuthContext] Supabase password reset email sent successfully');
+        return { error: null };
+      }
+      
+    } catch (error) {
+      console.error('[AuthContext] Password reset error:', error);
+      return { error: { name: 'PasswordResetError', message: 'Failed to process password reset request' } as SupabaseAuthError };
+    }
+  };
+
+  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Redirect to Google OAuth endpoint
+      window.location.href = '/api/auth/google';
+      return { success: true };
+    } catch (error) {
+      console.error('[AuthContext] Google sign-in error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Google sign-in failed' 
+      };
+    }
   };
 
   return (
@@ -280,7 +433,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signUp, 
       logIn, 
       logOut, 
-      sendPasswordReset, 
+      sendPasswordReset,
+      signInWithGoogle, 
       isSupabaseConfigured: isActuallyConfiguredAndAuthReady
     }}>
       {children}

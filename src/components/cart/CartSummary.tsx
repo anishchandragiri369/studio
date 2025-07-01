@@ -38,10 +38,20 @@ const CartSummary = () => {
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
-        <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button 
+          asChild 
+          size="lg" 
+          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+          suppressHydrationWarning
+        >
           <Link href="/checkout">Proceed to Checkout</Link>
         </Button>
-        <Button variant="outline" onClick={() => clearCart(true)} className="w-full">
+        <Button 
+          variant="outline" 
+          onClick={() => clearCart(true)} 
+          className="w-full"
+          suppressHydrationWarning
+        >
           Clear Cart
         </Button>
       </CardFooter>

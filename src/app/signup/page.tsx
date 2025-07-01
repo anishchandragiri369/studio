@@ -16,6 +16,7 @@ import type { SignUpFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, MailCheck } from 'lucide-react';
 import type { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function SignUpPage() {
 
     if ('error' in result && result.error) {
       const supabaseError = result.error as SupabaseAuthError;
-      if (supabaseError.message.includes("User already registered")) {
+      if (supabaseError.message.includes("already registered") || supabaseError.message.includes("already exists")) {
         setError("This email is already registered. Try logging in.");
       } else if (result.error.code === 'supabase/not-configured') {
         setError(result.error.message);
@@ -115,25 +116,69 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  autoComplete="email" 
+                  {...register("email")} 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  suppressHydrationWarning
+                />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" autoComplete="new-password" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="•••••••• (min. 6 characters)" 
+                  autoComplete="new-password" 
+                  {...register("password")} 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  suppressHydrationWarning
+                />
                 {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
+                <Input 
+                  id="confirmPassword" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  autoComplete="new-password" 
+                  {...register("confirmPassword")} 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  suppressHydrationWarning
+                />
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
               </div>
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
+              <Button 
+                type="submit" 
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                disabled={!isSupabaseConfigured || submitLoading}
+                suppressHydrationWarning
+              >
                 {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign Up
               </Button>
             </form>
           )}
+
+          <div className="relative my-4 flex items-center justify-center">
+            <div className="absolute inset-x-0 top-1/2 h-px bg-muted" />
+            <span className="z-10 bg-background px-4 text-sm text-muted-foreground">
+              Or sign up with
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <GoogleSignInButton 
+              text="signup_with"
+              disabled={!isSupabaseConfigured}
+              onError={(error) => setError(error)}
+            />
+          </div>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -31,6 +31,7 @@ const Navbar = () => {
   const { user, logOut, loading: authLoading, isSupabaseConfigured, isAdmin } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
@@ -46,24 +47,29 @@ const Navbar = () => {
   const itemCount = mounted ? getItemCount() : 0;
   const handleLogout = async () => {
     console.log('[Navbar] Starting logout process...');
+    setIsLoggingOut(true);
     setIsMenuOpen(false);
     
     try {
-      await logOut();
-      clearCart(); // Clear cart and show toast upon explicit logout
+      // Execute logout and navigation concurrently for better performance
+      const logoutPromise = logOut();
       
-      // Force a hard redirect to home page to ensure clean state
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      } else {
-        router.push('/');
-      }
+      // Clear cart immediately (don't wait for logout)
+      clearCart();
+      
+      // Navigate immediately (don't wait for logout to complete)
+      router.push('/');
+      
+      // Wait for logout to complete in background
+      await logoutPromise;
       
       console.log('[Navbar] Logout completed successfully');
     } catch (error) {
       console.error('[Navbar] Error during logout:', error);
-      // Even if logout fails, redirect to home
-      router.push('/');
+      // Even if logout fails, we've already navigated to home
+      // The AuthContext will handle clearing the state
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -78,7 +84,10 @@ const Navbar = () => {
         </div>        <nav className="hidden lg:flex items-center gap-2 xl:gap-3 text-sm font-medium flex-shrink min-w-0 overflow-hidden">
           {/* Categories Dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center transition-colors hover:text-primary text-foreground/70 whitespace-nowrap">
+            <DropdownMenuTrigger 
+              className="flex items-center transition-colors hover:text-primary text-foreground/70 whitespace-nowrap"
+              suppressHydrationWarning
+            >
               Categories
               <ChevronDown className="ml-1 h-3 w-3 xl:h-4 xl:w-4" />
             </DropdownMenuTrigger>
@@ -143,7 +152,10 @@ const Navbar = () => {
               </React.Fragment>
             ) : link.label === 'Subscriptions' && 'subLinks' in link ? (
               <DropdownMenu key={link.href}>
-                <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}>
+                <DropdownMenuTrigger 
+                  className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}
+                  suppressHydrationWarning
+                >
                   {link.label}
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
@@ -178,7 +190,14 @@ const Navbar = () => {
         </nav>
         
         <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0">
-          <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative flex-shrink-0" asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            aria-label="Shopping Cart" 
+            className="relative flex-shrink-0" 
+            asChild
+            suppressHydrationWarning
+          >
             <Link href="/cart">
               <>
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -196,7 +215,12 @@ const Navbar = () => {
               {user && isSupabaseConfigured ? ( 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex-shrink-0 p-1 rounded-full" aria-label="User Menu">
+                    <Button 
+                      variant="ghost" 
+                      className="flex-shrink-0 p-1 rounded-full" 
+                      aria-label="User Menu"
+                      suppressHydrationWarning
+                    >
                       <UserProfilePhoto size="sm" showName={false} showLoginPrompt={false} />
                     </Button>
                   </DropdownMenuTrigger>
@@ -248,21 +272,36 @@ const Navbar = () => {
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer" disabled={isLoggingOut}>
+                      {isLoggingOut ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogOut className="mr-2 h-4 w-4" />
+                      )}
+                      <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : isSupabaseConfigured ? (
                 <div className="hidden lg:flex items-center gap-1 xl:gap-2 flex-shrink-0">
-                  <Button variant="ghost" size="sm" asChild className="hidden xl:flex">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    asChild 
+                    className="hidden xl:flex"
+                    suppressHydrationWarning
+                  >
                     <Link href="/login">
                       <LogInIcon className="mr-1 h-4 w-4" /> 
                       <span className="hidden xl:inline">Login</span>
                     </Link>
                   </Button>
-                  <Button size="sm" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0">
+                  <Button 
+                    size="sm" 
+                    asChild 
+                    className="bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0"
+                    suppressHydrationWarning
+                  >
                      <Link href="/signup">
                        <UserPlus className="mr-1 h-4 w-4" /> 
                        <span className="hidden xl:inline">Sign Up</span>
@@ -282,7 +321,13 @@ const Navbar = () => {
           <div className="lg:hidden flex-shrink-0">
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open menu" className="flex-shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  aria-label="Open menu" 
+                  className="flex-shrink-0"
+                  suppressHydrationWarning
+                >
                   <MenuIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
               </SheetTrigger>
@@ -384,8 +429,19 @@ const Navbar = () => {
                             </Link>
                           </SheetClose>
                           <SheetClose asChild>
-                            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
-                              <LogOut className="mr-2 h-5 w-5" /> Logout
+                            <Button 
+                              variant="ghost" 
+                              onClick={handleLogout} 
+                              className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary"
+                              disabled={isLoggingOut}
+                              suppressHydrationWarning
+                            >
+                              {isLoggingOut ? (
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              ) : (
+                                <LogOut className="mr-2 h-5 w-5" />
+                              )}
+                              {isLoggingOut ? 'Logging out...' : 'Logout'}
                             </Button>
                           </SheetClose>
                       </>

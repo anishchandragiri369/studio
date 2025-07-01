@@ -646,6 +646,7 @@ function CheckoutPageContents() {
                                 setProceedToCheckout(true);
                               }}
                               className="gap-2"
+                              suppressHydrationWarning
                             >
                               <MapPin className="h-4 w-4" />
                               Load Interactive Map
@@ -664,6 +665,7 @@ function CheckoutPageContents() {
                               {...register("firstName")} 
                               placeholder="John" 
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                             {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
                           </div>
@@ -674,6 +676,7 @@ function CheckoutPageContents() {
                               {...register("lastName")} 
                               placeholder="Doe" 
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                           </div>
                         </div>
@@ -687,6 +690,7 @@ function CheckoutPageContents() {
                             placeholder="you@example.com" 
                             autoComplete="email"
                             className="glass border-border/50 focus:border-primary/50 transition-all"
+                            suppressHydrationWarning
                           />
                           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                         </div>
@@ -699,6 +703,7 @@ function CheckoutPageContents() {
                             {...register("mobileNumber")} 
                             placeholder="+91 98765 43210" 
                             className="glass border-border/50 focus:border-primary/50 transition-all"
+                            suppressHydrationWarning
                           />
                         </div>
                         
@@ -709,6 +714,7 @@ function CheckoutPageContents() {
                             {...register("addressLine1")} 
                             placeholder="123 Juice Street" 
                             className="glass border-border/50 focus:border-primary/50 transition-all"
+                            suppressHydrationWarning
                           />
                           {errors.addressLine1 && <p className="text-sm text-destructive">{errors.addressLine1.message}</p>}
                         </div>
@@ -720,6 +726,7 @@ function CheckoutPageContents() {
                             {...register("addressLine2")} 
                             placeholder="Apartment, Suite, etc." 
                             className="glass border-border/50 focus:border-primary/50 transition-all"
+                            suppressHydrationWarning
                           />
                         </div>
                         
@@ -731,6 +738,7 @@ function CheckoutPageContents() {
                               {...register("city")} 
                               placeholder="Your City" 
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                             {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
                           </div>
@@ -741,6 +749,7 @@ function CheckoutPageContents() {
                               {...register("state")} 
                               placeholder="Your State" 
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                             {errors.state && <p className="text-sm text-destructive">{errors.state.message}</p>}
                           </div>
@@ -755,6 +764,7 @@ function CheckoutPageContents() {
                               placeholder="500001" 
                               maxLength={6}
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                             {errors.zipCode && <p className="text-sm text-destructive">{errors.zipCode.message}</p>}
                             
@@ -806,6 +816,7 @@ function CheckoutPageContents() {
                               id="country" 
                               {...register("country")} 
                               className="glass border-border/50 focus:border-primary/50 transition-all"
+                              suppressHydrationWarning
                             />
                             {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
                           </div>
@@ -853,6 +864,7 @@ function CheckoutPageContents() {
                             className="w-full bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white rounded-xl py-4 text-lg font-medium btn-hover-lift shadow-soft-lg"
                             onClick={handleCashfreePayment}
                             disabled={isProcessingPayment || isCheckoutDisabled}
+                            suppressHydrationWarning
                           >
                             {isProcessingPayment ? (
                               <>
@@ -891,6 +903,7 @@ function CheckoutPageContents() {
                       size="lg" 
                       className="w-full bg-gradient-to-r from-accent to-green-500 hover:from-accent/90 hover:to-green-500/90 text-white text-lg py-4 rounded-xl font-medium btn-hover-lift shadow-soft-lg mt-8"
                       disabled={isCheckoutDisabled}
+                      suppressHydrationWarning
                     >
                       <CreditCard className="mr-2 h-5 w-5" /> 
                       Complete Order

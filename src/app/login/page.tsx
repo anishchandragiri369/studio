@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -18,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // Corrected import
 import AuthPageCacheBuster from '@/components/auth/AuthPageCacheBuster';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -107,19 +107,59 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                autoComplete="email" 
+                {...register("email")} 
+                disabled={!isSupabaseConfigured || submitLoading}
+                suppressHydrationWarning
+              />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} disabled={!isSupabaseConfigured || submitLoading} />
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                autoComplete="current-password" 
+                {...register("password")} 
+                disabled={!isSupabaseConfigured || submitLoading}
+                suppressHydrationWarning
+              />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+              disabled={!isSupabaseConfigured || submitLoading}
+              suppressHydrationWarning
+            >
               {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
             </Button>
           </form>
+          
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <GoogleSignInButton 
+            text="signin_with"
+            disabled={!isSupabaseConfigured}
+            onError={(error) => setError(error)}
+          />
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Link href="/forgot-password" className={`text-sm text-primary hover:underline text-center ${!isSupabaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>

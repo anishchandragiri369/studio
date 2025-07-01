@@ -101,6 +101,7 @@ const CartItem = ({ item }: CartItemProps) => {
               className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => handleQuantityChange(item.quantity - 1)}
               aria-label="Decrease quantity"
+              suppressHydrationWarning
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -119,6 +120,7 @@ const CartItem = ({ item }: CartItemProps) => {
               className="w-12 h-8 sm:h-9 text-center focus-visible:ring-primary px-1"
               min="1"
               aria-label={`${item.name} quantity`}
+              suppressHydrationWarning
             />
             <Button
               variant="outline"
@@ -126,6 +128,7 @@ const CartItem = ({ item }: CartItemProps) => {
               className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => handleQuantityChange(item.quantity + 1)}
               aria-label="Increase quantity"
+              suppressHydrationWarning
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -146,6 +149,7 @@ const CartItem = ({ item }: CartItemProps) => {
           onClick={() => removeFromCart(item.id)}
           className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 self-center sm:self-auto"
           aria-label={`Remove ${item.name} from cart`}
+          suppressHydrationWarning
         >
           <Trash2 className="h-5 w-5" />
         </Button>
