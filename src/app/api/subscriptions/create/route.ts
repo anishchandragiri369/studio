@@ -82,9 +82,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (![2, 3, 4, 6, 12].includes(subscriptionDuration)) {
+    if (!subscriptionDuration || typeof subscriptionDuration !== 'number' || subscriptionDuration < 1 || subscriptionDuration > 12) {
+      logger.warn('Invalid subscription duration attempted', { 
+        subscriptionDuration, 
+        allowedRange: '1-12 months' 
+      }, 'Subscriptions API');
       return NextResponse.json(
-        { success: false, message: 'Invalid subscription duration.' },
+        createLoggedResponse(false, 'Invalid subscription duration. Duration must be between 1 and 12 months.', { subscriptionDuration }, 400, 'error'),
         { status: 400 }
       );
     }
@@ -196,28 +200,24 @@ export async function POST(req: NextRequest) {
       // Don't fail the subscription creation if delivery record fails
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Subscription created successfully!',
-      data: {
-        subscription,
-        pricing,
-        nextDeliveryDate: nextDeliveryDate.toISOString(),
-        subscriptionEndDate: endDate.toISOString(),
-        deliverySchedule: {
-          firstDeliveryDate: deliverySchedule.firstDeliveryDate.toISOString(),
-          isAfterCutoff: deliverySchedule.isAfterCutoff,
-          orderCutoffTime: deliverySchedule.orderCutoffTime.toISOString(),
-          totalDeliveries: subscriptionDeliveryDates.totalDeliveries,
-          allDeliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString())
-        }
+    return NextResponse.json(createLoggedResponse(true, 'Subscription created successfully!', {
+      subscription,
+      pricing,
+      nextDeliveryDate: nextDeliveryDate.toISOString(),
+      subscriptionEndDate: endDate.toISOString(),
+      deliverySchedule: {
+        firstDeliveryDate: deliverySchedule.firstDeliveryDate.toISOString(),
+        isAfterCutoff: deliverySchedule.isAfterCutoff,
+        orderCutoffTime: deliverySchedule.orderCutoffTime.toISOString(),
+        totalDeliveries: subscriptionDeliveryDates.totalDeliveries,
+        allDeliveryDates: subscriptionDeliveryDates.deliveryDates.map(date => date.toISOString())
       }
-    });
+    }));
 
-  } catch (error) {
-    console.error('Error creating subscription:', error);
+  } catch (error: any) {
+    logger.error('Error creating subscription', { error: error.message }, 'Subscriptions API');
     return NextResponse.json(
-      { success: false, message: 'An unexpected error occurred.' },
+      createLoggedResponse(false, 'An unexpected error occurred.', {}, 500, 'error'),
       { status: 500 }
     );
   }
