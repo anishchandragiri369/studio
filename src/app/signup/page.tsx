@@ -16,6 +16,7 @@ import type { SignUpFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, MailCheck } from 'lucide-react';
 import type { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -132,6 +133,20 @@ export default function SignUpPage() {
                 {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign Up
               </Button>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+              
+              <GoogleSignInButton 
+                onError={setError}
+                disabled={submitLoading}
+              />
             </form>
           )}
         </CardContent>

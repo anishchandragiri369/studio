@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -31,6 +31,7 @@ const Navbar = () => {
   const { user, logOut, loading: authLoading, isSupabaseConfigured, isAdmin } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
@@ -46,11 +47,15 @@ const Navbar = () => {
   const itemCount = mounted ? getItemCount() : 0;
   const handleLogout = async () => {
     console.log('[Navbar] Starting logout process...');
+    setIsLoggingOut(true);
     setIsMenuOpen(false);
     
     try {
+      // Clear cart and state immediately for instant feedback
+      clearCart();
+      
+      // Start logout process
       await logOut();
-      clearCart(); // Clear cart and show toast upon explicit logout
       
       // Force a hard redirect to home page to ensure clean state
       if (typeof window !== 'undefined') {
@@ -64,6 +69,8 @@ const Navbar = () => {
       console.error('[Navbar] Error during logout:', error);
       // Even if logout fails, redirect to home
       router.push('/');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -248,9 +255,13 @@ const Navbar = () => {
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer" disabled={isLoggingOut}>
+                      {isLoggingOut ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogOut className="mr-2 h-4 w-4" />
+                      )}
+                      <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -384,8 +395,18 @@ const Navbar = () => {
                             </Link>
                           </SheetClose>
                           <SheetClose asChild>
-                            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary">
-                              <LogOut className="mr-2 h-5 w-5" /> Logout
+                            <Button 
+                              variant="ghost" 
+                              onClick={handleLogout} 
+                              className="w-full justify-start text-lg font-medium text-foreground/80 hover:text-primary"
+                              disabled={isLoggingOut}
+                            >
+                              {isLoggingOut ? (
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              ) : (
+                                <LogOut className="mr-2 h-5 w-5" />
+                              )}
+                              {isLoggingOut ? 'Logging out...' : 'Logout'}
                             </Button>
                           </SheetClose>
                       </>

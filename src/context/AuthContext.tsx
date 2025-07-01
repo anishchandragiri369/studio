@@ -17,6 +17,7 @@ interface AuthContextType {
   isAdmin: boolean;
   signUp: (data: SignUpFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logIn: (data: LoginFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
+  signInWithGoogle: () => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logOut: () => Promise<void>;
   sendPasswordReset: (data: ForgotPasswordFormData) => Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }>;
   isSupabaseConfigured: boolean;
@@ -35,6 +36,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const isActuallyConfiguredAndAuthReady = isSupabaseConfigured && supabase !== null;
+  
+  // Helper function for immediate state cleanup
+  const clearAuthState = () => {
+    setUser(null);
+    setIsAdmin(false);
+  };
   useEffect(() => {
     if (!isActuallyConfiguredAndAuthReady) {
       setUser(null);
@@ -42,6 +49,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
+
+    // Handle OAuth tokens in URL hash immediately
+    const handleOAuthHash = async () => {
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        console.log('[AuthContext] OAuth tokens detected in URL hash');
+        
+        // Clean URL immediately
+        const cleanUrl = () => {
+          console.log('[AuthContext] Cleaning OAuth hash from URL');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        };
+        
+        // Try multiple approaches to ensure URL gets cleaned
+        cleanUrl(); // Immediate
+        setTimeout(cleanUrl, 100); // Quick fallback
+        setTimeout(cleanUrl, 500); // Medium fallback  
+        setTimeout(cleanUrl, 1000); // Final fallback
+      }
+    };
+
+    handleOAuthHash();
 
     // Get initial session on load
     const getInitialSession = async () => {
@@ -109,23 +137,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     getInitialSession();
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthContext] Auth state change:', event);
+      
       // Handle specific auth events
       if (event === 'TOKEN_REFRESHED') {
         // Token refreshed successfully
+      } else if (event === 'SIGNED_IN') {
+        // User signed in - clean up OAuth hash if present
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+          console.log('[AuthContext] User signed in via OAuth, cleaning URL');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Handle return URL for OAuth
+          const returnUrl = sessionStorage.getItem('oauth-return-url');
+          if (returnUrl && returnUrl !== window.location.pathname) {
+            sessionStorage.removeItem('oauth-return-url');
+            console.log('[AuthContext] Redirecting to return URL:', returnUrl);
+            window.location.href = returnUrl;
+            return;
+          }
+        }
       } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsAdmin(false);
+        clearAuthState();
         
         // Additional cleanup for signed out state
         if (typeof window !== 'undefined') {
-          const keysToRemove = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('supabase') || key.includes('auth'))) {
-              keysToRemove.push(key);
-            }
-          }
-          keysToRemove.forEach(key => {
+          const authKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')
+          );
+          authKeys.forEach(key => {
             try {
               localStorage.removeItem(key);
             } catch (e) {
@@ -199,64 +239,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { data: null, error: { name: 'LoginUnexpectedError', message: e.message || "An unexpected error occurred during login." } as SupabaseAuthError };
     }
   };
-  const logOut = async (): Promise<void> => {    if (!isActuallyConfiguredAndAuthReady) {
-      setUser(null);
-      setIsAdmin(false);
-      // Clear any remaining localStorage items
+
+  const signInWithGoogle = async (): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
+    if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
+
+    try {
+      // Store current page for return after OAuth
       if (typeof window !== 'undefined') {
-        // Clear localStorage items that might contain auth data
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('supabase') || key.includes('auth'))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        sessionStorage.clear();
+        sessionStorage.setItem('oauth-return-url', window.location.pathname);
       }
-      return Promise.resolve();
+
+      const { data, error } = await supabase!.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+      
+      if (error) return { data: null, error };
+      
+      // For OAuth, the user will be redirected to Google and then back to our app
+      // The actual user data will be available after the redirect
+      return { data: null, error: null };
+    } catch (e: any) {
+      return { data: null, error: { name: 'GoogleSignInError', message: e.message || "An unexpected error occurred during Google sign in." } as SupabaseAuthError };
+    }
+  };
+  const logOut = async (): Promise<void> => {
+    // Clear local state immediately for instant UI feedback
+    clearAuthState();
+    
+    // Helper function to clear storage asynchronously
+    const clearStorage = () => {
+      if (typeof window === 'undefined') return;
+      
+      try {
+        // Use a more efficient approach to clear Supabase auth data
+        const authKeys = Object.keys(localStorage).filter(key => 
+          key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')
+        );
+        authKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.warn('[AuthContext] Failed to remove localStorage key:', key);
+          }
+        });
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('[AuthContext] Error during storage cleanup:', e);
+      }
+    };
+
+    if (!isActuallyConfiguredAndAuthReady) {
+      clearStorage();
+      return;
     }
     
     try {
-      // Sign out from Supabase
-      const { error } = await supabase!.auth.signOut();
-        // Clear local state immediately
-      setUser(null);
-      setIsAdmin(false);
+      // Start storage cleanup in parallel with Supabase signOut
+      clearStorage();
       
-      // Clear any remaining session data from browser storage
-      if (typeof window !== 'undefined') {
-        // Clear localStorage items that might contain auth data
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('supabase') || key.includes('auth'))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        // Clear sessionStorage completely
-        sessionStorage.clear();
-        
-        // Clear any cookies that might contain session data
-        document.cookie.split(";").forEach((c) => {
-          const eqPos = c.indexOf("=");
-          const name = eqPos > -1 ? c.substr(0, eqPos) : c;
-          if (name.trim().includes('supabase') || name.trim().includes('auth')) {
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-          }
-        });
-      }
+      // Sign out from Supabase - don't await if it takes too long
+      const signOutPromise = supabase!.auth.signOut();
       
-      if (error) {
-        // Continue with cleanup even if signOut had an error
-      }
+      // Set a timeout to prevent hanging
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.warn('[AuthContext] SignOut timeout - proceeding with local cleanup');
+          resolve();
+        }, 2000); // Reduced to 2 second timeout for faster logout
+      });
+      
+      // Race between signOut and timeout
+      await Promise.race([signOutPromise, timeoutPromise]);
+      
     } catch (error) {
-      // Even if there's an error, clear local state
-      setUser(null);
-      setIsAdmin(false);
+      console.warn('[AuthContext] Error during signOut:', error);
+      // Continue - local state is already cleared
     }
   };
 
@@ -279,6 +341,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       signUp, 
       logIn, 
+      signInWithGoogle,
       logOut, 
       sendPasswordReset, 
       isSupabaseConfigured: isActuallyConfiguredAndAuthReady

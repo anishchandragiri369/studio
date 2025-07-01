@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // Corrected import
 import AuthPageCacheBuster from '@/components/auth/AuthPageCacheBuster';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -119,6 +120,20 @@ export default function LoginPage() {
               {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
             </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+            
+            <GoogleSignInButton 
+              onError={setError}
+              disabled={submitLoading}
+            />
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

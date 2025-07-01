@@ -8,6 +8,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import WhatsAppFloatingButton from '@/components/shared/WhatsAppFloatingButton';
 import SessionValidator from '@/components/auth/SessionValidator';
+import OAuthTokenHandler from '@/components/auth/OAuthTokenHandler';
 import AppClientProviders from './AppClientProviders';
 import GoogleMapsApiLoaderWrapper from '@/components/GoogleMapsApiLoaderWrapper';
 import DirectGoogleMapsLoader from '@/components/DirectGoogleMapsLoader';
@@ -42,6 +43,7 @@ export default function RootLayout({
           src="https://unpkg.com/@googlemaps/extended-component-library@latest" 
           async
         />
+        <script src="/oauth-cleanup.js"></script>
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <CacheBuster />
@@ -50,6 +52,7 @@ export default function RootLayout({
         <AppClientProviders>
           <CartProvider>
             <AuthProvider>
+              <OAuthTokenHandler />
               <SessionValidator />
               <Navbar />
               <main className="flex-1">{children}</main>
