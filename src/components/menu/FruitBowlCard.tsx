@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCart } from '@/hooks/useCart';
 import { PlusCircle, MinusCircle, ShoppingCart, PackageX, Clock, Users, Leaf, Heart } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from "@/hooks/use-toast";
 
 interface FruitBowlCardProps {
   fruitBowl: FruitBowl;
@@ -20,11 +22,13 @@ interface FruitBowlCardProps {
 }
 
 const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuantity = 2 }: FruitBowlCardProps) => {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const [quantity, setQuantity] = useState(0);
   const [availabilityStatus, setAvailabilityStatus] = useState<'In Stock' | 'Low Stock' | 'Out of Stock'>('In Stock');
 
   useEffect(() => {
-    if (fruitBowl.stock_quantity <= 0) {
+    if (!fruitBowl.stock_quantity || fruitBowl.stock_quantity <= 0) {
       setAvailabilityStatus('Out of Stock');
     } else if (fruitBowl.stock_quantity <= 10) {
       setAvailabilityStatus('Low Stock');
@@ -34,18 +38,50 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
   }, [fruitBowl.stock_quantity]);
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity < 0 || newQuantity > maxQuantity || newQuantity > fruitBowl.stock_quantity) return;
-    setQuantity(newQuantity);
-    if (onSelect) {
-      onSelect(fruitBowl, newQuantity);
+    if (isSelectionMode) {
+      // Selection mode logic (for subscription selection)
+      if (newQuantity < 0 || newQuantity > maxQuantity || newQuantity > (fruitBowl.stock_quantity || 0)) return;
+      setQuantity(newQuantity);
+      if (onSelect) {
+        onSelect(fruitBowl, newQuantity);
+      }
+    } else {
+      // Regular cart mode logic
+      if (newQuantity < 0 || newQuantity > (fruitBowl.stock_quantity || 0)) return;
+      setQuantity(newQuantity);
     }
+  };
+
+  const handleAddToCart = () => {
+    if (quantity <= 0 || availabilityStatus === 'Out of Stock' || (fruitBowl.stock_quantity || 0) < quantity) {
+      toast({
+        title: "Cannot Add to Cart",
+        description: quantity <= 0 ? "Please select at least 1 item to add to cart." : "This item is out of stock or has insufficient quantity.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Convert FruitBowl to Juice-like format for cart compatibility
+    const cartItem = {
+      ...fruitBowl,
+      flavor: fruitBowl.ingredients?.fruits?.slice(0, 3).map(f => f.name).join(', ') || 'Mixed Fruits',
+      image: fruitBowl.image || fruitBowl.image_url || '/images/fruit-bowl-custom.jpg'
+    };
+    
+    addToCart(cartItem, quantity);
+    setQuantity(0);
+    toast({
+      title: "Added to Cart!",
+      description: `${quantity} x ${fruitBowl.name} added.`,
+    });
   };
 
   const incrementQuantity = () => handleQuantityChange(quantity + 1);
   const decrementQuantity = () => handleQuantityChange(quantity - 1);
 
   // Get main fruits for display
-  const mainFruits = fruitBowl.ingredients.fruits?.slice(0, 3).map(f => f.name).join(', ') || 'Mixed Fruits';
+  const mainFruits = fruitBowl.ingredients?.fruits?.slice(0, 3).map(f => f.name).join(', ') || 'Mixed Fruits';
 
   return (
     <Card className={cn(
@@ -67,7 +103,11 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
       {/* Image */}
       <div className="relative h-48 w-full overflow-hidden">
         <Image
-          src={fruitBowl.image_url || '/images/fruit-bowl-placeholder.jpg'}
+          src={
+            (fruitBowl.image && fruitBowl.image.trim()) || 
+            (fruitBowl.image_url && fruitBowl.image_url.trim()) || 
+            '/images/fruit-bowl-custom.jpg'
+          }
           alt={fruitBowl.name}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -92,15 +132,15 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>{fruitBowl.preparation_time}min</span>
+            <span>{fruitBowl.preparation_time || 'N/A'}min</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            <span>{fruitBowl.serving_size}</span>
+            <span>{fruitBowl.serving_size || 'N/A'}</span>
           </div>
           <div className="flex items-center gap-1">
             <Heart className="h-3 w-3" />
-            <span>{fruitBowl.nutritional_info.calories} cal</span>
+            <span>{fruitBowl.nutritional_info?.calories} cal</span>
           </div>
         </div>
       </CardHeader>
@@ -122,13 +162,13 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
         {/* Ingredients Preview */}
         <div className="text-xs text-muted-foreground">
           <span className="font-medium">Main ingredients: </span>
-          {fruitBowl.ingredients.fruits?.slice(0, 3).map((fruit, index) => (
+          {fruitBowl.ingredients?.fruits?.slice(0, 3).map((fruit, index) => (
             <span key={fruit.name}>
               {fruit.name} ({fruit.quantity})
-              {index < Math.min(2, fruitBowl.ingredients.fruits!.length - 1) ? ', ' : ''}
+              {index < Math.min(2, (fruitBowl.ingredients?.fruits?.length || 0) - 1) ? ', ' : ''}
             </span>
           ))}
-          {fruitBowl.ingredients.fruits && fruitBowl.ingredients.fruits.length > 3 && '...'}
+          {fruitBowl.ingredients?.fruits && fruitBowl.ingredients.fruits.length > 3 && '...'}
         </div>
       </CardContent>
 
@@ -138,7 +178,7 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
             ₹{fruitBowl.price.toFixed(2)}
           </span>
           <span className="text-xs text-muted-foreground">
-            Stock: {fruitBowl.stock_quantity}
+            Stock: {fruitBowl.stock_quantity || 0}
           </span>
         </div>
 
@@ -159,7 +199,7 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
                 variant="outline"
                 size="sm"
                 onClick={incrementQuantity}
-                disabled={quantity >= maxQuantity || quantity >= fruitBowl.stock_quantity || availabilityStatus === 'Out of Stock'}
+                disabled={quantity >= maxQuantity || quantity >= (fruitBowl.stock_quantity || 0) || availabilityStatus === 'Out of Stock'}
                 className="h-8 w-8 p-0"
               >
                 <PlusCircle className="h-4 w-4" />
@@ -170,22 +210,59 @@ const FruitBowlCard = ({ fruitBowl, onSelect, isSelectionMode = false, maxQuanti
             </span>
           </div>
         ) : (
-          <div className="flex gap-2 w-full">
-            <Link href={`/fruit-bowls/${fruitBowl.id}`} className="flex-1">
-              <Button variant="outline" className="w-full" size="sm">
-                View Details
-              </Button>
-            </Link>
-            <Link href={`/subscribe/fruit-bowls`} className="flex-1">
-              <Button 
-                className="w-full" 
+          <div className="space-y-2 w-full">
+            {/* Add to Cart Controls */}
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={decrementQuantity}
+                  disabled={quantity <= 0 || availabilityStatus === 'Out of Stock'}
+                  className="h-8 w-8 p-0"
+                >
+                  <MinusCircle className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[30px] text-center font-medium">{quantity}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={incrementQuantity}
+                  disabled={quantity >= (fruitBowl.stock_quantity || 0) || availabilityStatus === 'Out of Stock'}
+                  className="h-8 w-8 p-0"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button
+                onClick={handleAddToCart}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                disabled={availabilityStatus === 'Out of Stock' || quantity <= 0}
                 size="sm"
-                disabled={availabilityStatus === 'Out of Stock'}
               >
                 <ShoppingCart className="h-4 w-4 mr-1" />
-                Subscribe
+                Add to Cart
               </Button>
-            </Link>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2 w-full">
+              <Link href={`/fruit-bowls/${fruitBowl.id}`} className="flex-1">
+                <Button variant="outline" className="w-full" size="sm">
+                  View Details
+                </Button>
+              </Link>
+              <Link href={`/fruit-bowls/subscriptions`} className="flex-1">
+                <Button 
+                  variant="secondary"
+                  className="w-full" 
+                  size="sm"
+                  disabled={availabilityStatus === 'Out of Stock'}
+                >
+                  Subscribe
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </CardFooter>

@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import FruitBowlCard from '@/components/menu/FruitBowlCard';
 import type { FruitBowl } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar, Heart, Sparkles } from 'lucide-react';
 
 export default function FruitBowlsPage() {
   const [fruitBowls, setFruitBowls] = useState<FruitBowl[]>([]);
@@ -64,9 +66,60 @@ export default function FruitBowlsPage() {
         <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-4 animate-fade-in">
           Fresh Fruit Bowls
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animation-delay-200">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animation-delay-200 mb-6">
           Start your day right or enjoy a healthy snack with our vibrant and nutritious fruit bowls.
         </p>
+        
+        {/* Subscription CTA */}
+        <div className="glass-card p-6 rounded-xl border border-primary/20 max-w-3xl mx-auto mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Heart className="w-6 h-6 text-red-500" />
+            <h3 className="text-xl font-semibold">Never Run Out of Healthy Options</h3>
+          </div>
+          <p className="text-muted-foreground mb-4">
+            Subscribe to our fruit bowl plans and get fresh, nutritious bowls delivered regularly. Save time and stay healthy!
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+              <Link href="/fruit-bowls/subscriptions">
+                <Calendar className="w-4 h-4 mr-2" />
+                View Subscription Plans
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/subscriptions">
+                <Sparkles className="w-4 h-4 mr-2" />
+                All Subscription Options
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Subscription CTA Section */}
+      <section className="mb-12">
+        <div className="glass-card p-8 rounded-xl border border-primary/20 text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Calendar className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-semibold text-primary">Never Run Out</h2>
+          </div>
+          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+            Subscribe to receive fresh fruit bowls delivered regularly. Choose from weekly or monthly plans and customize your selections.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+              <Link href="/fruit-bowls/subscriptions">
+                <Calendar className="w-4 h-4 mr-2" />
+                View Fruit Bowl Subscriptions
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/subscriptions">
+                All Subscription Plans
+              </Link>
+            </Button>
+          </div>
+        </div>
       </section>
       
       {fruitBowls.length > 0 ? (

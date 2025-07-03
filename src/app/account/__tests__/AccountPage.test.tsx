@@ -113,6 +113,7 @@ describe('AccountPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });    mockUseCart.mockReturnValue({
       cartItems: [],
@@ -144,6 +145,7 @@ describe('AccountPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });
 
@@ -161,6 +163,7 @@ describe('AccountPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });
 

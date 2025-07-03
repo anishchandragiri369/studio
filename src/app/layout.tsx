@@ -3,7 +3,7 @@ import './globals.css';
 import '@/styles/mobile.css';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
-import { Toaster } from '@/components/ui/toaster';
+import ClientToaster from '@/components/ui/ClientToaster';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import WhatsAppFloatingButton from '@/components/shared/WhatsAppFloatingButton';
@@ -58,7 +58,7 @@ export default function RootLayout({
               <main className="flex-1">{children}</main>
               <Footer />
               <WhatsAppFloatingButton />
-              <Toaster />
+              <ClientToaster />
             </AuthProvider>
           </CartProvider>
         </AppClientProviders>

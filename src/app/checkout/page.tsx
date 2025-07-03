@@ -205,8 +205,13 @@ function CheckoutPageContents() {
     } else {
       setIsSubscriptionCheckout(false);
       const cartTotal = getCartTotal();
-      const shippingCost = cartTotal > 0 ? 5.00 : 0;
+      
+      // Free delivery above ₹299, otherwise ₹50 delivery charge
+      const DELIVERY_CHARGE = 50;
+      const FREE_DELIVERY_THRESHOLD = 299;
+      const shippingCost = cartTotal > 0 ? (cartTotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE) : 0;
       const totalWithShipping = cartTotal + shippingCost;
+      
       setOriginalOrderTotal(totalWithShipping);
       setCurrentOrderTotal(totalWithShipping);
       setSubscriptionDetails(null);
@@ -1072,9 +1077,21 @@ function CheckoutPageContents() {
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Delivery Charges</span>
                           <span className="font-medium">
-                            {(originalOrderTotal - getCartTotal()) > 0 ? `₹${(originalOrderTotal - getCartTotal()).toFixed(2)}` : 'FREE'}
+                            {(originalOrderTotal - getCartTotal()) > 0 ? (
+                              `₹${(originalOrderTotal - getCartTotal()).toFixed(2)}`
+                            ) : (
+                              <span className="text-green-600">FREE</span>
+                            )}
                           </span>
                         </div>
+                        {/* Free delivery prompt */}
+                        {getCartTotal() > 0 && getCartTotal() < 299 && (originalOrderTotal - getCartTotal()) > 0 && (
+                          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                            <span className="font-medium">
+                              💡 Add ₹{(299 - getCartTotal()).toFixed(0)} more to get FREE delivery!
+                            </span>
+                          </div>
+                        )}
                         {appliedCoupon && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Coupon ({appliedCoupon.coupon.code})</span>

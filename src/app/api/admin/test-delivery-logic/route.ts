@@ -26,7 +26,12 @@ export async function GET(request: NextRequest) {
       })),
       validation: {
         hasSundayDeliveries: deliveryDates.deliveryDates.some(date => date.getDay() === 0),
-        dayGaps: []
+        dayGaps: [] as Array<{
+          from: string;
+          to: string;
+          gapDays: number;
+          isValid: boolean;
+        }>
       }
     };
 

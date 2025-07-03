@@ -13,7 +13,7 @@ const TEST_CONFIG = {
 };
 
 // Mock fetch for testing
-global.fetch = jest.fn();
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 describe('API Core Functionality Tests', () => {
   beforeAll(async () => {

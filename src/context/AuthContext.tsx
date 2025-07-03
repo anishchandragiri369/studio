@@ -53,6 +53,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Handle OAuth tokens in URL hash immediately
     const handleOAuthHash = async () => {
       if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        // Don't clean tokens on the reset password page - let the reset component handle them
+        if (window.location.pathname === '/reset-password') {
+          console.log('[AuthContext] OAuth tokens detected on reset password page - skipping cleanup');
+          return;
+        }
+        
         console.log('[AuthContext] OAuth tokens detected in URL hash');
         
         // Clean URL immediately
@@ -142,6 +148,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Handle specific auth events
       if (event === 'TOKEN_REFRESHED') {
         // Token refreshed successfully
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log('[AuthContext] Password recovery initiated, maintaining session for reset');
+        // During password recovery, we need to maintain the session for the reset process
+        // Don't clear user state or trigger sign out
+        if (session?.user) {
+          setUser(session.user);
+        }
+        return; // Early return to prevent other handling
       } else if (event === 'SIGNED_IN') {
         // User signed in - clean up OAuth hash if present
         if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
@@ -158,23 +172,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } else if (event === 'SIGNED_OUT') {
-        clearAuthState();
-        
+        // Check if we're on the reset password page to avoid interference
+        if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+          console.log('[AuthContext] Ignoring SIGNED_OUT on reset password page');
+          return;
+        }
+
+        console.log('[AuthContext] User signed out, clearing state');
+        setUser(null);
+        setIsAdmin(false);
+
         // Additional cleanup for signed out state
         if (typeof window !== 'undefined') {
-          const authKeys = Object.keys(localStorage).filter(key => 
-            key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')
-          );
-          authKeys.forEach(key => {
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => {
             try {
               localStorage.removeItem(key);
-            } catch (e) {
+            } catch (cleanupError) {
               console.warn('[AuthContext] Failed to remove localStorage key:', key);
             }
           });
         }
-        
-        return; // Early return for SIGNED_OUT
       }
       
       const currentUser = session?.user || null;
@@ -351,7 +375,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const sendPasswordReset = async (data: ForgotPasswordFormData): Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }> => {
     if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
-    
+
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
 
     const { error } = await supabase!.auth.resetPasswordForEmail(data.email, {
@@ -362,16 +386,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{
+    <AuthContext.Provider value={{ 
       user, 
       loading, 
-      isAdmin,
+      isAdmin, 
       signUp, 
       logIn, 
-      signInWithGoogle,
+      signInWithGoogle, 
       logOut, 
       sendPasswordReset, 
-      isSupabaseConfigured: isActuallyConfiguredAndAuthReady
+      isSupabaseConfigured 
     }}>
       {children}
     </AuthContext.Provider>

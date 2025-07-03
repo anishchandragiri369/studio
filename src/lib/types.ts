@@ -19,6 +19,52 @@ export interface Juice {
   stock_quantity?: number; // Potential alias from Supabase
 }
 
+export interface FruitBowl {
+  id: string;
+  name: string;
+  flavor: string;
+  price: number;
+  image: string;
+  image_url?: string; // Potential alias from Supabase
+  description?: string;
+  category?: string; // e.g., 'Breakfast Bowls', 'Power Bowls', 'Tropical Bowls'
+  tags?: string[]; // e.g., 'breakfast', 'protein', 'antioxidant'
+  dataAiHint?: string; // For placeholder images
+  data_ai_hint?: string; // Potential alias from Supabase
+  availability?: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  stockQuantity?: number;
+  stock_quantity?: number; // Potential alias from Supabase
+  preparation_time?: number; // in minutes
+  serving_size?: string; // e.g., "1 bowl", "250g"
+  dietary_tags?: string[]; // e.g., 'vegan', 'gluten-free', 'organic'
+  allergen_info?: string[]; // e.g., 'nuts', 'dairy', 'gluten'
+  ingredients?: {
+    fruits?: Array<{
+      name: string;
+      quantity: string;
+      organic: boolean;
+    }>;
+    toppings?: Array<{
+      name: string;
+      quantity: string;
+    }>;
+    greens?: Array<{
+      name: string;
+      quantity: string;
+      organic: boolean;
+    }>;
+  };
+  nutritional_info?: {
+    calories: number;
+    protein: string;
+    carbs: string;
+    fiber: string;
+    sugar: string;
+    fat: string;
+    vitamins: Record<string, string>;
+  };
+}
+
 export interface CartItem extends Juice {
   quantity: number;
 }
@@ -30,8 +76,12 @@ export interface SubscriptionPlan {
   pricePerDelivery: number;
   description: string;
   defaultJuices?: { juiceId: string; quantity: number }[]; // Optional: pre-selected juices
+  defaultFruitBowls?: { fruitBowlId: string; quantity: number }[]; // Optional: pre-selected fruit bowls
   isCustomizable?: boolean;
-  maxJuices?: number; // Max number of items for customizable plans
+  maxJuices?: number; // Max number of juices for customizable plans
+  maxFruitBowls?: number; // Max number of fruit bowls for customizable plans
+  includesFruitBowls?: boolean; // Whether this plan supports fruit bowls
+  planType?: 'juice-only' | 'fruit-bowl-only' | 'customized'; // Type of plan
 }
 
 // For AI Recipe Suggestion
@@ -164,50 +214,6 @@ export type SuggestSubscriptionPlanInput = {
   // Add more fields as needed for your AI flow/component
 };
 
-// Fruit Bowl Types
-export interface FruitBowl {
-  id: string;
-  name: string;
-  description: string;
-  ingredients: {
-    fruits: Array<{
-      name: string;
-      quantity: string;
-      organic: boolean;
-    }>;
-    toppings?: Array<{
-      name: string;
-      quantity: string;
-    }>;
-    greens?: Array<{
-      name: string;
-      quantity: string;
-      organic: boolean;
-    }>;
-  };
-  nutritional_info: {
-    calories: number;
-    protein: string;
-    carbs: string;
-    fiber: string;
-    sugar: string;
-    fat: string;
-    vitamins: Record<string, string>;
-  };
-  price: number;
-  image_url?: string;
-  category: string;
-  serving_size: string;
-  preparation_time: number;
-  allergen_info: string[];
-  dietary_tags: string[];
-  seasonal_availability: boolean;
-  stock_quantity: number;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface FruitBowlSubscriptionPlan {
   id: string;
   name: string;
@@ -298,5 +304,382 @@ export interface FruitBowlCustomization {
 export interface CartFruitBowl extends FruitBowl {
   quantity: number;
   customizations?: FruitBowlCustomization['customizations'];
+}
+
+// Advanced Subscription Features Types
+
+// Gift Subscription System
+export interface GiftSubscription {
+  id: string;
+  gifter_user_id: string;
+  recipient_email: string;
+  recipient_name: string;
+  recipient_phone?: string;
+  subscription_plan_id: string;
+  subscription_duration: 2 | 3 | 4 | 6 | 12;
+  custom_message?: string;
+  delivery_date?: string;
+  status: 'pending' | 'sent' | 'claimed' | 'expired' | 'cancelled';
+  gift_code: string;
+  total_amount: number;
+  recipient_user_id?: string;
+  created_subscription_id?: string;
+  is_anonymous: boolean;
+  delivery_address?: CheckoutAddressFormData;
+  notification_sent: boolean;
+  claimed_at?: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GiftSubscriptionFormData {
+  recipient_email: string;
+  recipient_name: string;
+  recipient_phone?: string;
+  subscription_plan_id: string;
+  subscription_duration: 2 | 3 | 4 | 6 | 12;
+  custom_message?: string;
+  delivery_date?: string;
+  is_anonymous: boolean;
+  delivery_address: CheckoutAddressFormData;
+}
+
+// Family Sharing System
+export interface FamilyGroup {
+  id: string;
+  group_name: string;
+  primary_user_id: string;
+  invite_code: string;
+  max_members: number;
+  is_active: boolean;
+  shared_delivery_address?: CheckoutAddressFormData;
+  allow_individual_deliveries: boolean;
+  default_delivery_schedule?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FamilyGroupMember {
+  id: string;
+  family_group_id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  joined_at: string;
+  permissions: {
+    can_pause: boolean;
+    can_modify_address: boolean;
+    can_view_billing: boolean;
+  };
+  delivery_address?: CheckoutAddressFormData;
+  notification_preferences: {
+    delivery_reminders: boolean;
+    group_updates: boolean;
+  };
+}
+
+export interface FamilySharedSubscription {
+  id: string;
+  family_group_id: string;
+  subscription_id: string;
+  billing_member_id: string;
+  delivery_distribution: any; // JSON configuration for delivery splitting
+  cost_sharing: any; // JSON configuration for cost splitting
+  member_juice_selections?: any; // JSON with member preferences
+  created_at: string;
+  updated_at: string;
+}
+
+// Corporate Wellness Program
+export interface CorporateAccount {
+  id: string;
+  company_name: string;
+  company_email: string;
+  contact_person: string;
+  contact_phone?: string;
+  account_manager_id?: string;
+  billing_address: CheckoutAddressFormData;
+  tax_id?: string;
+  employee_limit: number;
+  monthly_budget?: number;
+  subsidy_percentage: number;
+  allowed_plans?: string[]; // Plan IDs that are covered
+  status: 'pending' | 'active' | 'suspended' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CorporateEmployee {
+  id: string;
+  corporate_account_id: string;
+  user_id: string;
+  employee_id?: string;
+  department?: string;
+  position?: string;
+  enrollment_date: string;
+  is_active: boolean;
+  monthly_allowance?: number;
+  used_allowance: number;
+}
+
+export interface CorporateSubscription {
+  id: string;
+  corporate_account_id: string;
+  employee_id: string;
+  subscription_id: string;
+  corporate_contribution: number;
+  employee_contribution: number;
+  approval_status: 'pending' | 'approved' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  created_at: string;
+}
+
+// Subscription Transfer Marketplace
+export interface SubscriptionTransfer {
+  id: string;
+  subscription_id: string;
+  seller_user_id: string;
+  asking_price: number;
+  remaining_deliveries: number;
+  original_price: number;
+  transfer_reason?: string;
+  title: string;
+  description?: string;
+  is_negotiable: boolean;
+  status: 'listed' | 'pending' | 'completed' | 'cancelled' | 'expired';
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionTransferOffer {
+  id: string;
+  transfer_id: string;
+  buyer_user_id: string;
+  offered_price: number;
+  message?: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  seller_response?: string;
+  responded_at?: string;
+  created_at: string;
+}
+
+export interface SubscriptionTransferTransaction {
+  id: string;
+  transfer_id: string;
+  offer_id?: string;
+  seller_user_id: string;
+  buyer_user_id: string;
+  final_price: number;
+  platform_fee: number;
+  seller_amount: number;
+  payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_id?: string;
+  escrow_released: boolean;
+  subscription_transferred_at?: string;
+  transfer_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Subscription Notifications
+export interface SubscriptionNotification {
+  id: string;
+  user_id: string;
+  type: string; // 'gift_received', 'family_invite', 'transfer_offer', etc.
+  title: string;
+  message: string;
+  related_id?: string;
+  related_type?: string;
+  is_read: boolean;
+  is_action_required: boolean;
+  action_url?: string;
+  email_sent: boolean;
+  sms_sent: boolean;
+  push_sent: boolean;
+  created_at: string;
+  read_at?: string;
+}
+
+// Form Data Types for Advanced Features
+export interface CreateFamilyGroupFormData {
+  group_name: string;
+  max_members: number;
+  shared_delivery_address?: CheckoutAddressFormData;
+  allow_individual_deliveries: boolean;
+}
+
+export interface CreateTransferListingFormData {
+  asking_price: number;
+  title: string;
+  description?: string;
+  transfer_reason?: string;
+  is_negotiable: boolean;
+}
+
+export interface MakeTransferOfferFormData {
+  offered_price: number;
+  message?: string;
+}
+
+export interface CorporateAccountFormData {
+  company_name: string;
+  company_email: string;
+  contact_person: string;
+  contact_phone?: string;
+  billing_address: CheckoutAddressFormData;
+  tax_id?: string;
+  employee_limit: number;
+  monthly_budget?: number;
+  subsidy_percentage: number;
+}
+
+// Enhanced User Subscription with Advanced Features
+export interface EnhancedUserSubscription extends UserSubscription {
+  // Gift subscription info (if this subscription was gifted)
+  gift_info?: {
+    gifter_name?: string;
+    custom_message?: string;
+    is_anonymous: boolean;
+  };
+  
+  // Family sharing info (if this subscription is shared)
+  family_sharing?: {
+    family_group_id: string;
+    billing_member_id: string;
+    member_role: 'admin' | 'member';
+    cost_split_percentage: number;
+  };
+  
+  // Corporate wellness info (if this subscription is corporate-funded)
+  corporate_info?: {
+    corporate_account_id: string;
+    corporate_contribution: number;
+    employee_contribution: number;
+    monthly_allowance_used: number;
+  };
+  
+  // Transfer info (if this subscription is transferable/was transferred)
+  transfer_eligible: boolean;
+  transfer_history?: SubscriptionTransferTransaction[];
+}
+
+// Enhanced Delivery Scheduling Types
+export interface DeliveryTimeWindow {
+  id: string;
+  name: string;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  delivery_fee_modifier: number;
+  max_capacity: number;
+  days_of_week: number[];
+  created_at: string;
+  updated_at: string;
+  stats?: {
+    today_bookings: number;
+    weekly_bookings: number;
+    available_slots: number;
+    utilization_rate: number;
+    is_full: boolean;
+  };
+}
+
+export interface CustomerDeliveryPreferences {
+  id: string;
+  user_id: string;
+  subscription_id: string;
+  preferred_time_window_id?: string;
+  alternative_time_window_id?: string;
+  special_instructions?: string;
+  is_flexible: boolean;
+  preferred_days: number[];
+  avoid_days: number[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnhancedSubscriptionDelivery {
+  id: string;
+  subscription_id: string;
+  delivery_date: string;
+  delivery_time_window_id?: string;
+  scheduled_start_time?: string;
+  scheduled_end_time?: string;
+  actual_delivery_time?: string;
+  delivery_instructions?: string;
+  delivery_person_id?: string;
+  delivery_rating?: number;
+  delivery_feedback?: string;
+  status: 'scheduled' | 'in_transit' | 'delivered' | 'failed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+// Analytics Types
+export interface RevenueAnalytics {
+  date: string;
+  total_revenue: number;
+  gift_revenue: number;
+  family_revenue: number;
+  corporate_revenue: number;
+  transfer_fees: number;
+}
+
+export interface CustomerAcquisitionAnalytics {
+  period: string;
+  new_customers: number;
+  gift_acquisitions: number;
+  family_acquisitions: number;
+  corporate_acquisitions: number;
+  conversion_rate: number;
+}
+
+export interface ChurnAnalytics {
+  period: string;
+  churned_customers: number;
+  churn_rate: number;
+  retention_rate: number;
+  churn_reasons: Array<{
+    reason: string;
+    count: number;
+  }>;
+}
+
+export interface SubscriptionAnalyticsSummary {
+  total_revenue: number;
+  total_new_customers: number;
+  average_churn_rate: number;
+  growth_rate: number;
+}
+
+export interface SubscriptionAnalyticsData {
+  revenue_trends: RevenueAnalytics[];
+  customer_acquisition: CustomerAcquisitionAnalytics[];
+  churn_analysis: ChurnAnalytics[];
+  summary: SubscriptionAnalyticsSummary;
+}
+
+// Delivery Window Form Data
+export interface DeliveryWindowFormData {
+  name: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  deliveryFeeModifier: number;
+  maxCapacity: number;
+  daysOfWeek: number[];
+}
+
+export interface DeliveryPreferencesFormData {
+  subscriptionId: string;
+  userId: string;
+  preferredTimeWindowId?: string;
+  alternativeTimeWindowId?: string;
+  specialInstructions?: string;
+  isFlexible: boolean;
+  preferredDays: number[];
+  avoidDays: number[];
 }
 

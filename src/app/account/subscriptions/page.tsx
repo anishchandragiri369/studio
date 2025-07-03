@@ -149,7 +149,7 @@ export default function AccountSubscriptionsPage() {
               Subscribe to Juices
             </Button>
           </Link>
-          <Link href="/subscribe/fruit-bowls">
+          <Link href="/subscriptions">
             <Button>
               <Apple className="h-4 w-4 mr-2" />
               Subscribe to Fruit Bowls
@@ -177,7 +177,7 @@ export default function AccountSubscriptionsPage() {
               <Link href="/subscriptions">
                 <Button variant="outline">Browse Juice Plans</Button>
               </Link>
-              <Link href="/subscribe/fruit-bowls">
+              <Link href="/subscriptions">
                 <Button>Browse Fruit Bowl Plans</Button>
               </Link>
             </div>
@@ -340,7 +340,7 @@ export default function AccountSubscriptionsPage() {
                             <span>
                               {typeof subscription.delivery_address === 'object' ? (
                                 <>
-                                  {subscription.delivery_address.street}, {subscription.delivery_address.city}, {subscription.delivery_address.state} - {subscription.delivery_address.pincode}
+                                  {subscription.delivery_address.addressLine1}, {subscription.delivery_address.city}, {subscription.delivery_address.state} - {subscription.delivery_address.zipCode}
                                 </>
                               ) : (
                                 subscription.delivery_address

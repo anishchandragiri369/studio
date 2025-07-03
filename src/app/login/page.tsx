@@ -1,9 +1,8 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,10 +19,12 @@ import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js'; // 
 import AuthPageCacheBuster from '@/components/auth/AuthPageCacheBuster';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { logIn, user, loading: authLoading, isSupabaseConfigured } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
@@ -41,6 +42,16 @@ export default function LoginPage() {
       document.title = 'Login - Elixr';
     }
   }, []);
+
+  useEffect(() => {
+    // Check for password reset success message
+    const message = searchParams.get('message');
+    if (message === 'password-reset-success') {
+      setSuccessMessage('Password reset successfully! You can now log in with your new password.');
+      // Clean up the URL
+      router.replace('/login', undefined);
+    }
+  }, [searchParams, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     if (!isSupabaseConfigured) {
@@ -106,6 +117,12 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {successMessage && (
+              <Alert className="border-green-200 bg-green-50">
+                <AlertTitle className="text-green-800">Success!</AlertTitle>
+                <AlertDescription className="text-green-700">{successMessage}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
@@ -149,5 +166,17 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -27,6 +27,7 @@ interface SubscriptionCartItem {
     subscriptionDuration: number;
     basePrice: number;
     selectedJuices: { juiceId: string; quantity: number }[];
+    selectedFruitBowls?: { fruitBowlId: string; quantity: number }[];
   };
   image?: string;
 }

@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabaseClient';
 import RewardsDisplay from '@/components/account/RewardsDisplay';
+import OrderRating from '@/components/ratings/OrderRating';
 
 export default function AccountPage() {
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -269,10 +270,22 @@ export default function AccountPage() {
                               </>
                             )}
                           </CardContent>
-                          <CardFooter className="pt-3">
-                            <Button asChild variant="outline" size="sm">
-                              <Link href="/orders">View All Orders</Link>
-                            </Button>
+                          <CardFooter className="pt-3 space-y-2">
+                            <div className="flex justify-between items-center w-full">
+                              <Button asChild variant="outline" size="sm">
+                                <Link href="/orders">View All Orders</Link>
+                              </Button>
+                            </div>
+                            
+                            {/* Rating Component */}
+                            <div className="w-full">
+                              <OrderRating 
+                                order={order} 
+                                userId={user?.id} 
+                                compact={false}
+                                showForm={true}
+                              />
+                            </div>
                           </CardFooter>
                         </Card>
                       ))}

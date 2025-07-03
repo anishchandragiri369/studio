@@ -77,7 +77,7 @@ export default function FruitBowlDetailPage() {
   }
 
   const getAvailabilityStatus = () => {
-    if (fruitBowl.stock_quantity <= 0) return 'Out of Stock';
+    if (!fruitBowl.stock_quantity || fruitBowl.stock_quantity <= 0) return 'Out of Stock';
     if (fruitBowl.stock_quantity <= 10) return 'Low Stock';
     return 'In Stock';
   };
@@ -142,7 +142,7 @@ export default function FruitBowlDetailPage() {
               <Heart className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Calories</p>
-                <p className="text-sm text-muted-foreground">{fruitBowl.nutritional_info.calories} cal</p>
+                <p className="text-sm text-muted-foreground">{fruitBowl.nutritional_info?.calories || 'N/A'} cal</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export default function FruitBowlDetailPage() {
           <div>
             <h3 className="font-semibold mb-2">Dietary Information</h3>
             <div className="flex flex-wrap gap-2">
-              {fruitBowl.dietary_tags.map((tag) => (
+              {fruitBowl.dietary_tags?.map((tag) => (
                 <Badge key={tag} variant="outline" className="capitalize">
                   <Leaf className="h-3 w-3 mr-1" />
                   {tag}
@@ -167,8 +167,7 @@ export default function FruitBowlDetailPage() {
             </div>
           </div>
 
-          {/* Allergen Info */}
-          {fruitBowl.allergen_info.length > 0 && (
+          {/* Allergen Info */}            {fruitBowl.allergen_info && fruitBowl.allergen_info.length > 0 && (
             <div>
               <h3 className="font-semibold mb-2 flex items-center">
                 <Shield className="h-4 w-4 mr-2" />
@@ -186,7 +185,7 @@ export default function FruitBowlDetailPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Link href="/subscribe/fruit-bowls" className="w-full">
+            <Link href="/subscriptions/subscribe?plan=fruit-bowl-weekly" className="w-full">
               <Button 
                 className="w-full" 
                 size="lg"
@@ -208,11 +207,11 @@ export default function FruitBowlDetailPage() {
             <CardTitle>Ingredients</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {fruitBowl.ingredients.fruits && (
+            {fruitBowl.ingredients?.fruits && (
               <div>
                 <h4 className="font-semibold mb-2">Fresh Fruits</h4>
                 <div className="space-y-2">
-                  {fruitBowl.ingredients.fruits.map((fruit, index) => (
+                  {fruitBowl.ingredients?.fruits?.map((fruit: any, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <span className="flex items-center gap-2">
                         {fruit.name}
@@ -225,12 +224,12 @@ export default function FruitBowlDetailPage() {
               </div>
             )}
 
-            {fruitBowl.ingredients.greens && fruitBowl.ingredients.greens.length > 0 && (
+            {fruitBowl.ingredients?.greens && fruitBowl.ingredients.greens.length > 0 && (
               <div>
                 <Separator />
                 <h4 className="font-semibold mb-2">Fresh Greens</h4>
                 <div className="space-y-2">
-                  {fruitBowl.ingredients.greens.map((green, index) => (
+                  {fruitBowl.ingredients?.greens?.map((green: any, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <span className="flex items-center gap-2">
                         {green.name}
@@ -243,12 +242,12 @@ export default function FruitBowlDetailPage() {
               </div>
             )}
 
-            {fruitBowl.ingredients.toppings && fruitBowl.ingredients.toppings.length > 0 && (
+            {fruitBowl.ingredients?.toppings && fruitBowl.ingredients.toppings.length > 0 && (
               <div>
                 <Separator />
                 <h4 className="font-semibold mb-2">Toppings</h4>
                 <div className="space-y-2">
-                  {fruitBowl.ingredients.toppings.map((topping, index) => (
+                  {fruitBowl.ingredients?.toppings?.map((topping: any, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <span>{topping.name}</span>
                       <span className="text-sm text-muted-foreground">{topping.quantity}</span>
@@ -269,27 +268,27 @@ export default function FruitBowlDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="font-medium">Calories</p>
-                <p className="text-2xl font-bold text-primary">{fruitBowl.nutritional_info.calories}</p>
+                <p className="text-2xl font-bold text-primary">{fruitBowl.nutritional_info?.calories || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium">Protein</p>
-                <p className="text-lg">{fruitBowl.nutritional_info.protein}</p>
+                <p className="text-lg">{fruitBowl.nutritional_info?.protein || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium">Carbohydrates</p>
-                <p className="text-lg">{fruitBowl.nutritional_info.carbs}</p>
+                <p className="text-lg">{fruitBowl.nutritional_info?.carbs || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium">Fiber</p>
-                <p className="text-lg">{fruitBowl.nutritional_info.fiber}</p>
+                <p className="text-lg">{fruitBowl.nutritional_info?.fiber || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium">Sugar</p>
-                <p className="text-lg">{fruitBowl.nutritional_info.sugar}</p>
+                <p className="text-lg">{fruitBowl.nutritional_info?.sugar || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium">Fat</p>
-                <p className="text-lg">{fruitBowl.nutritional_info.fat}</p>
+                <p className="text-lg">{fruitBowl.nutritional_info?.fat || 'N/A'}</p>
               </div>
             </div>
 
@@ -298,12 +297,12 @@ export default function FruitBowlDetailPage() {
             <div>
               <h4 className="font-semibold mb-3">Vitamins & Minerals</h4>
               <div className="space-y-2">
-                {Object.entries(fruitBowl.nutritional_info.vitamins).map(([vitamin, amount]) => (
+                {fruitBowl.nutritional_info?.vitamins ? Object.entries(fruitBowl.nutritional_info.vitamins).map(([vitamin, amount]) => (
                   <div key={vitamin} className="flex justify-between">
                     <span className="capitalize">{vitamin.replace('_', ' ')}</span>
                     <span className="font-medium">{amount}</span>
                   </div>
-                ))}
+                )) : <p className="text-muted-foreground">No vitamin information available</p>}
               </div>
             </div>
           </CardContent>

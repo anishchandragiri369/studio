@@ -119,6 +119,7 @@ describe('OrdersPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });
   });
@@ -140,6 +141,7 @@ describe('OrdersPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });
 
@@ -158,6 +160,7 @@ describe('OrdersPage', () => {
       isAdmin: false,
       signUp: jest.fn(),
       logIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       sendPasswordReset: jest.fn(),
     });
 

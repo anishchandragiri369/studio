@@ -150,7 +150,7 @@ const Navbar = () => {
               </React.Fragment>
             ) : link.label === 'Subscriptions' && 'subLinks' in link ? (
               <DropdownMenu key={link.href}>
-                <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) ? "text-primary font-semibold" : "text-foreground/70"}`}>
+                <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-primary ${pathname.startsWith(link.basePath || link.href) || pathname.startsWith('/fruit-bowls/subscriptions') ? "text-primary font-semibold" : "text-foreground/70"}`}>
                   {link.label}
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>

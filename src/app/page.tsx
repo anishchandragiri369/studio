@@ -30,8 +30,10 @@ const instagramPosts = [
 
 export default function HomePage() {
   const featuredJuices = JUICES.slice(0, 8);
-  const weeklyKickstarterPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'weekly');
-  const monthlyWellnessPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly');
+  const weeklyJuicePlan = SUBSCRIPTION_PLANS.find(p => p.id === 'weekly-juice');
+  const monthlyJuicePlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly-juice');
+  const monthlyFruitBowlPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly-fruit-bowl');
+  const monthlyCustomizedPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly-customized');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -224,7 +226,7 @@ export default function HomePage() {
       </section>
 
       {/* Subscription Plans */}
-      {(weeklyKickstarterPlan || monthlyWellnessPlan) && (
+      {(weeklyJuicePlan || monthlyJuicePlan || monthlyFruitBowlPlan || monthlyCustomizedPlan) && (
         <section className="py-8 md:py-16 bg-gradient-to-br from-primary/5 via-accent/5 to-background mobile-section">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
@@ -237,31 +239,49 @@ export default function HomePage() {
                 Our Subscription Plans
               </h2>
               <p className="text-lg max-w-3xl mx-auto" style={{ color: "#374151", fontWeight: "500" }}>
-                At ElixR, we believe in making fresh, nutritious juices a seamless part of your daily routine. 
+                Choose from fresh juice deliveries, nutritious fruit bowls, or customized wellness plans. 
                 Our subscription plans are designed to bring you the best of health with convenience.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {weeklyKickstarterPlan && (
-                <div className="animate-fade-in">
-                  <SubscriptionOptionCard plan={weeklyKickstarterPlan} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+              {weeklyJuicePlan && (
+                <div className="animate-fade-in h-full">
+                  <SubscriptionOptionCard plan={weeklyJuicePlan} />
                 </div>
               )}
-              {monthlyWellnessPlan && (
-                <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                  <SubscriptionOptionCard plan={monthlyWellnessPlan} isFeatured />
+              {monthlyJuicePlan && (
+                <div className="animate-fade-in h-full" style={{ animationDelay: '100ms' }}>
+                  <SubscriptionOptionCard plan={monthlyJuicePlan} />
+                </div>
+              )}
+              {monthlyFruitBowlPlan && (
+                <div className="animate-fade-in h-full" style={{ animationDelay: '200ms' }}>
+                  <SubscriptionOptionCard plan={monthlyFruitBowlPlan} />
+                </div>
+              )}
+              {monthlyCustomizedPlan && (
+                <div className="animate-fade-in h-full" style={{ animationDelay: '300ms' }}>
+                  <SubscriptionOptionCard plan={monthlyCustomizedPlan} isFeatured />
                 </div>
               )}
             </div>
             
             <div className="text-center mt-12">
-              <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 btn-hover-lift">
-                <Link href="/subscriptions">
-                  Explore All Plans
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 btn-hover-lift">
+                  <Link href="/subscriptions">
+                    Explore All Plans
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="border-2 hover:bg-primary/10">
+                  <Link href="/fruit-bowls/subscriptions">
+                    Fruit Bowl Plans
+                    <Heart className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>

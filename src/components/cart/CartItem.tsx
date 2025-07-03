@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { useCart } from '@/hooks/useCart';
 import { Minus, Plus, Trash2, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { JUICES } from '@/lib/constants';
+import { useEffect, useState } from 'react';
 
 // Import the unified cart item types from CartContext
 type RegularCartItem = {
@@ -32,6 +34,7 @@ type SubscriptionCartItem = {
     subscriptionDuration: number;
     basePrice: number;
     selectedJuices: { juiceId: string; quantity: number }[];
+    selectedFruitBowls?: { fruitBowlId: string; quantity: number }[];
   };
   image?: string;
 };
@@ -44,6 +47,27 @@ interface CartItemProps {
 
 const CartItem = ({ item }: CartItemProps) => {
   const { updateQuantity, removeFromCart } = useCart();
+  const [fruitBowls, setFruitBowls] = useState<any[]>([]);
+
+  // Fetch fruit bowls for name resolution
+  useEffect(() => {
+    const fetchFruitBowls = async () => {
+      try {
+        const response = await fetch('/api/fruit-bowls');
+        if (response.ok) {
+          const data = await response.json();
+          setFruitBowls(data.fruitBowls || []); // Fix: use data.fruitBowls instead of data
+        }
+      } catch (error) {
+        console.error('Failed to fetch fruit bowls:', error);
+        setFruitBowls([]); // Set empty array as fallback
+      }
+    };
+
+    if (item.type === 'subscription' && item.subscriptionData.selectedFruitBowls && item.subscriptionData.selectedFruitBowls.length > 0) {
+      fetchFruitBowls();
+    }
+  }, [item]);
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity < 1) {
@@ -88,6 +112,52 @@ const CartItem = ({ item }: CartItemProps) => {
             <p className="text-sm text-muted-foreground">{item.flavor}</p>
             <p className="text-sm font-semibold text-accent">Rs.{item.price.toFixed(2)} each</p>
           </>
+        )}
+
+        {/* Subscription Details */}
+        {item.type === 'subscription' && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground capitalize">{item.subscriptionData.planFrequency} delivery</p>
+            </div>
+            
+            {/* Selected Juices */}
+            {item.subscriptionData.selectedJuices && item.subscriptionData.selectedJuices.length > 0 && (
+              <div className="text-sm">
+                <p className="font-medium text-foreground mb-1">Juices:</p>
+                <div className="space-y-1">
+                  {item.subscriptionData.selectedJuices.map(sj => {
+                    const juiceInfo = JUICES.find(j => j.id === sj.juiceId);
+                    return (
+                      <p key={sj.juiceId} className="text-muted-foreground">
+                        {sj.quantity}x {juiceInfo ? juiceInfo.name : `Juice (ID: ${sj.juiceId})`}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Selected Fruit Bowls */}
+            {item.subscriptionData.selectedFruitBowls && item.subscriptionData.selectedFruitBowls.length > 0 && (
+              <div className="text-sm">
+                <p className="font-medium text-foreground mb-1">Fruit Bowls:</p>
+                <div className="space-y-1">
+                  {item.subscriptionData.selectedFruitBowls.map(sfb => {
+                    const fruitBowlInfo = fruitBowls.find(fb => fb.id === sfb.fruitBowlId);
+                    return (
+                      <p key={sfb.fruitBowlId} className="text-muted-foreground">
+                        {sfb.quantity}x {fruitBowlInfo ? fruitBowlInfo.name : `Fruit Bowl (ID: ${sfb.fruitBowlId})`}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm font-semibold text-accent">Rs.{item.price.toFixed(2)} per {item.subscriptionData.planFrequency}</p>
+          </div>
         )}
       </div>
 

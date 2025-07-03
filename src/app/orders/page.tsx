@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import OrderRating from '@/components/ratings/OrderRating';
 
 export default function OrdersPage() {
   const { user, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -381,7 +382,7 @@ export default function OrdersPage() {
                   ) : (
                     <div className="space-y-4">
                       {orders.map((order) => (
-                        <OrderCard key={order.id} order={order} />
+                        <OrderCard key={order.id} order={order} user={user} />
                       ))}
                     </div>
                   )}
@@ -463,7 +464,7 @@ export default function OrdersPage() {
             ) : (
               <div className="space-y-6">
                 {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
+                  <OrderCard key={order.id} order={order} user={user} />
                 ))}
                 
                 {/* Load More Button */}
@@ -526,7 +527,7 @@ function formatOrderDate(dateString: string | undefined): string {
 }
 
 // OrderCard component to display individual order details (optimized)
-function OrderCard({ order }: { order: any }) {
+function OrderCard({ order, user }: { order: any; user: any }) {
   // Memoize expensive calculations
   const orderItems = Array.isArray(order.items) ? order.items : [];
   const itemCount = orderItems.length;
@@ -617,10 +618,22 @@ function OrderCard({ order }: { order: any }) {
           </>
         )}
       </CardContent>
-      <CardFooter className="pt-3">
-        <Button variant="outline" size="sm" disabled className="text-xs">
-          Order Details (Coming Soon)
-        </Button>
+      <CardFooter className="pt-3 space-y-2">
+        <div className="flex justify-between items-center w-full">
+          <Button variant="outline" size="sm" disabled className="text-xs">
+            Order Details (Coming Soon)
+          </Button>
+        </div>
+        
+        {/* Rating Component */}
+        <div className="w-full">
+          <OrderRating 
+            order={order} 
+            userId={user?.id} 
+            compact={true}
+            showForm={true}
+          />
+        </div>
       </CardFooter>
     </Card>
   );

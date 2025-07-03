@@ -103,6 +103,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Trigger rating request for completed orders
+    try {
+      const ratingResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ratings/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
+          orderStatus: orderStatus,
+          triggerEmail: false // Set to true if you want to send rating request emails
+        })
+      });
+
+      const ratingResult = await ratingResponse.json();
+      if (!ratingResult.success) {
+        console.error('Failed to trigger rating request:', ratingResult.message);
+      } else {
+        console.log('Rating request triggered successfully for order:', order.id);
+      }
+    } catch (error) {
+      console.error('Error triggering rating request:', error);
+      // Don't fail the webhook for rating request errors
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Order processing completed successfully.'

@@ -14,6 +14,12 @@ export default function SessionValidator() {
 
   useEffect(() => {
     const validateUserSession = async () => {
+      // Skip validation on reset password page to avoid interfering with password reset flow
+      if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+        console.log('[SessionValidator] Skipping validation on reset password page');
+        return;
+      }
+
       // Only validate once per session and if we think we have a user
       if (loading || hasValidated.current) {
         return;
@@ -55,6 +61,12 @@ export default function SessionValidator() {
   // Also validate on focus (when user returns to tab)
   useEffect(() => {
     const handleFocus = async () => {
+      // Skip validation on reset password page
+      if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+        console.log('[SessionValidator] Skipping focus validation on reset password page');
+        return;
+      }
+
       if (!loading && user) {
         const isValid = await ensureValidAuth();
         if (!isValid && typeof window !== 'undefined') {

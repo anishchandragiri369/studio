@@ -21,6 +21,12 @@ export default function OAuthTokenHandler() {
       const hash = window.location.hash;
       if (!hash || !hash.includes('access_token')) return;
 
+      // Don't handle tokens on the reset password page - let the reset component handle them
+      if (window.location.pathname === '/reset-password') {
+        console.log('[OAuthTokenHandler] OAuth tokens detected on reset password page - skipping handling');
+        return;
+      }
+
       console.log('[OAuthTokenHandler] OAuth tokens detected in URL');
 
       try {

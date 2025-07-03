@@ -1,3 +1,25 @@
+/*
+ * Admin Subscription Pause System - Database Schema
+ * 
+ * This script creates the complete admin pause system with proper error handling.
+ * Safe to run multiple times - will not fail if objects already exist.
+ * 
+ * Features:
+ * - Admin pause/reactivate functionality
+ * - 6 PM cutoff logic for delivery scheduling  
+ * - Sunday exclusion in delivery dates
+ * - Automatic cleanup of expired pauses
+ * - Comprehensive audit logging
+ * - Subscription end date extension by pause duration
+ */
+
+-- Validation: Check if we're connected to the right database
+DO $$ 
+BEGIN
+    RAISE NOTICE 'Executing admin subscription pause system setup...';
+    RAISE NOTICE 'Database: %, User: %', current_database(), current_user;
+END $$;
+
 -- Create admin_subscription_pauses table
 CREATE TABLE IF NOT EXISTS admin_subscription_pauses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -35,12 +57,22 @@ ADD COLUMN IF NOT EXISTS admin_reactivated_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS admin_reactivated_by UUID;
 
 -- Update status check constraint to include admin_paused
-ALTER TABLE user_subscriptions 
-DROP CONSTRAINT IF EXISTS user_subscriptions_status_check;
-
-ALTER TABLE user_subscriptions 
-ADD CONSTRAINT user_subscriptions_status_check 
-CHECK (status IN ('active', 'paused', 'expired', 'cancelled', 'admin_paused'));
+DO $$ 
+BEGIN
+    -- Drop constraint if it exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'user_subscriptions_status_check' 
+        AND table_name = 'user_subscriptions'
+    ) THEN
+        ALTER TABLE user_subscriptions DROP CONSTRAINT user_subscriptions_status_check;
+    END IF;
+    
+    -- Add updated constraint
+    ALTER TABLE user_subscriptions 
+    ADD CONSTRAINT user_subscriptions_status_check 
+    CHECK (status IN ('active', 'paused', 'expired', 'cancelled', 'admin_paused'));
+END $$;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_admin_subscription_pauses_status 
@@ -70,9 +102,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_admin_subscription_pauses_updated_at
-    BEFORE UPDATE ON admin_subscription_pauses
-    FOR EACH ROW EXECUTE FUNCTION update_admin_pause_updated_at();
+-- Create trigger with proper error handling
+DO $$ 
+BEGIN
+    -- Drop trigger if it exists and recreate
+    DROP TRIGGER IF EXISTS update_admin_subscription_pauses_updated_at ON admin_subscription_pauses;
+    
+    CREATE TRIGGER update_admin_subscription_pauses_updated_at
+        BEFORE UPDATE ON admin_subscription_pauses
+        FOR EACH ROW EXECUTE FUNCTION update_admin_pause_updated_at();
+        
+    RAISE NOTICE 'Trigger update_admin_subscription_pauses_updated_at created successfully';
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Trigger creation: %', SQLERRM;
+END $$;
 
 -- Add comments for documentation
 COMMENT ON TABLE admin_subscription_pauses IS 'Tracks admin-initiated pauses affecting multiple subscriptions (e.g., holidays, emergencies)';
@@ -186,8 +229,57 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Grant appropriate permissions (adjust as needed for your setup)
--- GRANT SELECT, INSERT, UPDATE ON admin_subscription_pauses TO authenticated;
--- GRANT SELECT, INSERT ON admin_audit_logs TO authenticated;
--- GRANT EXECUTE ON FUNCTION get_admin_pause_summary() TO authenticated;
--- GRANT EXECUTE ON FUNCTION cleanup_expired_admin_pauses() TO authenticated;
+-- Grant appropriate permissions (with error handling)
+DO $$ 
+BEGIN
+    -- Grant permissions with error handling
+    BEGIN
+        GRANT SELECT, INSERT, UPDATE ON admin_subscription_pauses TO authenticated;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'admin_subscription_pauses permissions: %', SQLERRM;
+    END;
+    
+    BEGIN
+        GRANT SELECT, INSERT ON admin_audit_logs TO authenticated;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'admin_audit_logs permissions: %', SQLERRM;
+    END;
+    
+    BEGIN
+        GRANT EXECUTE ON FUNCTION get_admin_pause_summary() TO authenticated;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'get_admin_pause_summary permissions: %', SQLERRM;
+    END;
+    
+    BEGIN
+        GRANT EXECUTE ON FUNCTION cleanup_expired_admin_pauses() TO authenticated;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'cleanup_expired_admin_pauses permissions: %', SQLERRM;
+    END;
+    
+    BEGIN
+        GRANT EXECUTE ON FUNCTION calculate_reactivation_delivery_date(TIMESTAMP WITH TIME ZONE) TO authenticated;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'calculate_reactivation_delivery_date permissions: %', SQLERRM;
+    END;
+END $$;
+
+-- Success message and validation
+DO $$ 
+BEGIN
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Admin Subscription Pause System Setup Complete!';
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Tables created: admin_subscription_pauses, admin_audit_logs';
+    RAISE NOTICE 'Columns added: user_subscriptions (admin pause tracking)';
+    RAISE NOTICE 'Functions created: get_admin_pause_summary, cleanup_expired_admin_pauses, calculate_reactivation_delivery_date';
+    RAISE NOTICE 'Triggers created: update_admin_subscription_pauses_updated_at';
+    RAISE NOTICE 'Indexes created: Performance indexes for admin pause operations';
+    RAISE NOTICE '';
+    RAISE NOTICE 'Next steps:';
+    RAISE NOTICE '1. Test admin pause functionality at /admin/subscriptions';
+    RAISE NOTICE '2. Verify reactivation 6 PM cutoff logic';
+    RAISE NOTICE '3. Test delivery scheduling with Sunday exclusion';
+    RAISE NOTICE '4. Verify cron job calls cleanup_expired_admin_pauses()';
+    RAISE NOTICE '================================================';
+END $$;

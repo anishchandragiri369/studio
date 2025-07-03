@@ -188,34 +188,75 @@ export default function SubscriptionsPage() {
               </p>
             </div>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="glass border-border/50">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter: <span className="capitalize ml-1">{frequencyFilter}</span>
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>              <DropdownMenuContent className="glass-card border-0">
-                <DropdownMenuItem onClick={e => {
-                  e.preventDefault();
-                  handlePlanNavigation('all');
-                }}>
-                  All Plans
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={e => {
-                  e.preventDefault();
-                  handlePlanNavigation('weekly');
-                }}>
-                  Weekly Plans
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={e => {
-                  e.preventDefault();
-                  handlePlanNavigation('monthly');
-                }}>
-                  Monthly Plans
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Plan Type Navigation */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="glass border-border/50">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Plan Types
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="glass-card border-0">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    router.push('/subscriptions');
+                  }}>
+                    🧃 All Plans
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    router.push('/subscriptions?type=juice');
+                  }}>
+                    🥤 Juice Plans
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    router.push('/fruit-bowls/subscriptions');
+                  }}>
+                    🥣 Fruit Bowl Plans
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    router.push('/subscriptions?type=customized');
+                  }}>
+                    ✨ Customized Plans
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Frequency Filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="glass border-border/50">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter: <span className="capitalize ml-1">{frequencyFilter}</span>
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="glass-card border-0">
+                  <DropdownMenuItem onClick={e => {
+                    e.preventDefault();
+                    handlePlanNavigation('all');
+                  }}>
+                    All Plans
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={e => {
+                    e.preventDefault();
+                    handlePlanNavigation('weekly');
+                  }}>
+                    Weekly Plans
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={e => {
+                    e.preventDefault();
+                    handlePlanNavigation('monthly');
+                  }}>
+                    Monthly Plans
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {filteredPlans.length > 0 ? (
