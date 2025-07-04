@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { JUICES } from '@/lib/constants';
+import { useState, useEffect } from 'react';
+import { JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Plus, Minus, ShoppingCart, Check } from 'lucide-react';
 import Image from 'next/image';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import type { Juice } from '@/lib/types';
 
 interface OneDayDetoxBuilderProps {
   onClose?: () => void;
@@ -17,18 +18,46 @@ interface OneDayDetoxBuilderProps {
 export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback
   const [selectedJuices, setSelectedJuices] = useState<{ [key: string]: number }>({});
   const [selectedFruitBowls, setSelectedFruitBowls] = useState<{ [key: string]: number }>({});
 
+  // Fetch juices from API
+  useEffect(() => {
+    const fetchJuices = async () => {
+      try {
+        const response = await fetch('/api/juices');
+        if (response.ok) {
+          const data = await response.json();
+          const juicesArray = data.juices || data || [];
+          if (Array.isArray(juicesArray)) {
+            setJuices(juicesArray);
+          } else {
+            console.error('Juices data is not an array:', data);
+            setJuices(FALLBACK_JUICES);
+          }
+        } else {
+          console.error('Failed to fetch juices:', response.status, response.statusText);
+          setJuices(FALLBACK_JUICES);
+        }
+      } catch (error) {
+        console.error('Error fetching juices:', error);
+        setJuices(FALLBACK_JUICES);
+      }
+    };
+
+    fetchJuices();
+  }, []);
+
   // Get available juices (excluding detox plans and fruit bowls)
-  const availableJuices = JUICES.filter(juice => 
+  const availableJuices = juices.filter((juice: Juice) => 
     juice.category !== 'Detox Plans' && 
     juice.category !== 'Fruit Bowls' &&
     juice.availability !== 'Out of Stock'
   );
 
   // Get available fruit bowls
-  const availableFruitBowls = JUICES.filter(juice => 
+  const availableFruitBowls = juices.filter((juice: Juice) => 
     juice.category === 'Fruit Bowls' &&
     juice.availability !== 'Out of Stock'
   );
@@ -43,7 +72,7 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
     
     // Add juice prices
     Object.entries(selectedJuices).forEach(([juiceId, quantity]) => {
-      const juice = availableJuices.find(j => j.id === juiceId);
+      const juice = availableJuices.find((j: Juice) => j.id === juiceId);
       if (juice) {
         total += juice.price * quantity;
       }
@@ -51,7 +80,7 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
 
     // Add fruit bowl prices
     Object.entries(selectedFruitBowls).forEach(([bowlId, quantity]) => {
-      const bowl = availableFruitBowls.find(b => b.id === bowlId);
+      const bowl = availableFruitBowls.find((b: Juice) => b.id === bowlId);
       if (bowl) {
         total += bowl.price * quantity;
       }
@@ -146,7 +175,7 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
       <section className="mb-12">
         <h3 className="text-2xl font-semibold mb-6">Choose Your Juices</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {availableJuices.map(juice => (
+          {availableJuices.map((juice: Juice) => (
             <Card key={juice.id} className="overflow-hidden h-fit">
               <div className="relative h-40 w-full bg-white flex items-center justify-center">
                 <Image
@@ -199,7 +228,7 @@ export default function OneDayDetoxBuilder({ onClose }: OneDayDetoxBuilderProps)
       <section className="mb-8">
         <h3 className="text-2xl font-semibold mb-6">Choose Your Fruit Bowls</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {availableFruitBowls.map(bowl => (
+          {availableFruitBowls.map((bowl: Juice) => (
             <Card key={bowl.id} className="overflow-hidden h-fit">
               <div className="relative h-40 w-full bg-white flex items-center justify-center">
                 <Image

@@ -1,21 +1,22 @@
 "use client";
 
-import React, { useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { recommendJuiceCombinations } from '@/ai/flows/recommend-juice-combinations'; // AI Flow
 import type { RecommendJuiceCombinationsInput, AIJuiceRecommendationOutput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { MOCK_USER_ORDER_HISTORY, MOCK_AI_PREFERENCES_INPUT } from '@/lib/constants';
+import { MOCK_USER_ORDER_HISTORY, MOCK_AI_PREFERENCES_INPUT, JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import { useCart } from '@/hooks/useCart';
-import { JUICES } from '@/lib/constants';
 import { useToast } from "@/hooks/use-toast";
+import type { Juice } from '@/lib/types';
 
 const JuiceRecommenderClient = () => {
   const [recommendations, setRecommendations] = useState<AIJuiceRecommendationOutput['recommendations'] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -23,6 +24,32 @@ const JuiceRecommenderClient = () => {
   const pastOrders = MOCK_USER_ORDER_HISTORY;
   const preferences = MOCK_AI_PREFERENCES_INPUT;
 
+  // Fetch juices from API
+  useEffect(() => {
+    const fetchJuices = async () => {
+      try {
+        const response = await fetch('/api/juices');
+        if (response.ok) {
+          const data = await response.json();
+          const juicesArray = data.juices || data || [];
+          if (Array.isArray(juicesArray)) {
+            setJuices(juicesArray);
+          } else {
+            console.error('Juices data is not an array:', data);
+            setJuices(FALLBACK_JUICES);
+          }
+        } else {
+          console.error('Failed to fetch juices:', response.status, response.statusText);
+          setJuices(FALLBACK_JUICES);
+        }
+      } catch (error) {
+        console.error('Error fetching juices:', error);
+        setJuices(FALLBACK_JUICES);
+      }
+    };
+
+    fetchJuices();
+  }, []);
 
   const handleGetRecommendations = async () => {
     setError(null);
@@ -49,7 +76,7 @@ const JuiceRecommenderClient = () => {
   const handleAddCombinationToCart = (combo: AIJuiceRecommendationOutput['recommendations'][0]) => {
     if (combo.juices && Array.isArray(combo.juices) && combo.juices.length > 0) {
       combo.juices.forEach(recommendedJuice => {
-        const juiceDetails = JUICES.find(j => j.name === recommendedJuice.juiceName);
+        const juiceDetails = juices.find((j: Juice) => j.name === recommendedJuice.juiceName);
         if (juiceDetails) {
           addToCart(juiceDetails, recommendedJuice.quantity);
         } else {

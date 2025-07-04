@@ -8,13 +8,11 @@ import {
   ArrowRightLeft, 
   TrendingUp, 
   DollarSign, 
-  Package,
   AlertTriangle,
   CheckCircle,
   Clock,
   Eye,
-  BarChart3,
-  Calendar
+  BarChart3
 } from 'lucide-react';
 import SubscriptionAnalyticsDashboard from '@/components/admin/SubscriptionAnalyticsDashboard';
 import DeliveryWindowManagement from '@/components/admin/DeliveryWindowManagement';

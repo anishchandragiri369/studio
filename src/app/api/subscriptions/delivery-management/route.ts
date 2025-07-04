@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import { generateSubscriptionDeliveryDatesWithSettings, calculateNextDeliveryDateWithSettings } from '@/lib/deliverySchedulerWithSettings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,23 +79,25 @@ async function generateDeliverySchedule(subscription: any) {
     }
 
     const startDate = new Date(subscription.next_delivery_date);
-    const frequency = subscription.delivery_frequency;
     
-    // Generate delivery schedule for next 2 months
-    let deliveryDates: Date[] = [];
-    
-    if (frequency === 'monthly') {
-      deliveryDates = SubscriptionManager.generateMonthlyDeliverySchedule(startDate, 2);
-    } else {
-      // For weekly, generate next 8 weeks
-      for (let i = 0; i < 8; i++) {
-        const nextDate = SubscriptionManager.getNextScheduledDelivery(
-          new Date(startDate.getTime() + (i * 7 * 24 * 60 * 60 * 1000)),
-          'weekly'
-        );
-        deliveryDates.push(nextDate);
-      }
+    // Determine subscription type based on subscription details
+    let subscriptionType = 'customized'; // default
+    if (subscription.plan_id?.toLowerCase().includes('juice') || 
+        (subscription.selected_juices && subscription.selected_juices.length > 0)) {
+      subscriptionType = 'juices';
+    } else if (subscription.plan_id?.toLowerCase().includes('fruit') && 
+               subscription.plan_id?.toLowerCase().includes('bowl')) {
+      subscriptionType = 'fruit_bowls';
     }
+    
+    // Use admin-configurable delivery scheduling for next 2 months
+    const subscriptionDeliveryDates = await generateSubscriptionDeliveryDatesWithSettings(
+      subscriptionType,
+      2, // 2 months
+      startDate
+    );
+    
+    const deliveryDates = subscriptionDeliveryDates.deliveryDates;
 
     // Remove existing future delivery records
     await supabase
@@ -109,7 +112,7 @@ async function generateDeliverySchedule(subscription: any) {
       subscription_id: subscription.id,
       delivery_date: date.toISOString(),
       status: 'scheduled',
-      items: subscription.selected_juices || [],
+      items: subscription.selected_juices ?? [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
@@ -164,12 +167,22 @@ async function updateNextDelivery(subscription: any) {
     }
 
     const currentDate = new Date();
-    const lastDeliveryDate = subscription.next_delivery_date ? new Date(subscription.next_delivery_date) : null;
+    const lastDeliveryDate = subscription.next_delivery_date ? new Date(subscription.next_delivery_date) : currentDate;
     
-    const nextDelivery = SubscriptionManager.getNextScheduledDelivery(
-      currentDate,
-      subscription.delivery_frequency,
-      lastDeliveryDate || undefined
+    // Determine subscription type based on subscription details
+    let subscriptionType = 'customized'; // default
+    if (subscription.plan_id?.toLowerCase().includes('juice') || 
+        (subscription.selected_juices && subscription.selected_juices.length > 0)) {
+      subscriptionType = 'juices';
+    } else if (subscription.plan_id?.toLowerCase().includes('fruit') && 
+               subscription.plan_id?.toLowerCase().includes('bowl')) {
+      subscriptionType = 'fruit_bowls';
+    }
+    
+    // Use admin-configurable delivery scheduler to calculate next delivery
+    const nextDelivery = await calculateNextDeliveryDateWithSettings(
+      subscriptionType,
+      lastDeliveryDate
     );
 
     // Update subscription

@@ -1,12 +1,12 @@
 
 "use client";
 
-import type { SubscriptionPlan, FruitBowl } from '@/lib/types';
+import type { SubscriptionPlan, FruitBowl, Juice } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Zap, Edit3, Apple, Droplets, Star } from 'lucide-react';
 import Link from 'next/link';
-import { JUICES } from '@/lib/constants'; // Import JUICES to resolve names
+import { JUICES as FALLBACK_JUICES } from '@/lib/constants'; // Fallback juices
 import { useState, useEffect } from 'react';
 
 interface SubscriptionOptionCardProps {
@@ -16,9 +16,37 @@ interface SubscriptionOptionCardProps {
 
 const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOptionCardProps) => {
   const [fruitBowls, setFruitBowls] = useState<FruitBowl[]>([]);
+  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback
 
+  // Fetch juices from API
   useEffect(() => {
-    // Fetch fruit bowls to display names
+    const fetchJuices = async () => {
+      try {
+        const response = await fetch('/api/juices');
+        if (response.ok) {
+          const data = await response.json();
+          const juicesArray = data.juices || data || [];
+          if (Array.isArray(juicesArray)) {
+            setJuices(juicesArray);
+          } else {
+            console.error('Juices data is not an array:', data);
+            setJuices(FALLBACK_JUICES);
+          }
+        } else {
+          console.error('Failed to fetch juices:', response.status, response.statusText);
+          setJuices(FALLBACK_JUICES);
+        }
+      } catch (error) {
+        console.error('Error fetching juices:', error);
+        setJuices(FALLBACK_JUICES);
+      }
+    };
+
+    fetchJuices();
+  }, []);
+
+  // Fetch fruit bowls to display names
+  useEffect(() => {
     if (plan.defaultFruitBowls && plan.defaultFruitBowls.length > 0) {
       fetch('/api/fruit-bowls')
         .then(res => res.json())
@@ -69,7 +97,7 @@ const SubscriptionOptionCard = ({ plan, isFeatured = false }: SubscriptionOption
           <div className="space-y-1 text-sm mb-4">
             <h4 className="font-semibold mb-1">{plan.isCustomizable ? "Suggested starting juices:" : "Includes:"}</h4>
             {plan.defaultJuices.slice(0,3).map(dj => {
-                 const juiceInfo = JUICES.find(j => j.id === dj.juiceId);
+                 const juiceInfo = juices.find((j: Juice) => j.id === dj.juiceId);
                  return (
                    <p key={dj.juiceId} className="flex items-center gap-2 text-muted-foreground">
                       <CheckCircle size={16} className="text-green-500 flex-shrink-0" />

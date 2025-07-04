@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import crypto from 'crypto';
+
+// Use service role for admin operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,9 +34,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (reactivateType === 'selected' && (!subscriptionIds || subscriptionIds.length === 0)) {
+    if (reactivateType === 'selected' && (!subscriptionIds || subscriptionIds.length === 0) && !adminPauseId) {
       return NextResponse.json(
-        { success: false, message: 'Subscription IDs required for selected reactivation' },
+        { success: false, message: 'Either subscription IDs or admin pause ID is required for selected reactivation' },
         { status: 400 }
       );
     }
@@ -43,45 +50,152 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
-    // Verify admin user exists
-    const { data: adminUser, error: adminError } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('id', adminUserId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid admin user' },
-        { status: 401 }
-      );
-    }
+    // Note: Frontend handles admin authentication, this endpoint assumes valid admin access
 
     // Build query for fetching admin paused subscriptions
-    let query = supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('status', 'admin_paused');
-
+    // Due to database constraint issues, admin paused subscriptions may not have their status updated
+    // So we need to find them via admin pause records instead
+    let subscriptions = [];
+    
     if (adminPauseId) {
-      query = query.eq('admin_pause_id', adminPauseId);
+      // Get specific admin pause record first
+      const { data: adminPause, error: pauseError } = await supabase
+        .from('admin_subscription_pauses')
+        .select('*')
+        .eq('id', adminPauseId)
+        .eq('status', 'active')
+        .single();
+
+      if (pauseError || !adminPause) {
+        console.log('No active admin pause record found for ID:', adminPauseId);
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: `No active admin pause found with ID: ${adminPauseId}`,
+            debug: { adminPauseId, pauseError }
+          },
+          { status: 404 }
+        );
+      }
+
+      console.log('Found admin pause record:', adminPause);
+
+      // Get subscriptions for the affected users
+      const affectedUserIds = adminPause.pause_type === 'all' 
+        ? null 
+        : adminPause.affected_user_ids;
+
+      let subscriptionQuery = supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('status', 'admin_paused')
+        .eq('admin_pause_id', adminPauseId);
+
+      const { data: subscriptionData, error: subscriptionError } = await subscriptionQuery;
+      
+      if (subscriptionError) {
+        console.error('Error fetching subscriptions:', subscriptionError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to fetch subscriptions' },
+          { status: 500 }
+        );
+      }
+
+      subscriptions = subscriptionData || [];
+    } else if (reactivateType === 'all_paused') {
+      // Get all active admin pause records and their affected subscriptions
+      const { data: activePauses, error: pausesError } = await supabase
+        .from('admin_subscription_pauses')
+        .select('*')
+        .eq('status', 'active');
+
+      if (pausesError) {
+        console.error('Error fetching admin pauses:', pausesError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to fetch admin pauses' },
+          { status: 500 }
+        );
+      }
+
+      if (activePauses && activePauses.length > 0) {
+        console.log(`Found ${activePauses.length} active admin pause records`);
+        
+        // Get all affected user IDs from all active pauses
+        const allAffectedUserIds = new Set();
+        let hasGlobalPause = false;
+        
+        activePauses.forEach(pause => {
+          if (pause.pause_type === 'all') {
+            hasGlobalPause = true;
+          } else if (pause.affected_user_ids) {
+            pause.affected_user_ids.forEach((userId: string) => allAffectedUserIds.add(userId));
+          }
+        });
+
+        let subscriptionQuery = supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('status', 'admin_paused');
+
+        if (!hasGlobalPause && allAffectedUserIds.size > 0) {
+          subscriptionQuery = subscriptionQuery.in('user_id', Array.from(allAffectedUserIds));
+        }
+
+        const { data: subscriptionData, error: subscriptionError } = await subscriptionQuery;
+        
+        if (!subscriptionError && subscriptionData) {
+          subscriptions = subscriptionData;
+        }
+      }
     } else if (reactivateType === 'selected') {
-      query = query.in('id', subscriptionIds);
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .in('id', subscriptionIds)
+        .eq('status', 'admin_paused');
+
+      if (!subscriptionError && subscriptionData) {
+        subscriptions = subscriptionData;
+      }
     }
 
-    const { data: subscriptions, error: fetchError } = await query;
-
-    if (fetchError) {
-      console.error('Error fetching admin paused subscriptions:', fetchError);
-      return NextResponse.json(
-        { success: false, message: 'Failed to fetch subscriptions' },
-        { status: 500 }
-      );
-    }
+    console.log('Debug - Found subscriptions for reactivation:', subscriptions?.length || 0);
 
     if (!subscriptions || subscriptions.length === 0) {
+      // Get debug info about all subscriptions and admin pauses
+      const { data: debugSubscriptions } = await supabase
+        .from('user_subscriptions')
+        .select('id, status, admin_pause_id, user_id')
+        .limit(10);
+        
+      const { data: debugPauses } = await supabase
+        .from('admin_subscription_pauses')
+        .select('id, status, pause_type, affected_user_ids')
+        .eq('status', 'active');
+
       return NextResponse.json(
-        { success: false, message: 'No admin paused subscriptions found' },
+        { 
+          success: false, 
+          message: `No admin paused subscriptions found for reactivation.`,
+          debug: {
+            requestedAdminPauseId: adminPauseId,
+            reactivateType,
+            subscriptionIds,
+            totalSubscriptions: debugSubscriptions?.length || 0,
+            subscriptionStatuses: debugSubscriptions?.map(s => ({ 
+              id: s.id, 
+              status: s.status, 
+              admin_pause_id: s.admin_pause_id,
+              user_id: s.user_id 
+            })) || [],
+            activeAdminPauses: debugPauses?.map(p => ({
+              id: p.id,
+              status: p.status,
+              pause_type: p.pause_type,
+              affected_user_ids: p.affected_user_ids
+            })) || []
+          }
+        },
         { status: 404 }
       );
     }

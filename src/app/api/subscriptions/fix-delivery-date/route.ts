@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import { generateSubscriptionDeliveryDatesWithSettings } from '@/lib/deliverySchedulerWithSettings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,21 +85,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate proper delivery schedule for the future
+    // Generate proper delivery schedule for the future using admin-configurable settings
     let deliveryDates: Date[] = [];
     
-    if (subscription.delivery_frequency === 'monthly') {
-      deliveryDates = SubscriptionManager.generateMonthlyDeliverySchedule(newNextDelivery, 2);
-    } else {
-      // For weekly, generate next 8 weeks
-      for (let i = 0; i < 8; i++) {
-        const nextDate = SubscriptionManager.getNextScheduledDelivery(
-          new Date(newNextDelivery.getTime() + (i * 7 * 24 * 60 * 60 * 1000)),
-          'weekly'
-        );
-        deliveryDates.push(nextDate);
-      }
+    // Determine subscription type based on subscription details
+    let subscriptionType = 'customized'; // default
+    if (subscription.plan_id?.toLowerCase().includes('juice') || 
+        (subscription.selected_juices && subscription.selected_juices.length > 0)) {
+      subscriptionType = 'juices';
+    } else if (subscription.plan_id?.toLowerCase().includes('fruit') && 
+               subscription.plan_id?.toLowerCase().includes('bowl')) {
+      subscriptionType = 'fruit_bowls';
     }
+    
+    const subscriptionDeliveryDates = await generateSubscriptionDeliveryDatesWithSettings(
+      subscriptionType,
+      2, // 2 months
+      newNextDelivery
+    );
+    deliveryDates = subscriptionDeliveryDates.deliveryDates;
 
     // Remove existing future delivery records
     await supabase
@@ -113,7 +118,7 @@ export async function POST(request: NextRequest) {
       subscription_id: subscriptionId,
       delivery_date: date.toISOString(),
       status: 'scheduled',
-      items: subscription.selected_juices || [],
+      items: subscription.selected_juices ?? [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));

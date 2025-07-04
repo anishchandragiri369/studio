@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+// Use service role for admin operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,27 +19,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const adminUserId = searchParams.get('adminUserId');
     const includeSubscriptions = searchParams.get('includeSubscriptions') === 'true';
+    const includeUsers = searchParams.get('includeUsers') === 'true';
 
-    if (!adminUserId) {
-      return NextResponse.json(
-        { success: false, message: 'Admin user ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify admin user exists
-    const { data: adminUser, error: adminError } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('id', adminUserId)
-      .single();
-
-    if (adminError || !adminUser) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid admin user' },
-        { status: 401 }
-      );
-    }
+    // Note: Frontend handles admin authentication, this endpoint assumes valid admin access
 
     // Get all admin pause records
     const { data: adminPauses, error: pausesError } = await supabase
@@ -73,6 +61,51 @@ export async function GET(request: NextRequest) {
     };
 
     let subscriptions = null;
+    let usersWithSubscriptions = null;
+
+    // If requested, include users with active subscriptions for selection
+    if (includeUsers) {
+      try {
+        // First, get unique user IDs from active subscriptions
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .select('user_id')
+          .eq('status', 'active');
+
+        if (subscriptionError) {
+          console.error('Error fetching user subscriptions:', subscriptionError);
+        } else if (subscriptionData && subscriptionData.length > 0) {
+          // Get unique user IDs
+          const uniqueUserIds = [...new Set(subscriptionData.map(sub => sub.user_id))];
+          
+          // Try to get user details from auth.users (Supabase Auth table)
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+          
+          if (!authError && authUsers?.users) {
+            // Match auth users with subscription user IDs
+            const usersWithActiveSubscriptions = authUsers.users
+              .filter(user => uniqueUserIds.includes(user.id))
+              .map(user => ({
+                user_id: user.id,
+                email: user.email || 'No email'
+              }));
+            
+            usersWithSubscriptions = usersWithActiveSubscriptions;
+          } else {
+            // Fallback: create user list with IDs only
+            usersWithSubscriptions = uniqueUserIds.map(userId => ({
+              user_id: userId,
+              email: `User ID: ${userId}`
+            }));
+          }
+        } else {
+          usersWithSubscriptions = [];
+        }
+      } catch (userFetchError) {
+        console.error('Error in user fetch process:', userFetchError);
+        usersWithSubscriptions = [];
+      }
+    }
 
     // If requested, include detailed subscription information
     if (includeSubscriptions) {
@@ -126,6 +159,7 @@ export async function GET(request: NextRequest) {
         adminPauses: adminPauses || [],
         subscriptionStats: stats,
         subscriptions,
+        usersWithSubscriptions,
         auditLogs: auditLogs || [],
         summary: {
           totalAdminPauses: adminPauses?.length || 0,

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -24,9 +25,7 @@ import {
   Clock,
   AlertCircle,
   History,
-  RefreshCw,
-  UserCheck,
-  UserX
+  RefreshCw
 } from 'lucide-react';
 
 interface SubscriptionStats {
@@ -72,10 +71,14 @@ export default function AdminSubscriptionManagementPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // User selection state
+  const [usersWithSubscriptions, setUsersWithSubscriptions] = useState<{user_id: string, email: string}[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   // Pause dialog state
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [pauseType, setPauseType] = useState<'all' | 'selected'>('all');
-  const [selectedUserIds, setSelectedUserIds] = useState('');
   const [pauseStartDate, setPauseStartDate] = useState('');
   const [pauseEndDate, setPauseEndDate] = useState('');
   const [pauseReason, setPauseReason] = useState('');
@@ -115,7 +118,7 @@ export default function AdminSubscriptionManagementPage() {
       } else {
         toast({
           title: "Error",
-          description: result.message || "Failed to fetch subscription data",
+          description: result.message ?? "Failed to fetch subscription data",
           variant: "destructive",
         });
       }
@@ -128,6 +131,35 @@ export default function AdminSubscriptionManagementPage() {
       });
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const fetchUsersWithSubscriptions = async () => {
+    if (usersWithSubscriptions.length > 0) return; // Already loaded
+    
+    try {
+      setLoadingUsers(true);
+      const response = await fetch(`/api/admin/subscriptions/overview?adminUserId=${user?.id}&includeUsers=true`);
+      const result = await response.json();
+
+      if (result.success && result.data.usersWithSubscriptions) {
+        setUsersWithSubscriptions(result.data.usersWithSubscriptions);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch users with subscriptions",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while fetching users",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -147,10 +179,10 @@ export default function AdminSubscriptionManagementPage() {
       return;
     }
 
-    if (pauseType === 'selected' && !selectedUserIds.trim()) {
+    if (pauseType === 'selected' && selectedUsers.size === 0) {
       toast({
-        title: "Validation Error",
-        description: "User IDs are required for selected pause type",
+        title: "Validation Error", 
+        description: "Please select at least one user for selected pause type",
         variant: "destructive",
       });
       return;
@@ -159,7 +191,7 @@ export default function AdminSubscriptionManagementPage() {
     setPauseSubmitting(true);
     try {
       const userIds = pauseType === 'selected' 
-        ? selectedUserIds.split(',').map(id => id.trim()).filter(id => id)
+        ? Array.from(selectedUsers)
         : [];
 
       const response = await fetch('/api/admin/subscriptions/pause', {
@@ -189,7 +221,7 @@ export default function AdminSubscriptionManagementPage() {
       } else {
         toast({
           title: "Error",
-          description: result.message || "Failed to pause subscriptions",
+          description: result.message ?? "Failed to pause subscriptions",
           variant: "destructive",
         });
       }
@@ -246,7 +278,7 @@ export default function AdminSubscriptionManagementPage() {
       } else {
         toast({
           title: "Error",
-          description: result.message || "Failed to reactivate subscriptions",
+          description: result.message ?? "Failed to reactivate subscriptions",
           variant: "destructive",
         });
       }
@@ -264,10 +296,28 @@ export default function AdminSubscriptionManagementPage() {
 
   const resetPauseForm = () => {
     setPauseType('all');
-    setSelectedUserIds('');
+    setSelectedUsers(new Set());
     setPauseStartDate('');
     setPauseEndDate('');
     setPauseReason('');
+  };
+
+  const handleUserSelection = (userId: string, isSelected: boolean) => {
+    const newSelected = new Set(selectedUsers);
+    if (isSelected) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleSelectAllUsers = () => {
+    if (selectedUsers.size === usersWithSubscriptions.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(usersWithSubscriptions.map(u => u.user_id)));
+    }
   };
 
   const resetReactivateForm = () => {
@@ -404,7 +454,7 @@ export default function AdminSubscriptionManagementPage() {
                 Pause Subscriptions
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Pause Subscriptions</DialogTitle>
                 <DialogDescription>
@@ -414,7 +464,12 @@ export default function AdminSubscriptionManagementPage() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="pause-type">Pause Type</Label>
-                  <Select value={pauseType} onValueChange={(value: 'all' | 'selected') => setPauseType(value)}>
+                  <Select value={pauseType} onValueChange={(value: 'all' | 'selected') => {
+                    setPauseType(value);
+                    if (value === 'selected') {
+                      fetchUsersWithSubscriptions();
+                    }
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -426,14 +481,63 @@ export default function AdminSubscriptionManagementPage() {
                 </div>
 
                 {pauseType === 'selected' && (
-                  <div>
-                    <Label htmlFor="user-ids">User IDs (comma-separated)</Label>
-                    <Textarea
-                      id="user-ids"
-                      placeholder="user-id-1, user-id-2, user-id-3"
-                      value={selectedUserIds}
-                      onChange={(e) => setSelectedUserIds(e.target.value)}
-                    />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Select Users with Active Subscriptions</Label>
+                      {loadingUsers ? (
+                        <div className="text-sm text-muted-foreground">Loading users...</div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectAllUsers}
+                          disabled={usersWithSubscriptions.length === 0}
+                        >
+                          {selectedUsers.size === usersWithSubscriptions.length ? 'Deselect All' : 'Select All'}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {loadingUsers && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        Loading users with active subscriptions...
+                      </div>
+                    )}
+                    
+                    {!loadingUsers && usersWithSubscriptions.length === 0 && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No users with active subscriptions found
+                      </div>
+                    )}
+                    
+                    {!loadingUsers && usersWithSubscriptions.length > 0 && (
+                      <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
+                        {usersWithSubscriptions.map((user) => (
+                          <div key={user.user_id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={user.user_id}
+                              checked={selectedUsers.has(user.user_id)}
+                              onCheckedChange={(checked) => 
+                                handleUserSelection(user.user_id, checked as boolean)
+                              }
+                            />
+                            <Label 
+                              htmlFor={user.user_id} 
+                              className="text-sm cursor-pointer flex-1"
+                            >
+                              {user.email}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {selectedUsers.size > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {selectedUsers.size} user(s) selected
+                      </div>
+                    )}
                   </div>
                 )}
 

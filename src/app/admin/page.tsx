@@ -67,13 +67,22 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const adminFeatures = [    {
+  const adminFeatures = [
+    {
       title: "Subscription Management",
       description: "Admin pause/reactivate controls for all or selected user subscriptions (holidays, emergencies)",
       icon: Users,
       href: "/admin/subscriptions",
       color: "text-red-600",
       bgColor: "bg-red-50"
+    },
+    {
+      title: "Delivery Schedule Settings",
+      description: "Configure delivery frequency and gaps for different subscription types (juices, fruit bowls, customized)",
+      icon: Settings,
+      href: "/admin/delivery-schedule",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50"
     },
     {
       title: "Analytics Dashboard",
@@ -128,7 +137,7 @@ export default function AdminDashboardPage() {
               Admin Dashboard
             </CardTitle>
             <CardDescription className="text-lg">
-              Welcome, {user.user_metadata?.full_name || user.email}. Manage your Elixr juice business from here.
+              Welcome, {user.user_metadata?.full_name ?? user.email}. Manage your Elixr juice business from here.
             </CardDescription>
           </CardHeader>
         </Card>

@@ -1,5 +1,8 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { JUICES, SUBSCRIPTION_PLANS, HOME_CATEGORIES } from '@/lib/constants';
+import { SUBSCRIPTION_PLANS, HOME_CATEGORIES, JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import JuiceCard from '@/components/menu/JuiceCard';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +11,7 @@ import { ArrowRight, Gift, Sparkles, Users, Instagram, MessageCircle, Star, Zap,
 import JuiceRecommenderClient from '@/components/recommendations/JuiceRecommenderClient';
 import SubscriptionOptionCard from '@/components/subscriptions/SubscriptionOptionCard';
 import CategoryScroller from '@/components/categories/CategoryScroller';
+import type { Juice } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 
 // Instagram posts data
@@ -29,7 +33,39 @@ const instagramPosts = [
 ];
 
 export default function HomePage() {
-  const featuredJuices = JUICES.slice(0, 8);
+  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback
+  const [loading, setLoading] = useState(true);
+
+  // Fetch juices from API
+  useEffect(() => {
+    const fetchJuices = async () => {
+      try {
+        const response = await fetch('/api/juices');
+        if (response.ok) {
+          const data = await response.json();
+          const juicesArray = data.juices || data || [];
+          if (Array.isArray(juicesArray)) {
+            setJuices(juicesArray);
+          } else {
+            console.error('Juices data is not an array:', data);
+            setJuices(FALLBACK_JUICES);
+          }
+        } else {
+          console.error('Failed to fetch juices:', response.status, response.statusText);
+          setJuices(FALLBACK_JUICES);
+        }
+      } catch (error) {
+        console.error('Error fetching juices:', error);
+        setJuices(FALLBACK_JUICES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJuices();
+  }, []);
+
+  const featuredJuices = juices.slice(0, 8);
   const weeklyJuicePlan = SUBSCRIPTION_PLANS.find(p => p.id === 'weekly-juice');
   const monthlyJuicePlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly-juice');
   const monthlyFruitBowlPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'monthly-fruit-bowl');

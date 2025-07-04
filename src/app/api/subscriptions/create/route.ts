@@ -4,10 +4,11 @@ import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { CheckoutAddressFormData } from '@/lib/types';
 import { 
   calculateFirstDeliveryDate, 
-  generateSubscriptionDeliveryDates,
+  generateSubscriptionDeliveryDatesWithSettings,
+  clearDeliverySettingsCache,
   type DeliverySchedule,
   type SubscriptionDeliveryDates 
-} from '@/lib/deliveryScheduler';
+} from '@/lib/deliverySchedulerWithSettings';
 import { validatePincode } from '@/lib/pincodeValidation';
 import { logger, createLoggedResponse } from '@/lib/logger';
 import { validateAdminPauseForSubscription } from '@/lib/adminPauseHelper';
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
       planFrequency, 
       customerInfo, 
       selectedJuices,
+      selectedFruitBowls, // Add support for fruit bowls
       subscriptionDuration = 3, // Default to 3 months if not provided
       basePrice = 120 // Default base price if not provided
     } = body;
@@ -113,9 +115,26 @@ export async function POST(req: NextRequest) {
     // Use new delivery scheduling system with 6 PM cutoff
     const deliverySchedule: DeliverySchedule = calculateFirstDeliveryDate(new Date());
     
-    // Generate all delivery dates for the subscription period
-    const subscriptionDeliveryDates: SubscriptionDeliveryDates = generateSubscriptionDeliveryDates(
-      planFrequency as 'weekly' | 'monthly',
+    // Determine subscription type based on plan and selections
+    let subscriptionType = 'customized'; // default for mixed or unspecified plans
+    const planNameLower = planName?.toLowerCase() ?? '';
+    const hasJuices = selectedJuices && selectedJuices.length > 0;
+    const hasFruitBowls = selectedFruitBowls && selectedFruitBowls.length > 0;
+    
+    if (planNameLower.includes('juice') && !hasFruitBowls) {
+      subscriptionType = 'juices';
+    } else if (planNameLower.includes('fruit') && planNameLower.includes('bowl') && !hasJuices) {
+      subscriptionType = 'fruit_bowls';
+    } else if (hasJuices && !hasFruitBowls) {
+      subscriptionType = 'juices'; // Only juices selected
+    } else if (hasFruitBowls && !hasJuices) {
+      subscriptionType = 'fruit_bowls'; // Only fruit bowls selected
+    }
+    // If hasJuices && hasFruitBowls, it remains 'customized'
+    
+    // Generate all delivery dates for the subscription period using admin settings
+    const subscriptionDeliveryDates: SubscriptionDeliveryDates = await generateSubscriptionDeliveryDatesWithSettings(
+      subscriptionType,
       subscriptionDuration, // Duration in months
       deliverySchedule.firstDeliveryDate
     );
@@ -130,7 +149,8 @@ export async function POST(req: NextRequest) {
       plan_id: planId,
       status: 'active',
       delivery_frequency: planFrequency,
-      selected_juices: selectedJuices || [],
+      selected_juices: selectedJuices ?? [],
+      selected_fruit_bowls: selectedFruitBowls ?? [], // Store fruit bowls for mixed subscriptions
       delivery_address: customerInfo,
       total_amount: pricing.finalPrice,
       subscription_duration: subscriptionDuration,
@@ -195,7 +215,7 @@ export async function POST(req: NextRequest) {
         subscription_id: subscription.id,
         delivery_date: deliveryDateTime.toISOString(),
         status: 'scheduled',
-        items: selectedJuices || [],
+        items: selectedJuices ?? [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

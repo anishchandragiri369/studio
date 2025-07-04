@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import { generateSubscriptionDeliveryDatesWithSettings } from '@/lib/deliverySchedulerWithSettings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,16 +57,26 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Generate daily delivery schedule
+        // Generate delivery schedule using admin-configurable settings
         let deliveryDates: Date[] = [];
         
-        if (subscription.delivery_frequency === 'monthly') {
-          // Generate daily deliveries for next 1 month (excluding Sundays)
-          deliveryDates = SubscriptionManager.generateMonthlyDeliverySchedule(newNextDelivery, 1);
-        } else {
-          // For weekly, generate daily for next 2 weeks
-          deliveryDates = SubscriptionManager.generateMonthlyDeliverySchedule(newNextDelivery, 0.5);
+        // Determine subscription type based on subscription details
+        let subscriptionType = 'customized'; // default
+        if (subscription.plan_id?.toLowerCase().includes('juice') || 
+            (subscription.selected_juices && subscription.selected_juices.length > 0)) {
+          subscriptionType = 'juices';
+        } else if (subscription.plan_id?.toLowerCase().includes('fruit') && 
+                   subscription.plan_id?.toLowerCase().includes('bowl')) {
+          subscriptionType = 'fruit_bowls';
         }
+        
+        const duration = subscription.delivery_frequency === 'monthly' ? 1 : 0.5; // 1 month for monthly, 2 weeks for weekly
+        const subscriptionDeliveryDates = await generateSubscriptionDeliveryDatesWithSettings(
+          subscriptionType,
+          duration,
+          newNextDelivery
+        );
+        deliveryDates = subscriptionDeliveryDates.deliveryDates;
 
         // Remove existing future delivery records
         await supabase
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
             subscription_id: subscription.id,
             delivery_date: date.toISOString(),
             status: 'scheduled',
-            items: subscription.selected_juices || [],
+            items: subscription.selected_juices ?? [],
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }));

@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { UserSubscription, UserFruitBowlSubscription } from '@/lib/types';
 import { 
@@ -14,7 +13,6 @@ import {
   Package, 
   Pause, 
   Play, 
-  Trash2, 
   Settings, 
   Loader2, 
   AlertTriangle,

@@ -239,6 +239,7 @@ exports.handler = async (event) => {
           ...customerInfo
         },
         selectedJuices: subscriptionData.selectedJuices || [],
+        selectedFruitBowls: subscriptionData.selectedFruitBowls || [], // Add missing fruit bowls support
         subscriptionDuration: subscriptionData.subscriptionDuration || 3,
         basePrice: subscriptionData.basePrice || subscriptionItem?.price || 120
       };

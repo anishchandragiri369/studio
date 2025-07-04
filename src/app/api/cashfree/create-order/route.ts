@@ -3,14 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { Cashfree , CFEnvironment } from "cashfree-pg";
 import type { CreateOrderRequest } from "cashfree-pg";
 import { supabase } from '@/lib/supabaseClient';
-import nodemailer from 'nodemailer';
-import { google } from 'googleapis';
 
 // Load environment variables
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-const CASHFREE_API_MODE = process.env.CASHFREE_API_MODE as "sandbox" | "production" | undefined || "sandbox"; // Default to sandbox
-const API_VERSION = "2023-08-01"; // Or your desired API version
+const CASHFREE_API_MODE = process.env.CASHFREE_API_MODE as "sandbox" | "production" | undefined ?? "sandbox"; // Default to sandbox
 
 const cashfree = new Cashfree(
   CASHFREE_API_MODE === "production" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
@@ -47,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     // ACCEPT internalOrderId from the request body
-    const { internalOrderId, orderAmount, orderItems, customerInfo } = body;
+    const { internalOrderId, orderAmount, customerInfo } = body;
     console.log("order-id",internalOrderId)
 
     // Basic validation (add more as needed)

@@ -3,10 +3,11 @@ import { supabase } from '@/lib/supabaseClient';
 import type { OrderItem, CheckoutAddressFormData } from '@/lib/types';
 import { 
   calculateFirstDeliveryDate, 
-  generateSubscriptionDeliveryDates,
+  generateSubscriptionDeliveryDatesWithSettings,
+  clearDeliverySettingsCache,
   type DeliverySchedule,
   type SubscriptionDeliveryDates 
-} from '@/lib/deliveryScheduler';
+} from '@/lib/deliverySchedulerWithSettings';
 import { validatePincode } from '@/lib/pincodeValidation';
 import { logger, createLoggedResponse } from '@/lib/logger';
 
@@ -99,8 +100,25 @@ export async function POST(req: NextRequest) {
       }
       
       if (subscriptionInfo?.frequency && subscriptionInfo?.duration) {
-        subscriptionDeliveryDates = generateSubscriptionDeliveryDates(
-          subscriptionInfo.frequency,
+        // Determine subscription type from order items
+        let subscriptionType = 'customized'; // default
+        const subscriptionItem = orderItems.find((item: any) => item.type === 'subscription');
+        
+        if (subscriptionItem) {
+          // Try to determine subscription type from item details
+          if (subscriptionItem.name?.toLowerCase().includes('juice')) {
+            subscriptionType = 'juices';
+          } else if (subscriptionItem.name?.toLowerCase().includes('fruit') && subscriptionItem.name?.toLowerCase().includes('bowl')) {
+            subscriptionType = 'fruit_bowls';
+          } else if (subscriptionItem.category?.toLowerCase().includes('juice')) {
+            subscriptionType = 'juices';
+          } else if (subscriptionItem.category?.toLowerCase().includes('fruit')) {
+            subscriptionType = 'fruit_bowls';
+          }
+        }
+        
+        subscriptionDeliveryDates = await generateSubscriptionDeliveryDatesWithSettings(
+          subscriptionType,
           subscriptionInfo.duration,
           deliverySchedule.firstDeliveryDate
         );

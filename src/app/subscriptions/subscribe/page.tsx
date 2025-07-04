@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
-import { SUBSCRIPTION_PLANS, JUICES } from '@/lib/constants';
+import { SUBSCRIPTION_PLANS, JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import SubscriptionDurationSelector from '@/components/subscriptions/SubscriptionDurationSelector';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { SubscriptionPlan, Juice, FruitBowl } from '@/lib/types';
@@ -31,6 +31,7 @@ function SubscribePageContents() {
   const [selectedDuration, setSelectedDuration] = useState<1 | 2 | 3 | 4 | 6 | 12>(selectedPlan?.frequency === 'weekly' ? 2 : 3);
   const [selectedPricing, setSelectedPricing] = useState<any>(null);
   const [fruitBowls, setFruitBowls] = useState<FruitBowl[]>([]);
+  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback juices
   
   useEffect(() => {
     if (selectedPlan && selectedPlan.isCustomizable) {
@@ -118,6 +119,35 @@ function SubscribePageContents() {
     };
 
     fetchFruitBowls();
+  }, []);
+
+  // Fetch juices from API
+  useEffect(() => {
+    const fetchJuices = async () => {
+      try {
+        const response = await fetch('/api/juices');
+        if (response.ok) {
+          const data = await response.json();
+          // The API returns { juices: [...] }
+          const juicesArray = data.juices || data || [];
+          // Ensure data is an array
+          if (Array.isArray(juicesArray)) {
+            setJuices(juicesArray);
+          } else {
+            console.error('Juices data is not an array:', data);
+            setJuices(FALLBACK_JUICES); // Fallback to constants
+          }
+        } else {
+          console.error('Failed to fetch juices:', response.status, response.statusText);
+          setJuices(FALLBACK_JUICES); // Fallback to constants
+        }
+      } catch (error) {
+        console.error('Error fetching juices:', error);
+        setJuices(FALLBACK_JUICES); // Fallback to constants
+      }
+    };
+
+    fetchJuices();
   }, []);
 
   if (typeof window !== 'undefined') {
@@ -260,7 +290,7 @@ function SubscribePageContents() {
                         <h5 className="font-medium text-xs text-muted-foreground mb-1">Juices:</h5>
                         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                           {selectedPlan.defaultJuices.map(dj => {
-                            const juiceInfo = JUICES.find(j => j.id === dj.juiceId);
+                            const juiceInfo = juices.find(j => j.id === dj.juiceId);
                             return (
                               <li key={dj.juiceId}>{dj.quantity}x {juiceInfo ? juiceInfo.name : `Juice (ID: ${dj.juiceId})`}</li>
                             )
@@ -306,7 +336,7 @@ function SubscribePageContents() {
                   )}
                 </CardHeader>
                 <CardContent className="space-y-4 max-h-[500px] overflow-y-auto p-4">
-                  {JUICES.map(juice => (
+                  {juices.map(juice => (
                     <div key={juice.id} className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-muted/20 transition-colors text-center">
                       <Image 
                         src={juice.image} 
