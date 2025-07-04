@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabaseClient';
 import RewardsDisplay from '@/components/account/RewardsDisplay';
 import OrderRating from '@/components/ratings/OrderRating';
+import { batchCheckOrderRatings } from '@/lib/ratingHelpers';
 
 export default function AccountPage() {
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -56,7 +57,20 @@ export default function AccountPage() {
         setErrorFetchingOrders('Failed to fetch orders. Please try again.');
         setOrders([]);
       } else {
-        setOrders(data as Order[]);
+        const ordersList = data as Order[];
+        
+        // Fetch rating status for all orders
+        if (ordersList.length > 0 && user?.id) {
+          console.log("Account page: Checking batch ratings for orders");
+          batchCheckOrderRatings(ordersList, user.id)
+            .then(() => {
+              console.log("Account page: Updated order rating statuses");
+              // This will trigger a re-render with the updated rating statuses
+              setOrders([...ordersList]);
+            });
+        }
+        
+        setOrders(ordersList);
       }
       setLoadingOrders(false);
     };
@@ -213,83 +227,94 @@ export default function AccountPage() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      {orders.slice(0, 3).map((order) => (
-                        <Card key={order.id} className="bg-muted/30 hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-3">
-                            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                              <CardTitle className="text-lg font-semibold text-primary">Order ID: {order.id}</CardTitle>
-                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                                order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                                order.status === 'Payment Success' ? 'bg-green-100 text-green-700' :
-                                order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                                order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
-                                order.status === 'Pending' ? 'bg-gray-100 text-gray-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>{order.status}</span>
-                            </div>
-                            <CardDescription className="text-xs">
-                              Date: {formatOrderDate((order as any).created_at || (order as any).orderDate)}
-                              <span className="mx-1">|</span>
-                              Total: Rs.{typeof (order as any).total_amount === 'number' && (order as any).total_amount > 0 ? (order as any).total_amount.toFixed(2) : (typeof (order as any).totalAmount === 'number' && (order as any).totalAmount > 0 ? (order as any).totalAmount.toFixed(2) : '—')}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-3 pt-0">
-                            <Separator className="my-2" />
-                            <h4 className="text-sm font-medium mb-1">Items:</h4>
-                            {order.items.map((item: any, idx: number) => (
-                              <div key={item.juiceId || idx} className="flex items-center gap-3 text-sm">
-                                {item.image && (
-                                  <Image
-                                    src={item.image}
-                                    alt={item.juiceName || 'Order item image'}
-                                    width={40}
-                                    height={40}
-                                    className="rounded object-contain border"
-                                    data-ai-hint={(item.juiceName ? item.juiceName.toLowerCase().split(" ").slice(0,2).join(" ") : '')}
-                                    unoptimized={item.image.startsWith('https://placehold.co')}
-                                    onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
-                                  />
-                                )}
-                                <div className="flex-grow">
-                                  <span>{item.quantity}x {(item as any).juiceName || (item as any).name || 'Unknown Juice'}</span>
-                                </div>
-                                <span className="text-muted-foreground">Rs.{typeof (item as any).pricePerItem === 'number' && (item as any).pricePerItem > 0 ? (item.quantity * (item as any).pricePerItem).toFixed(2) : (typeof (item as any).price === 'number' && (item as any).price > 0 ? (item.quantity * (item as any).price).toFixed(2) : '—')}</span>
+                    <>
+                      <div className="space-y-6">
+                        {orders.slice(0, 3).map((order) => (
+                          <Card key={order.id} className="bg-muted/30 hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-3">
+                              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                                <CardTitle className="text-lg font-semibold text-primary">Order ID: {order.id}</CardTitle>
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                  order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                                  order.status === 'Payment Success' ? 'bg-green-100 text-green-700' :
+                                  order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+                                  order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
+                                  order.status === 'Pending' ? 'bg-gray-100 text-gray-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>{order.status}</span>
                               </div>
-                            ))}
-                            {order.shippingAddress && (
-                              <>
-                                <Separator className="my-2" />
-                                <h4 className="text-sm font-medium mb-1">Shipping Address:</h4>
-                                <p className="text-xs text-muted-foreground">
-                                  {order.shippingAddress.firstName} {order.shippingAddress.lastName || ''}<br/>
-                                  {order.shippingAddress.addressLine1}{order.shippingAddress.addressLine2 ? `, ${order.shippingAddress.addressLine2}` : ''}<br/>
-                                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br/>
-                                  {order.shippingAddress.country}
-                                </p>
-                              </>
-                            )}
-                          </CardContent>
-                          <CardFooter className="pt-3 space-y-2">
-                            <div className="flex justify-between items-center w-full">
-                              <Button asChild variant="outline" size="sm">
-                                <Link href="/orders">View All Orders</Link>
-                              </Button>
-                            </div>
-                            
-                            {/* Rating Component */}
-                            <div className="w-full">
-                              <OrderRating 
-                                order={order} 
-                                userId={user?.id} 
-                                compact={false}
-                                showForm={true}
-                              />
-                            </div>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
+                              <CardDescription className="text-xs">
+                                Date: {formatOrderDate((order as any).created_at || (order as any).orderDate)}
+                                <span className="mx-1">|</span>
+                                Total: Rs.{typeof (order as any).total_amount === 'number' && (order as any).total_amount > 0 ? (order as any).total_amount.toFixed(2) : (typeof (order as any).totalAmount === 'number' && (order as any).totalAmount > 0 ? (order as any).totalAmount.toFixed(2) : '—')}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pt-0">
+                              <Separator className="my-2" />
+                              <h4 className="text-sm font-medium mb-1">Items:</h4>
+                              {order.items.map((item: any, idx: number) => (
+                                <div key={item.juiceId || idx} className="flex items-center gap-3 text-sm">
+                                  {item.image && (
+                                    <Image
+                                      src={item.image}
+                                      alt={item.juiceName || 'Order item image'}
+                                      width={40}
+                                      height={40}
+                                      className="rounded object-contain border"
+                                      data-ai-hint={(item.juiceName ? item.juiceName.toLowerCase().split(" ").slice(0,2).join(" ") : '')}
+                                      unoptimized={item.image.startsWith('https://placehold.co')}
+                                      onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
+                                    />
+                                  )}
+                                  <div className="flex-grow">
+                                    <span>{item.quantity}x {(item as any).juiceName || (item as any).name || 'Unknown Juice'}</span>
+                                  </div>
+                                  <span className="text-muted-foreground">Rs.{typeof (item as any).pricePerItem === 'number' && (item as any).pricePerItem > 0 ? (item.quantity * (item as any).pricePerItem).toFixed(2) : (typeof (item as any).price === 'number' && (item as any).price > 0 ? (item.quantity * (item as any).price).toFixed(2) : '—')}</span>
+                                </div>
+                              ))}
+                              {order.shippingAddress && (
+                                <>
+                                  <Separator className="my-2" />
+                                  <h4 className="text-sm font-medium mb-1">Shipping Address:</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    {order.shippingAddress.firstName} {order.shippingAddress.lastName || ''}<br/>
+                                    {order.shippingAddress.addressLine1}{order.shippingAddress.addressLine2 ? `, ${order.shippingAddress.addressLine2}` : ''}<br/>
+                                    {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br/>
+                                    {order.shippingAddress.country}
+                                  </p>
+                                </>
+                              )}
+                            </CardContent>
+                            <CardFooter className="pt-3 space-y-2">
+                              {/* Rating Component */}
+                              <div className="w-full">
+                                <OrderRating 
+                                  order={order} 
+                                  userId={user?.id} 
+                                  compact={false}
+                                  showForm={true}
+                                />
+                              </div>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {/* View All Orders Button - more prominent */}
+                      {orders.length > 0 && (
+                        <div className="mt-8 text-center">
+                          <Button asChild size="lg" className="px-8">
+                            <Link href="/orders">
+                              <ShoppingBag className="mr-2 h-5 w-5" />
+                              View All Orders
+                            </Link>
+                          </Button>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            See your complete order history and manage ratings
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </section>
               </CardContent>

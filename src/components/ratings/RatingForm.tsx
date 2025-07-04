@@ -111,25 +111,35 @@ export default function RatingForm({ order, userId, onSuccess, onCancel }: Ratin
     try {
       const productRatingsList = Object.values(productRatings).filter(rating => rating.rating > 0);
 
+      // Use direct fetch to the API endpoint with relative URL to ensure proper routing
+      console.log("Submitting rating for order:", order.id);
+      
+      // Create the request payload
+      const payload = {
+        orderId: order.id,
+        userId,
+        rating: overallRating,
+        qualityRating: qualityRating ?? null,
+        deliveryRating: deliveryRating ?? null,
+        serviceRating: serviceRating ?? null,
+        feedbackText: feedbackText.trim() || null,
+        anonymous,
+        productRatings: productRatingsList
+      };
+      
+      console.log("Rating payload:", payload);
+      
       const response = await fetch('/api/ratings/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderId: order.id,
-          userId,
-          rating: overallRating,
-          qualityRating: qualityRating || null,
-          deliveryRating: deliveryRating || null,
-          serviceRating: serviceRating || null,
-          feedbackText: feedbackText.trim() || null,
-          anonymous,
-          productRatings: productRatingsList
-        }),
+        body: JSON.stringify(payload),
       });
 
+      console.log("Rating submission response status:", response.status);
       const result = await response.json();
+      console.log("Rating submission response:", result);
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to submit rating');
@@ -139,6 +149,11 @@ export default function RatingForm({ order, userId, onSuccess, onCancel }: Ratin
         title: "Rating Submitted!",
         description: result.message || "Thank you for your feedback!",
       });
+
+      // Emit event to refresh rewards display
+      window.dispatchEvent(new CustomEvent('ratingSubmitted', {
+        detail: { orderId: order.id, pointsEarned: result.data?.pointsEarned || 0 }
+      }));
 
       if (onSuccess) {
         onSuccess();

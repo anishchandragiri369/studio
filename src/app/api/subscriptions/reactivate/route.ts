@@ -1,9 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  if (!supabase) {
+  // Create a local supabase client if the global one is not available
+  const client = supabase || (isSupabaseConfigured ? createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ) : null);
+  
+  if (!client) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503 }
@@ -22,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch subscription details
-    const { data: subscription, error: fetchError } = await supabase
+    const { data: subscription, error: fetchError } = await client
       .from('user_subscriptions')
       .select('*')
       .eq('id', subscriptionId)
@@ -41,7 +48,7 @@ export async function POST(req: NextRequest) {
     
     if (!reactivationCheck.canReactivate) {
       // Mark subscription as expired
-      await supabase
+      await client
         .from('user_subscriptions')
         .update({ status: 'expired' })
         .eq('id', subscriptionId);
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
     const pauseDurationDays = reactivationResult.pauseDurationDays;
 
     // Update subscription status to active with extended end date
-    const { data: updatedSubscription, error: updateError } = await supabase
+    const { data: updatedSubscription, error: updateError } = await client
       .from('user_subscriptions')
       .update({
         status: 'active',
@@ -90,7 +97,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }    // Create new delivery schedule
-    const { error: deliveryError } = await supabase
+    const { error: deliveryError } = await client
       .from('subscription_deliveries')
       .insert({
         subscription_id: subscriptionId,

@@ -224,7 +224,7 @@ export default function PrivacyPolicyPage() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                        You may pause your subscription at any time with 24 hours notice before next delivery.
+                        You may pause your subscription at any time within 6PM before next delivery.
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></span>

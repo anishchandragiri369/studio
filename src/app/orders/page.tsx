@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import OrderRating from '@/components/ratings/OrderRating';
+import { batchCheckOrderRatings } from '@/lib/ratingHelpers';
+import { cacheOrders, getCachedOrders, clearOrderCache } from '@/lib/orderCache';
 
 export default function OrdersPage() {
   const { user, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -55,7 +57,24 @@ export default function OrdersPage() {
         return;
       }
 
-      setLoadingOrders(true);
+      // Check for cached orders first for immediate display
+      const cachedOrders = getCachedOrders(user.id);
+      if (cachedOrders && cachedOrders.length > 0) {
+        console.log("Using cached orders while fetching fresh data");
+        setOrders(cachedOrders);
+        setLoadingOrders(false); // Immediately set loading to false to show cached orders
+        
+        // Still fetch rating status for cached orders
+        if (user?.id) {
+          batchCheckOrderRatings(cachedOrders, user.id)
+            .then(() => {
+              setOrders([...cachedOrders]);
+            });
+        }
+      } else {
+        setLoadingOrders(true);
+      }
+
       setErrorFetchingOrders(null);
 
       try {
@@ -69,7 +88,9 @@ export default function OrdersPage() {
             status,
             order_type,
             items,
-            shipping_address
+            shipping_address,
+            user_id,
+            rating_submitted
           `)
           .eq('user_id', user.id)
           .in('status', ['payment_success', 'Payment Success', 'delivered', 'shipped', 'processing'])
@@ -78,16 +99,42 @@ export default function OrdersPage() {
 
         if (error) {
           setErrorFetchingOrders('Failed to fetch orders. Please try again.');
-          setOrders([]);
+          // Keep using cached orders if we have them
+          if (!cachedOrders || cachedOrders.length === 0) {
+            setOrders([]);
+          }
         } else {
-          setOrders(data || []);
-          setHasMoreOrders((data?.length || 0) === ORDERS_PER_PAGE);
+          const ordersList = data || [];
+          
+          // Fetch rating status for all orders
+          if (ordersList.length > 0 && user?.id) {
+            console.log("Checking batch ratings for orders");
+            batchCheckOrderRatings(ordersList, user.id)
+              .then(() => {
+                console.log("Updated order rating statuses");
+                // This will trigger a re-render with the updated rating statuses
+                setOrders([...ordersList]);
+                
+                // Cache the updated orders
+                cacheOrders(ordersList, user.id);
+              });
+          } else {
+            setOrders(ordersList);
+            cacheOrders(ordersList, user.id);
+          }
+          
+          setHasMoreOrders((ordersList.length || 0) === ORDERS_PER_PAGE);
           setCurrentPage(0);
+          setLoadingOrders(false);
         }
       } catch (error) {
+        console.error('Error fetching orders:', error);
         setErrorFetchingOrders('An unexpected error occurred.');
-        setOrders([]);
-      } finally {
+        
+        // Keep using cached orders if we have them
+        if (!cachedOrders || cachedOrders.length === 0) {
+          setOrders([]);
+        }
         setLoadingOrders(false);
       }
     };
@@ -95,6 +142,13 @@ export default function OrdersPage() {
     if (user && isSupabaseConfigured) {
       fetchOrders();
     }
+    
+    // Clear cache on logout
+    return () => {
+      if (user && isSupabaseConfigured) {
+        clearOrderCache(user.id);
+      }
+    };
   }, [user, isSupabaseConfigured, ORDERS_PER_PAGE]);
 
   // Function to fetch orders by email for non-authenticated users
@@ -625,12 +679,12 @@ function OrderCard({ order, user }: { order: any; user: any }) {
           </Button>
         </div>
         
-        {/* Rating Component */}
+        {/* Rating Component - Using full form view for proper rating submission */}
         <div className="w-full">
           <OrderRating 
             order={order} 
             userId={user?.id} 
-            compact={true}
+            compact={false}
             showForm={true}
           />
         </div>

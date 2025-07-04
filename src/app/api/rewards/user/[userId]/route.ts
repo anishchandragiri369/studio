@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 
 // CORS headers
 const corsHeaders = {
@@ -7,6 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+// Create admin client for bypassing RLS
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminClient = supabaseServiceKey && process.env.NEXT_PUBLIC_SUPABASE_URL 
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseServiceKey)
+  : null;
 
 // Handle preflight OPTIONS request
 export async function OPTIONS() {
@@ -20,7 +27,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  if (!supabase) {
+  const dbClient = adminClient || supabase;
+  
+  if (!dbClient) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503, headers: corsHeaders }
@@ -37,8 +46,10 @@ export async function GET(
       );
     }
 
+    console.log(`Fetching rewards for user ${userId} using ${adminClient ? 'admin' : 'anon'} client`);
+
     // Fetch user rewards
-    const { data: rewards, error: rewardsError } = await supabase
+    const { data: rewards, error: rewardsError } = await dbClient
       .from('user_rewards')
       .select('*')
       .eq('user_id', userId)
@@ -66,6 +77,8 @@ export async function GET(
       data: {
         userId: rewards.user_id,
         totalPoints: rewards.total_points,
+        availablePoints: rewards.available_points || (rewards.total_points - (rewards.redeemed_points || 0)),
+        redeemedPoints: rewards.redeemed_points || 0,
         totalEarned: rewards.total_earned,
         referralCode: rewards.referral_code,
         referralsCount: rewards.referrals_count,

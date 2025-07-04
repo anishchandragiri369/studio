@@ -1,16 +1,40 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
+  console.log("Rating submission API called");
+  
   if (!supabase) {
+    console.error("Database connection not available - Supabase client not initialized");
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503 }
     );
   }
+  
+  // Create a Supabase client with the user's session token to respect RLS
+  // or use service role client to bypass RLS entirely
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  let adminClient = null;
+  if (supabaseUrl && supabaseServiceKey) {
+    adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+      }
+    });
+    console.log("Created admin client with service role");
+  } else {
+    console.log("Unable to create admin client, service role key missing");
+  }
 
   try {
     const body = await req.json();
+    console.log("Rating submission request body:", JSON.stringify(body));
+    
     const {
       orderId,
       userId,
@@ -39,6 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify that the order belongs to the user
+    console.log("Verifying order exists and belongs to user:", { orderId, userId });
+    
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('id, user_id, status, items')
@@ -46,7 +72,16 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
       .single();
 
-    if (orderError || !order) {
+    if (orderError) {
+      console.error("Error fetching order:", orderError);
+      return NextResponse.json(
+        { success: false, message: 'Error verifying order: ' + orderError.message },
+        { status: 404 }
+      );
+    }
+    
+    if (!order) {
+      console.error("Order not found or does not belong to user:", { orderId, userId });
       return NextResponse.json(
         { success: false, message: 'Order not found or access denied.' },
         { status: 404 }
@@ -77,25 +112,42 @@ export async function POST(req: NextRequest) {
     }
 
     // Start transaction - insert order rating
-    const { data: orderRating, error: ratingError } = await supabase
-      .from('order_ratings')
-      .insert([{
-        order_id: orderId,
-        user_id: userId,
-        rating,
-        quality_rating: qualityRating,
-        delivery_rating: deliveryRating,
-        service_rating: serviceRating,
-        feedback_text: feedbackText?.trim() || null,
-        anonymous
-      }])
-      .select()
-      .single();
+    console.log("Inserting order rating for:", { orderId, userId, rating });
+    
+    let orderRating = null;
+    try {
+      const dbClient = adminClient || supabase;
+      console.log("Using admin client:", !!adminClient);
+      
+      const { data: ratingData, error: ratingError } = await dbClient
+        .from('order_ratings')
+        .insert([{
+          order_id: orderId,
+          user_id: userId,
+          rating,
+          quality_rating: qualityRating,
+          delivery_rating: deliveryRating,
+          service_rating: serviceRating,
+          feedback_text: feedbackText?.trim() ?? null,
+          anonymous
+        }])
+        .select()
+        .single();
 
-    if (ratingError) {
-      console.error('Error inserting order rating:', ratingError);
+      if (ratingError) {
+        console.error('Error inserting order rating:', ratingError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to submit rating: ' + ratingError.message },
+          { status: 500 }
+        );
+      }
+      
+      orderRating = ratingData;
+      console.log("Order rating inserted successfully:", orderRating);
+    } catch (insertError) {
+      console.error('Exception during order rating insertion:', insertError);
       return NextResponse.json(
-        { success: false, message: 'Failed to submit rating.' },
+        { success: false, message: 'Failed to submit rating due to database error.' },
         { status: 500 }
       );
     }
@@ -103,6 +155,8 @@ export async function POST(req: NextRequest) {
     // Insert product ratings if provided
     const productRatingInserts = [];
     if (productRatings && productRatings.length > 0) {
+      console.log("Processing product ratings:", productRatings.length);
+      
       for (const productRating of productRatings) {
         const {
           juiceId,
@@ -123,7 +177,7 @@ export async function POST(req: NextRequest) {
             rating: productRatingValue,
             taste_rating: tasteRating,
             freshness_rating: freshnessRating,
-            feedback_text: productFeedback?.trim() || null,
+            feedback_text: productFeedback?.trim() ?? null,
             would_recommend: wouldRecommend,
             anonymous
           });
@@ -131,42 +185,56 @@ export async function POST(req: NextRequest) {
       }
 
       if (productRatingInserts.length > 0) {
-        const { error: productRatingError } = await supabase
-          .from('product_ratings')
-          .insert(productRatingInserts);
+        console.log("Inserting product ratings:", productRatingInserts.length);
+        try {
+          const dbClient = adminClient || supabase;
+          const { error: productRatingError } = await dbClient
+            .from('product_ratings')
+            .insert(productRatingInserts);
 
-        if (productRatingError) {
-          console.error('Error inserting product ratings:', productRatingError);
+          if (productRatingError) {
+            console.error('Error inserting product ratings:', productRatingError);
+            // Don't fail the whole request, just log the error
+          } else {
+            console.log("Product ratings inserted successfully");
+          }
+        } catch (productRatingInsertError) {
+          console.error('Exception during product ratings insertion:', productRatingInsertError);
           // Don't fail the whole request, just log the error
         }
       }
     }
 
     // Update order to mark rating as submitted
-    await supabase
+    const dbClient = adminClient || supabase;
+    await dbClient
       .from('orders')
       .update({ rating_submitted: true })
       .eq('id', orderId);
 
     // Award points for rating (5 points for rating)
     try {
-      const { data: userRewards } = await supabase
+      const dbClient = adminClient || supabase;
+      
+      const { data: userRewards } = await dbClient
         .from('user_rewards')
-        .select('total_points')
+        .select('total_points, total_earned')
         .eq('user_id', userId)
         .single();
 
       if (userRewards) {
-        await supabase
+        // Update both total_points and total_earned
+        await dbClient
           .from('user_rewards')
           .update({
             total_points: userRewards.total_points + 5,
+            total_earned: userRewards.total_earned + 2.5, // ₹2.5 for rating
             last_updated: new Date().toISOString()
           })
           .eq('user_id', userId);
 
         // Create transaction record
-        await supabase
+        await dbClient
           .from('reward_transactions')
           .insert([{
             user_id: userId,
@@ -177,12 +245,45 @@ export async function POST(req: NextRequest) {
             order_id: orderId,
             created_at: new Date().toISOString()
           }]);
+        
+        console.log(`Awarded 5 points to user ${userId} for rating order ${orderId}`);
+      } else {
+        // Create initial rewards record if it doesn't exist
+        const referralCode = `ELIXR${userId.slice(0, 6)}`;
+        
+        await dbClient
+          .from('user_rewards')
+          .insert([{
+            user_id: userId,
+            total_points: 5,
+            total_earned: 2.5,
+            referral_code: referralCode,
+            referrals_count: 0,
+            redeemed_points: 0,
+            last_updated: new Date().toISOString()
+          }]);
+
+        // Create transaction record
+        await dbClient
+          .from('reward_transactions')
+          .insert([{
+            user_id: userId,
+            type: 'earned',
+            points: 5,
+            amount: 2.5,
+            description: `Rating points for order #${orderId.slice(-8)}`,
+            order_id: orderId,
+            created_at: new Date().toISOString()
+          }]);
+        
+        console.log(`Created new rewards record and awarded 5 points to user ${userId} for rating order ${orderId}`);
       }
     } catch (rewardError) {
       console.error('Error awarding rating points:', rewardError);
       // Don't fail the request for reward errors
     }
 
+    console.log("Rating submission successful, returning response");
     return NextResponse.json({
       success: true,
       message: 'Rating submitted successfully! You earned 5 reward points.',
@@ -267,7 +368,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        orderRating: orderRating || null,
+        orderRating: orderRating ?? null,
         productRatings: productRatings || [],
         feedbackResponses
       }

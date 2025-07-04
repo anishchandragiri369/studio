@@ -68,17 +68,49 @@ export default function RewardsDisplay() {
     }
   }, [user]);
 
+  // Listen for rating submission events to refresh rewards
+  useEffect(() => {
+    const handleRatingSubmission = () => {
+      if (user?.id) {
+        console.log('Rating submitted, refreshing rewards...');
+        fetchUserRewards();
+        fetchRewardTransactions();
+      }
+    };
+
+    // Listen for custom rating events
+    window.addEventListener('ratingSubmitted', handleRatingSubmission);
+    
+    return () => {
+      window.removeEventListener('ratingSubmitted', handleRatingSubmission);
+    };
+  }, [user]);
+
   const fetchUserRewards = async () => {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/user/${user.id}`);
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/user/${user.id}`;
+      console.log('Fetching rewards from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      console.log('Rewards API response status:', response.status);
       
       if (response.ok) {
         const result = await response.json();
+        console.log('Rewards API result:', result);
+        
         if (result.success && result.data) {
           setRewards(result.data);
+          console.log('Rewards set successfully:', result.data);
+        } else {
+          console.log('No rewards data in response or success=false');
         }
+      } else {
+        console.error('Rewards API failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
       }
       // Silently ignore fetch failures for rewards feature
     } catch (error) {
@@ -92,13 +124,27 @@ export default function RewardsDisplay() {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/transactions/${user.id}`);
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/rewards/transactions/${user.id}`;
+      console.log('Fetching transactions from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      
+      console.log('Transactions API response status:', response.status);
       
       if (response.ok) {
         const result = await response.json();
+        console.log('Transactions API result:', result);
+        
         if (result.success && result.data) {
           setTransactions(result.data);
+          console.log('Transactions set successfully:', result.data);
+        } else {
+          console.log('No transactions data in response or success=false');
         }
+      } else {
+        console.error('Transactions API failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
       }
       // Silently ignore fetch failures for rewards feature
     } catch (error) {

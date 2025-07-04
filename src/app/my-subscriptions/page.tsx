@@ -1,4 +1,3 @@
-
 "use client";
 
 // Helper to normalize both user_subscriptions and order-based subscription items to a common shape
@@ -78,6 +77,39 @@ export default function MySubscriptionsPage() {
       setLoading(false);
     }
   };
+
+  // Add a loading safeguard to prevent indefinite loading
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (loading) {
+      console.log("Subscription page loading started, setting safeguard timer");
+      timeoutId = setTimeout(() => {
+        console.log("Loading timeout reached (10s), forcing page reload");
+        if (loading) {
+          // Still loading after timeout - force refresh
+          window.location.reload();
+        }
+      }, 10000); // 10 second timeout
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [loading]);
+
+  // Add debug logging for component lifecycle
+  useEffect(() => {
+    console.log("[DEBUG] Subscription page mounted with auth state:", {
+      userId: user?.id || "not logged in",
+      authLoading,
+      supabaseConfigured: isSupabaseConfigured
+    });
+    
+    return () => {
+      console.log("[DEBUG] Subscription page unmounting");
+    };
+  }, [user, authLoading, isSupabaseConfigured]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -192,8 +224,8 @@ export default function MySubscriptionsPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Subscription Management Rules</AlertTitle>
               <AlertDescription>
-                • You may pause your subscription with <strong>24 hours notice</strong> before the next delivery.<br />
-                • If your next delivery is within 24 hours, you cannot pause until after the delivery.<br />
+                • You may pause your subscription with in <strong>6 PM</strong> before the next delivery.<br />
+                • If your next delivery is within 12 hours, you cannot pause until after the delivery(8am).<br />
                 • Subscription can be reactivated within 3 months from pause date.<br />
                 • After 3 months, paused subscriptions will expire and cannot be reactivated.
               </AlertDescription>

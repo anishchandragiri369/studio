@@ -41,25 +41,45 @@ export default function OrderRating({ order, userId, compact = false, showForm =
 
   const isEligibleForRating = () => {
     const completedStatuses = ['delivered', 'Delivered', 'payment_success', 'Payment Success', 'completed'];
-    return completedStatuses.includes(order.status) && !order.rating_submitted;
+    return completedStatuses.includes(order.status) && !order.rating_submitted && !existingRating;
   };
 
+  // Check for existing rating on component mount
   useEffect(() => {
-    if (userId && order.rating_submitted) {
+    if (userId) {
+      // If rating_submitted is already true, we can trust it
+      // However, we should still fetch the existing rating to display it
       fetchExistingRating();
     }
-  }, [userId, order.id, order.rating_submitted]);
+  }, [userId, order.id]);
+  
+  // Make sure we have consistent state between order.rating_submitted and existingRating
+  useEffect(() => {
+    if (existingRating) {
+      // Use direct assignment instead of nullish assignment to avoid lint error
+      order.rating_submitted = true;
+    }
+  }, [existingRating, order]);
 
   const fetchExistingRating = async () => {
     if (!userId) return;
     
     setLoading(true);
     try {
+      console.log(`Checking if order ${order.id} has an existing rating`);
       const response = await fetch(`/api/ratings/submit?orderId=${order.id}&userId=${userId}`);
       const result = await response.json();
       
       if (response.ok && result.data.orderRating) {
+        console.log(`Found existing rating for order ${order.id}:`, result.data.orderRating);
         setExistingRating(result.data.orderRating);
+        
+        // If we find a rating but order.rating_submitted is false, update local state
+        if (!order.rating_submitted) {
+          order.rating_submitted = true;
+        }
+      } else {
+        console.log(`No existing rating found for order ${order.id}`);
       }
     } catch (error) {
       console.error('Error fetching existing rating:', error);
@@ -87,9 +107,21 @@ export default function OrderRating({ order, userId, compact = false, showForm =
 
   const handleRatingSuccess = () => {
     setShowRatingForm(false);
-    fetchExistingRating();
-    // Update the order object to reflect that rating has been submitted
+    
+    // Mark order as rated in local state
     order.rating_submitted = true;
+    
+    // Refetch the rating to get the complete data
+    fetchExistingRating();
+    
+    // Update any related UI
+    setTimeout(() => {
+      // Force a re-render of the component
+      setLoading(true);
+      setTimeout(() => setLoading(false), 10);
+    }, 100);
+    
+    console.log(`Rating submission successful for order ${order.id}, updating local state`);
   };
 
   // Compact view - just stars or rating prompt

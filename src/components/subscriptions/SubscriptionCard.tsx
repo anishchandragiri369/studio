@@ -58,18 +58,26 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
       return;
     }
 
+    console.log("Attempting to pause subscription:", subscription.id);
     setIsPausing(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/pause`, {
+      const payload = {
+        subscriptionId: subscription.id,
+        reason: pauseReason.trim() || 'User requested pause'
+      };
+      console.log("Sending pause request with payload:", payload);
+      
+      // Use direct fetch with a relative URL to ensure we hit the correct endpoint
+      const response = await fetch('/api/subscriptions/pause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionId: subscription.id,
-          reason: pauseReason.trim() || 'User requested pause'
-        }),
+        body: JSON.stringify(payload),
       });
+      
+      const result = await response.json();
 
-      const result = await response.json();      if (result.success) {
+      console.log("Pause API response:", result);
+      if (result.success) {
         toast({
           title: "Subscription Paused",
           description: `Your subscription has been paused. You can reactivate it until ${result.data.canReactivateUntil}. A confirmation email has been sent.`,
@@ -79,6 +87,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         setPauseReason('');
         onUpdate();
       } else {
+        console.error("Failed to pause subscription:", result.message);
         toast({
           title: "Failed to Pause Subscription",
           description: result.message,
@@ -94,6 +103,7 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
       });
     } finally {
       setIsPausing(false);
+      console.log("Pause operation completed");
     }
   };
   const handleReactivateSubscription = async () => {
@@ -108,7 +118,8 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
 
     setIsReactivating(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/subscriptions/reactivate`, {
+      console.log("Attempting to reactivate subscription:", subscription.id);
+      const response = await fetch('/api/subscriptions/reactivate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +127,9 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
         }),
       });
 
-      const result = await response.json();      if (result.success) {
+      const result = await response.json();
+      console.log("Reactivate API response:", result);      
+      if (result.success) {
         const pauseDays = result.data.pauseDurationDays || 0;
         const extendedMessage = pauseDays > 0 
           ? ` Your subscription has been extended by ${pauseDays} day${pauseDays > 1 ? 's' : ''} to account for the pause period.`
@@ -388,6 +401,10 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                           variant="outline" 
                           size="sm"
                           disabled={!canPause}
+                          onClick={() => {
+                            console.log("Pause button clicked, opening dialog");
+                            setShowPauseDialog(true);
+                          }}
                         >
                           <Pause className="h-4 w-4 mr-2" />
                           Pause Subscription
@@ -438,7 +455,10 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handlePauseSubscription}
+                  onClick={() => {
+                    console.log("Confirming pause subscription");
+                    handlePauseSubscription();
+                  }}
                   disabled={isPausing || !canPause}
                 >
                   {isPausing ? 'Pausing...' : 'Pause Subscription'}

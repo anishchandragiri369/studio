@@ -1,9 +1,23 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  if (!supabase) {
+  // Log Supabase configuration
+  console.log("Supabase configuration:", {
+    isSupabaseConfigured,
+    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  });
+
+  // Create a local supabase client if the global one is not available
+  const client = supabase || (isSupabaseConfigured ? createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ) : null);
+  
+  if (!client) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503 }
@@ -11,10 +25,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Log request details
+    console.log("Received pause request:", { url: req.url });
+    
     const body = await req.json();
+    console.log("Request body:", body);
+    
     const { subscriptionId, reason } = body;
 
     if (!subscriptionId) {
+      console.error("Missing subscription ID in request");
       return NextResponse.json(
         { success: false, message: 'Subscription ID is required.' },
         { status: 400 }
@@ -22,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch subscription details
-    const { data: subscription, error: fetchError } = await supabase
+    const { data: subscription, error: fetchError } = await client
       .from('user_subscriptions')
       .select('*')
       .eq('id', subscriptionId)
@@ -59,7 +79,7 @@ export async function POST(req: NextRequest) {
     const reactivationDeadline = SubscriptionManager.calculateReactivationDeadline(pauseDate);
 
     // Update subscription status to paused
-    const { data: updatedSubscription, error: updateError } = await supabase
+    const { data: updatedSubscription, error: updateError } = await client
       .from('user_subscriptions')
       .update({
         status: 'paused',
@@ -79,7 +99,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }    // Mark upcoming deliveries as skipped
-    const { error: deliveryUpdateError } = await supabase
+    const { error: deliveryUpdateError } = await client
       .from('subscription_deliveries')
       .update({ status: 'skipped' })
       .eq('subscription_id', subscriptionId)
