@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket, Loader2 } from 'lucide-react';
+import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/context/AuthContext';
@@ -222,6 +222,12 @@ const Navbar = () => {
                         <Settings className="mr-2 h-4 w-4" />
                         <span>My Account</span>
                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/invoices" className="cursor-pointer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Download Invoices</span>
+                      </Link>
                     </DropdownMenuItem>                    {isAdmin && (
                       <>
                         <DropdownMenuItem asChild>
@@ -392,6 +398,11 @@ const Navbar = () => {
                         <SheetClose asChild>
                             <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
                               <Settings className="mr-2 h-5 w-5" /> My Account
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link href="/invoices" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
+                              <FileText className="mr-2 h-5 w-5" /> Download Invoices
                             </Link>
                           </SheetClose>
                           <SheetClose asChild>

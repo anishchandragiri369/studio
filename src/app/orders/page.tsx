@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import OrderRating from '@/components/ratings/OrderRating';
 import { batchCheckOrderRatings } from '@/lib/ratingHelpers';
 import { cacheOrders, getCachedOrders, clearOrderCache } from '@/lib/orderCache';
+import InvoiceDownloadButton from '@/components/orders/InvoiceDownloadButton';
 
 export default function OrdersPage() {
   const { user, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -673,10 +674,17 @@ function OrderCard({ order, user }: { order: any; user: any }) {
         )}
       </CardContent>
       <CardFooter className="pt-3 space-y-2">
-        <div className="flex justify-between items-center w-full">
+        <div className="flex justify-between items-center w-full gap-2">
           <Button variant="outline" size="sm" disabled className="text-xs">
             Order Details (Coming Soon)
           </Button>
+          <InvoiceDownloadButton
+            orderId={order.id}
+            userId={user?.id}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          />
         </div>
         
         {/* Rating Component - Using full form view for proper rating submission */}
