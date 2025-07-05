@@ -18,6 +18,7 @@ interface AuthContextType {
   signUp: (data: SignUpFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logIn: (data: LoginFormData) => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   signInWithGoogle: () => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
+  signUpWithGoogle: () => Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string; message: string }>;
   logOut: () => Promise<void>;
   sendPasswordReset: (data: ForgotPasswordFormData) => Promise<{ error: SupabaseAuthError | null } | { code: string; message: string }>;
   isSupabaseConfigured: boolean;
@@ -157,19 +158,159 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return; // Early return to prevent other handling
       } else if (event === 'SIGNED_IN') {
-        // User signed in - clean up OAuth hash if present
+        // User signed in - clean up OAuth hash if present (but not on reset password page)
         if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+          // Don't interfere with password reset flow
+          if (window.location.pathname === '/reset-password') {
+            console.log('[AuthContext] Tokens detected on reset password page - skipping OAuth logic');
+            if (session?.user) {
+              setUser(session.user);
+            }
+            return; // Early return to prevent OAuth handling
+          }
+          
           console.log('[AuthContext] User signed in via OAuth, cleaning URL');
           window.history.replaceState({}, document.title, window.location.pathname);
           
-          // Handle return URL for OAuth
-          const returnUrl = sessionStorage.getItem('oauth-return-url');
-          if (returnUrl && returnUrl !== window.location.pathname) {
-            sessionStorage.removeItem('oauth-return-url');
-            console.log('[AuthContext] Redirecting to return URL:', returnUrl);
-            window.location.href = returnUrl;
-            return;
+          if (session?.user) {
+            // Check if this was a legitimate OAuth flow from our app
+            const oauthSigninAttempt = sessionStorage.getItem('oauth-signin-attempt');
+            const isSignInAttempt = oauthSigninAttempt === 'true';
+            const isSignUpAttempt = oauthSigninAttempt === 'false';
+            
+            // Clean up the flag
+            sessionStorage.removeItem('oauth-signin-attempt');
+            
+            console.log('[AuthContext] OAuth user detected, checking database existence');
+            console.log('[AuthContext] OAuth flow type:', { oauthSigninAttempt, isSignInAttempt, isSignUpAttempt });
+            
+            // Check if user exists in our database (has user_rewards record)
+            fetch(`/api/rewards/user/${session.user.id}`)
+              .then(response => response.json())
+              .then(result => {
+                if (!result.success || !result.data) {
+                  // User doesn't exist in our database
+                  console.log('[AuthContext] User not found in app database');
+                  
+                  if (isSignInAttempt) {
+                    // This was a sign-in attempt but user doesn't exist - redirect to signup
+                    console.log('[AuthContext] Sign-in attempt but user not in database, redirecting to signup');
+                    
+                    // Sign out the user first
+                    supabase!.auth.signOut().then(() => {
+                      // Show message and redirect to signup
+                      alert('Please sign up first before signing in with Google.');
+                      window.location.href = '/signup';
+                    });
+                    return;
+                  } else if (isSignUpAttempt) {
+                    // This is a legitimate signup flow - continue with setup
+                    console.log('[AuthContext] Legitimate OAuth signup flow, setting up user');
+                    
+                    // Handle referral code and setup
+                    const storedReferralCode = sessionStorage.getItem('oauth-referral-code');
+                    if (storedReferralCode) {
+                      console.log('[AuthContext] Storing referral code in metadata:', storedReferralCode);
+                      
+                      // Update user metadata with referral code
+                      supabase!.auth.updateUser({
+                        data: { referral_code: storedReferralCode }
+                      }).then(({ error }) => {
+                        if (error) {
+                          console.error('[AuthContext] Error storing referral code:', error);
+                        } else {
+                          console.log('[AuthContext] Referral code stored successfully for OAuth user');
+                        }
+                      });
+                    }
+                    
+                    // Set up OAuth user (create rewards record, etc.)
+                    fetch('/api/auth/setup-oauth-user', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: session.user.id })
+                    }).then(response => response.json())
+                      .then(result => {
+                        console.log('[AuthContext] OAuth user setup result:', result);
+                        // Clean up stored referral code
+                        if (storedReferralCode) {
+                          sessionStorage.removeItem('oauth-referral-code');
+                        }
+                        
+                        // Redirect to return URL or dashboard
+                        const returnUrl = sessionStorage.getItem('oauth-return-url');
+                        sessionStorage.removeItem('oauth-return-url');
+                        
+                        if (returnUrl && returnUrl !== '/signup' && returnUrl !== '/login') {
+                          window.location.href = returnUrl;
+                        } else {
+                          window.location.href = '/dashboard';
+                        }
+                      })
+                      .catch(error => {
+                        console.error('[AuthContext] Error setting up OAuth user:', error);
+                        // Sign out and redirect to signup on error
+                        supabase!.auth.signOut().then(() => {
+                          alert('There was an error setting up your account. Please try again.');
+                          window.location.href = '/signup';
+                        });
+                      });
+                  } else {
+                    // No valid OAuth flow flag - this is suspicious, treat as unauthorized
+                    console.log('[AuthContext] No valid OAuth flow flag detected - unauthorized OAuth attempt');
+                    
+                    // Sign out the user and redirect to signup
+                    supabase!.auth.signOut().then(() => {
+                      alert('Unauthorized access detected. Please use the signup page to create an account.');
+                      window.location.href = '/signup';
+                    });
+                    return;
+                  }
+                } else {
+                  // User exists in database
+                  console.log('[AuthContext] User found in app database');
+                  
+                  if (isSignInAttempt || !oauthSigninAttempt) {
+                    // Allow sign-in for existing users (even if no flag, for backwards compatibility)
+                    console.log('[AuthContext] Existing OAuth user signed in successfully');
+                    
+                    // Redirect to return URL or dashboard
+                    const returnUrl = sessionStorage.getItem('oauth-return-url');
+                    sessionStorage.removeItem('oauth-return-url');
+                    
+                    if (returnUrl && returnUrl !== '/signup' && returnUrl !== '/login') {
+                      window.location.href = returnUrl;
+                    } else {
+                      window.location.href = '/dashboard';
+                    }
+                  } else if (isSignUpAttempt) {
+                    // User tried to sign up but already exists - redirect to login
+                    console.log('[AuthContext] User tried to sign up but already exists, redirecting to login');
+                    
+                    supabase!.auth.signOut().then(() => {
+                      alert('You already have an account. Please use the login page instead.');
+                      window.location.href = '/login';
+                    });
+                    return;
+                  }
+                }
+              })
+              .catch(error => {
+                console.error('[AuthContext] Error checking user existence:', error);
+                // On error, sign out and redirect to signup
+                supabase!.auth.signOut().then(() => {
+                  alert('There was an error verifying your account. Please try signing up.');
+                  window.location.href = '/signup';
+                });
+              });
+            
+            return; // Early return to prevent normal session handling
           }
+        }
+        
+        // Normal sign-in flow (non-OAuth)
+        if (session?.user) {
+          setUser(session.user);
         }
       } else if (event === 'SIGNED_OUT') {
         // Check if we're on the reset password page to avoid interference
@@ -237,6 +378,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase!.auth.signUp({
         email: credentials.email,
         password: credentials.password,
+        options: {
+          data: {
+            referralCode: credentials.referralCode || null
+          }
+        }
       });
       
       // Handle specific Supabase signup errors
@@ -259,6 +405,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (!data.user && !error) return {data: null, error: {name: "SignUpNoUserError", message: "Sign up did not return a user and no error."} as SupabaseAuthError}
+      
+      // If user signup was successful and referral code was provided, store it for later processing
+      if (data.user && credentials.referralCode) {
+        try {
+          // Store referral code in user metadata for processing after first order
+          await supabase!.auth.updateUser({
+            data: { 
+              pendingReferralCode: credentials.referralCode.toUpperCase() 
+            }
+          });
+        } catch (referralError) {
+          console.error('Failed to store referral code:', referralError);
+          // Don't fail the signup for this
+        }
+      }
+      
       return { data: { user: data.user, session: data.session }, error: null };
     } catch (e: any) {
       // Handle network or other unexpected errors
@@ -298,6 +460,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Store current page for return after OAuth
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('oauth-return-url', window.location.pathname);
+        sessionStorage.setItem('oauth-signin-attempt', 'true'); // Mark this as a sign-in attempt
       }
 
       const { data, error } = await supabase!.auth.signInWithOAuth({
@@ -316,6 +479,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { data: null, error: { name: 'GoogleSignInError', message: e.message || "An unexpected error occurred during Google sign in." } as SupabaseAuthError };
     }
   };
+  
+  const signUpWithGoogle = async (): Promise<{ data: { user: User | null; session: any } | null; error: SupabaseAuthError | null } | { code: string, message: string }> => {
+    if (!isActuallyConfiguredAndAuthReady) return Promise.resolve(NOT_CONFIGURED_ERROR_PAYLOAD);
+
+    try {
+      // Store current page for return after OAuth
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('oauth-return-url', window.location.pathname);
+        sessionStorage.setItem('oauth-signin-attempt', 'false'); // Mark this as a sign-up attempt
+      }
+
+      const { data, error } = await supabase!.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+      
+      if (error) return { data: null, error };
+      
+      // For OAuth, the user will be redirected to Google and then back to our app
+      // The actual user data will be available after the redirect
+      return { data: null, error: null };
+    } catch (e: any) {
+      return { data: null, error: { name: 'GoogleSignUpError', message: e.message || "An unexpected error occurred during Google sign up." } as SupabaseAuthError };
+    }
+  };
+
   const logOut = async (): Promise<void> => {
     // Clear local state immediately for instant UI feedback
     clearAuthState();
@@ -392,7 +583,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin, 
       signUp, 
       logIn, 
-      signInWithGoogle, 
+      signInWithGoogle,
+      signUpWithGoogle, 
       logOut, 
       sendPasswordReset, 
       isSupabaseConfigured 

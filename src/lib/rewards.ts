@@ -83,10 +83,38 @@ export const validateReferralCode = async (referralCode: string, userId?: string
       referralCode, 
       userId 
     });
-    return result;
-  } catch (error) {
+    
+    // Convert API response format to expected format
+    if (result.success && result.referrerId) {
+      return { 
+        isValid: true, 
+        referrerId: result.referrerId 
+      };
+    } else {
+      return { 
+        isValid: false, 
+        error: result.message || 'Invalid referral code' 
+      };
+    }
+  } catch (error: any) {
     console.error('Error validating referral code:', error);
-    return { isValid: false, error: 'Unable to validate referral code' };
+    
+    // Extract the actual error message from the API response
+    let errorMessage = 'Unable to validate referral code';
+    
+    if (error.message) {
+      if (error.message.includes('You cannot use your own referral code')) {
+        errorMessage = 'Self-referrals are not allowed. You cannot use your own referral code.';
+      } else if (error.message.includes('Invalid referral code')) {
+        errorMessage = 'Invalid referral code';
+      } else if (error.message.includes('already used')) {
+        errorMessage = 'You have already used this referral code';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    return { isValid: false, error: errorMessage };
   }
 };
 

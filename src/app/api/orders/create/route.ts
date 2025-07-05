@@ -125,6 +125,51 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check for pending referral code from user metadata
+    let pendingReferralCode = null;
+    let referrerUserId = null;
+    
+    if (userId && !appliedReferral) {
+      try {
+        // Get user metadata to check for pending referral code
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (user && user.user_metadata?.pendingReferralCode) {
+          const referralCode = user.user_metadata.pendingReferralCode;
+          
+          // Validate the referral code and get referrer info (case-insensitive)
+          const { data: referrer, error: referrerError } = await supabase
+            .from('user_rewards')
+            .select('user_id, referral_code')
+            .ilike('referral_code', referralCode)
+            .single();
+            
+          if (!referrerError && referrer && referrer.user_id !== userId) {
+            pendingReferralCode = referrer.referral_code; // Use actual referral code from DB
+            referrerUserId = referrer.user_id;
+            
+            // Clear the pending referral code from user metadata
+            await supabase.auth.updateUser({
+              data: { 
+                pendingReferralCode: null 
+              }
+            });
+            
+            logger.info('Applied pending referral code to order', { 
+              referralCode, 
+              referrerUserId,
+              userId 
+            }, 'Orders API');
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to process pending referral code', { 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        }, 'Orders API');
+        // Don't fail the order for this
+      }
+    }
+
     const orderToInsert = {
       user_id: userId,
       email: customerInfo.email, // Add email field
@@ -132,8 +177,8 @@ export async function POST(req: NextRequest) {
       original_amount: originalAmount || orderAmount,
       coupon_code: appliedCoupon?.code || null,
       discount_amount: appliedCoupon?.discountAmount || 0,
-      referral_code: appliedReferral?.code || null,
-      referrer_id: appliedReferral?.referrerId || null,
+      referral_code: appliedReferral?.code || pendingReferralCode || null,
+      referrer_id: appliedReferral?.referrerId || referrerUserId || null,
       items: orderItems,
       shipping_address: customerInfo, // <-- FIXED: use shipping_address
       status: 'payment_pending', // Use snake_case for consistency

@@ -1,8 +1,17 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+// Create admin client for bypassing RLS
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminClient = supabaseServiceKey && process.env.NEXT_PUBLIC_SUPABASE_URL 
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseServiceKey)
+  : null;
 
 export async function POST(req: NextRequest) {
-  if (!supabase) {
+  const dbClient = adminClient || supabase;
+  
+  if (!dbClient) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503 }
@@ -20,8 +29,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find the user who owns this referral code
-    const { data: referrer, error: referrerError } = await supabase
+    // Find the user who owns this referral code (case-insensitive)
+    const { data: referrer, error: referrerError } = await dbClient
       .from('user_rewards')
       .select('user_id')
       .eq('referral_code', referralCode.toUpperCase())
@@ -44,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     // Check if this referral code has already been used by this user
     if (userId) {
-      const { data: existingReferral, error: existingError } = await supabase
+      const { data: existingReferral, error: existingError } = await dbClient
         .from('referral_rewards')
         .select('id')
         .eq('referred_user_id', userId)

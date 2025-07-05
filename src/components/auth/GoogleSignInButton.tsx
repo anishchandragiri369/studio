@@ -10,10 +10,12 @@ interface GoogleSignInButtonProps {
   onError?: (error: string) => void;
   disabled?: boolean;
   className?: string;
+  referralCode?: string; // Add referral code prop
+  isSignUp?: boolean; // Add prop to distinguish between sign-in and sign-up
 }
 
-export default function GoogleSignInButton({ onError, disabled, className }: GoogleSignInButtonProps) {
-  const { signInWithGoogle, isSupabaseConfigured } = useAuth();
+export default function GoogleSignInButton({ onError, disabled, className, referralCode, isSignUp = false }: GoogleSignInButtonProps) {
+  const { signInWithGoogle, signUpWithGoogle, isSupabaseConfigured } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -23,8 +25,16 @@ export default function GoogleSignInButton({ onError, disabled, className }: Goo
     }
 
     setLoading(true);
+    
+    // Store referral code in sessionStorage before OAuth redirect
+    if (referralCode && typeof window !== 'undefined') {
+      sessionStorage.setItem('oauth-referral-code', referralCode.trim());
+      console.log('Stored referral code for OAuth:', referralCode);
+    }
+    
     try {
-      const result = await signInWithGoogle();
+      // Use the appropriate function based on isSignUp
+      const result = isSignUp ? await signUpWithGoogle() : await signInWithGoogle();
       
       if (result && 'error' in result && result.error) {
         const supabaseError = result.error as SupabaseAuthError;

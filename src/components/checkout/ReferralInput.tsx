@@ -46,7 +46,14 @@ export default function ReferralInput({
         onReferralApply(referralCode.trim().toUpperCase(), validation.referrerId);
         setReferralCode('');
       } else {
-        setError(validation.error || 'Invalid referral code');
+        // Handle specific error types differently
+        if (validation.error?.includes('Self-referrals are not allowed')) {
+          // Show alert for self-referrals
+          alert('⚠️ Self-Referrals Not Allowed\n\nYou cannot use your own referral code. Please ask a friend to share their referral code with you!');
+          setError('You cannot refer yourself');
+        } else {
+          setError(validation.error || 'Invalid referral code');
+        }
       }
     } catch (error) {
       console.error('Error validating referral code:', error);

@@ -28,7 +28,21 @@ export const apiCall = async (endpoint: string, options?: RequestInit) => {
     });
 
     if (!response.ok) {
-      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      // Try to get error message from response body
+      let errorMessage = `API call failed: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {
+        // If parsing fails, use the default error message
+      }
+      
+      const error = new Error(errorMessage) as any;
+      error.status = response.status;
+      error.response = response;
+      throw error;
     }
 
     return response;

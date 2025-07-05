@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,20 +14,89 @@ import { useAuth } from '@/context/AuthContext';
 import { signUpSchema } from '@/lib/zod-schemas';
 import type { SignUpFormData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, MailCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, MailCheck, Gift, CheckCircle } from 'lucide-react';
 import type { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signUp, user, loading: authLoading, isSupabaseConfigured } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [referralCodeValidation, setReferralCodeValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    checking: boolean;
+  }>({ isValid: false, message: '', checking: false });
+  
+  // Check if this is an OAuth flow
+  const isOAuthFlow = searchParams.get('oauth') === 'true';
+  const isExistingOAuthUser = searchParams.get('existing') === 'true';
 
-  const { register, handleSubmit, formState: { errors } } = useForm<SignUpFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
   });
+
+  const referralCode = watch('referralCode');
+
+  // Auto-fill referral code from URL parameter
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setValue('referralCode', refCode);
+    }
+  }, [searchParams, setValue]);
+
+  // Validate referral code when it changes
+  useEffect(() => {
+    if (referralCode && referralCode.length >= 6) {
+      validateReferralCode(referralCode);
+    } else if (referralCode && referralCode.length < 6) {
+      setReferralCodeValidation({
+        isValid: false,
+        message: 'Referral code should be at least 6 characters',
+        checking: false
+      });
+    } else {
+      setReferralCodeValidation({ isValid: false, message: '', checking: false });
+    }
+  }, [referralCode]);
+
+  const validateReferralCode = async (code: string) => {
+    setReferralCodeValidation({ isValid: false, message: '', checking: true });
+    
+    try {
+      const response = await fetch('/api/referrals/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralCode: code })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setReferralCodeValidation({
+          isValid: true,
+          message: 'Valid referral code! You\'ll earn bonus rewards.',
+          checking: false
+        });
+      } else {
+        setReferralCodeValidation({
+          isValid: false,
+          message: result.message || 'Invalid referral code',
+          checking: false
+        });
+      }
+    } catch (error) {
+      setReferralCodeValidation({
+        isValid: false,
+        message: 'Unable to validate referral code',
+        checking: false
+      });
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && user && isSupabaseConfigured) {
@@ -85,8 +154,29 @@ export default function SignUpPage() {
     <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-headline text-primary">Create an Account</CardTitle>
-          <CardDescription>Join Elixr and start your fresh juice journey!</CardDescription>
+          <CardTitle className="text-3xl font-headline text-primary">
+            {isOAuthFlow ? (isExistingOAuthUser ? 'Complete Your Account Setup' : 'Welcome to Elixr!') : 'Create an Account'}
+          </CardTitle>
+          <CardDescription>
+            {isOAuthFlow 
+              ? (isExistingOAuthUser 
+                  ? 'Complete your account setup to access all features'
+                  : 'Complete your Google signup to start your fresh juice journey!'
+                )
+              : 'Join Elixr and start your fresh juice journey!'
+            }
+          </CardDescription>
+          {isOAuthFlow && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <CheckCircle className="inline h-4 w-4 mr-1" />
+                {isExistingOAuthUser 
+                  ? 'Google authentication completed. Please finish your account setup below.'
+                  : 'Google authentication successful! Please complete your profile below.'
+                }
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {!isSupabaseConfigured && !successMessage && (
@@ -140,6 +230,40 @@ export default function SignUpPage() {
                 <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="referralCode" className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" />
+                  Referral Code (Optional)
+                </Label>
+                <Input 
+                  id="referralCode" 
+                  type="text" 
+                  placeholder="Enter referral code to earn bonus rewards" 
+                  {...register("referralCode")} 
+                  disabled={!isSupabaseConfigured || submitLoading}
+                  className={referralCodeValidation.isValid ? 'border-green-500 focus:ring-green-500' : ''}
+                />
+                {referralCodeValidation.checking && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Validating referral code...
+                  </p>
+                )}
+                {referralCodeValidation.message && !referralCodeValidation.checking && (
+                  <p className={`text-sm flex items-center gap-2 ${
+                    referralCodeValidation.isValid ? 'text-green-600' : 'text-destructive'
+                  }`}>
+                    {referralCodeValidation.isValid ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <AlertTriangle className="h-3 w-3" />
+                    )}
+                    {referralCodeValidation.message}
+                  </p>
+                )}
+                {errors.referralCode && <p className="text-sm text-destructive">{errors.referralCode.message}</p>}
+              </div>
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
                 {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign Up
@@ -157,6 +281,8 @@ export default function SignUpPage() {
               <GoogleSignInButton 
                 onError={setError}
                 disabled={submitLoading}
+                referralCode={referralCode}
+                isSignUp={true}
               />
             </form>
           )}

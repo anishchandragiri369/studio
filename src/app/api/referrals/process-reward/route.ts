@@ -1,9 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { REWARD_CONFIG } from '@/lib/rewards';
 
+// Create admin client for accessing user metadata
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function POST(req: NextRequest) {
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
       { status: 503 }
@@ -21,16 +28,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Only process if referral code is provided
-    if (!referralCode) {
+    // Get referral code from user metadata if not provided
+    let finalReferralCode = referralCode;
+    if (!finalReferralCode) {
+      try {
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          return NextResponse.json({ success: true, message: 'No referral code to process.' });
+        }
+        
+        finalReferralCode = userData.user?.user_metadata?.referral_code;
+        console.log('Retrieved referral code from user metadata:', finalReferralCode);
+      } catch (error) {
+        console.error('Error accessing user metadata:', error);
+        return NextResponse.json({ success: true, message: 'No referral code to process.' });
+      }
+    }
+
+    // Only process if referral code is available
+    if (!finalReferralCode) {
       return NextResponse.json({ success: true, message: 'No referral code to process.' });
     }
 
-    // Validate referral code and get referrer
-    const { data: referrer, error: referrerError } = await supabase
+    // Validate referral code and get referrer (case-insensitive for backward compatibility)
+    const { data: referrer, error: referrerError } = await supabaseAdmin
       .from('user_rewards')
-      .select('user_id')
-      .eq('referral_code', referralCode.toUpperCase())
+      .select('user_id, referral_code')
+      .eq('referral_code', finalReferralCode.toUpperCase())
       .single();
 
     if (referrerError || !referrer) {
@@ -40,36 +65,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if this is the user's first completed order
-    const { data: previousOrders, error: orderError } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .neq('id', orderId);
+    // Check if this is the user's first completed order or OAuth signup
+    const isOAuthSignup = orderId.startsWith('oauth-signup-');
+    
+    if (!isOAuthSignup) {
+      const { data: previousOrders, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .neq('id', orderId);
 
-    if (orderError) {
-      console.error('Error checking previous orders:', orderError);
-      return NextResponse.json(
-        { success: false, message: 'Unable to process referral reward.' },
-        { status: 500 }
-      );
+      if (orderError) {
+        console.error('Error checking previous orders:', orderError);
+        return NextResponse.json(
+          { success: false, message: 'Unable to process referral reward.' },
+          { status: 500 }
+        );
+      }
+
+      // Only process referral reward if this is the first completed order
+      if (previousOrders && previousOrders.length > 0) {
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Referral reward only applies to first order.' 
+        });
+      }
+    } else {
+      console.log('Processing referral reward for OAuth signup');
     }
 
-    // Only process referral reward if this is the first completed order
-    if (previousOrders && previousOrders.length > 0) {
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Referral reward only applies to first order.' 
-      });
-    }
-
-    // Check if referral reward already exists
-    const { data: existingReward, error: existingError } = await supabase
+    // Check if referral reward already exists (use actual referral code from DB)
+    const { data: existingReward, error: existingError } = await supabaseAdmin
       .from('referral_rewards')
       .select('id')
       .eq('referred_user_id', userId)
-      .eq('referral_code', referralCode.toUpperCase())
+      .eq('referral_code', referrer.referral_code)
       .single();
 
     if (existingReward) {
@@ -79,13 +110,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create referral reward record
-    const { data: reward, error: rewardError } = await supabase
+    // Create referral reward record (use actual referral code from DB)
+    const { data: reward, error: rewardError } = await supabaseAdmin
       .from('referral_rewards')
       .insert([{
         referrer_id: referrer.user_id,
         referred_user_id: userId,
-        referral_code: referralCode.toUpperCase(),
+        referral_code: referrer.referral_code,
         reward_points: REWARD_CONFIG.REFERRAL_REWARD_POINTS,
         reward_amount: REWARD_CONFIG.REFERRAL_REWARD_AMOUNT,
         status: 'completed',
@@ -103,7 +134,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }    // Update referrer's reward points
-    const { data: currentRewards, error: fetchError } = await supabase
+    const { data: currentRewards, error: fetchError } = await supabaseAdmin
       .from('user_rewards')
       .select('total_points, total_earned, referrals_count')
       .eq('user_id', referrer.user_id)
@@ -117,7 +148,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('user_rewards')
       .update({
         total_points: (currentRewards?.total_points || 0) + REWARD_CONFIG.REFERRAL_REWARD_POINTS,
@@ -133,14 +164,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Create reward transaction record
-    const { error: transactionError } = await supabase
+    const { error: transactionError } = await supabaseAdmin
       .from('reward_transactions')
       .insert([{
         user_id: referrer.user_id,
         type: 'earned',
         points: REWARD_CONFIG.REFERRAL_REWARD_POINTS,
         amount: REWARD_CONFIG.REFERRAL_REWARD_AMOUNT,
-        description: `Referral reward for ${referralCode}`,
+        description: `Referral reward for ${referrer.referral_code}`,
         order_id: orderId,
         referral_id: reward.id,
         created_at: new Date().toISOString()

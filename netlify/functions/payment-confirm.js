@@ -150,6 +150,34 @@ exports.handler = async (event) => {
             if (!emailResult.success) {
               console.error('Email sending failed:', emailResult.errors || emailResult.error);
             }
+
+            // Process referral rewards for successful payment
+            try {
+              console.log('Processing referral rewards for order:', order.id);
+              const referralApiUrl = process.env.REFERRAL_REWARD_API_URL || 'https://develixr.netlify.app/api/referrals/process-reward';
+              const referralPayload = {
+                orderId: order.id,
+                userId: order.user_id
+              };
+              
+              console.log('Calling referral reward API with payload:', referralPayload);
+              const referralRes = await fetch(referralApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(referralPayload),
+              });
+              
+              const referralResult = await referralRes.json();
+              console.log('Referral reward API response:', referralResult);
+              
+              if (!referralResult.success) {
+                console.error('Referral reward processing failed:', referralResult.message || referralResult.error);
+              } else {
+                console.log('Referral rewards processed successfully');
+              }
+            } catch (referralError) {
+              console.error('Error calling referral reward API:', referralError);
+            }
           } else {
             // Send payment failure notification
             console.log('Sending payment failure notification for order:', order.id);

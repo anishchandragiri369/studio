@@ -1,0 +1,25 @@
+{
+  "name": "elixr-studio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:e2e": "node tests/e2e/run-tests.js",
+    "test:auth": "node tests/e2e/auth-flows.test.js",
+    "test:oauth": "node tests/e2e/oauth-security.test.js",
+    "test:password-reset": "node tests/e2e/password-reset.test.js"
+  },
+  "dependencies": {
+    "existing dependencies": "..."
+  },
+  "devDependencies": {
+    "puppeteer": "^21.11.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}

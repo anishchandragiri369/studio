@@ -1,0 +1,118 @@
+{
+  "testConfig": {
+    "baseUrl": "http://localhost:9002",
+    "timeout": 30000,
+    "retries": 2,
+    "headless": false,
+    "slowMo": 100,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "mobileViewport": {
+      "width": 375,
+      "height": 812
+    },
+    "testUsers": {
+      "default": {
+        "email": "test@example.com",
+        "password": "TestPassword123!",
+        "name": "Test User"
+      },
+      "admin": {
+        "email": "admin@example.com",
+        "password": "AdminPassword123!",
+        "name": "Admin User"
+      }
+    },
+    "categories": {
+      "auth": {
+        "enabled": true,
+        "tests": [
+          "emailPasswordSignup",
+          "emailPasswordLogin", 
+          "passwordResetFlow",
+          "oauthLogin",
+          "sessionManagement",
+          "logoutFlow"
+        ]
+      },
+      "ecommerce": {
+        "enabled": true,
+        "tests": [
+          "productCatalog",
+          "productSearch",
+          "addToCart",
+          "cartManagement",
+          "fruitBowlBuilder",
+          "checkoutProcess",
+          "subscriptionFlow",
+          "orderHistory"
+        ]
+      },
+      "security": {
+        "enabled": true,
+        "tests": [
+          "xssProtection",
+          "csrfProtection",
+          "authSecurity",
+          "dataValidation",
+          "rateLimiting"
+        ]
+      },
+      "performance": {
+        "enabled": true,
+        "tests": [
+          "pageLoadPerformance",
+          "imagePerformance",
+          "apiPerformance",
+          "memoryUsage"
+        ]
+      },
+      "database": {
+        "enabled": true,
+        "tests": [
+          "databaseConnectivity",
+          "dataIntegrity",
+          "transactionHandling"
+        ]
+      },
+      "admin": {
+        "enabled": true,
+        "tests": [
+          "adminDashboard",
+          "userManagement",
+          "orderManagement",
+          "analytics"
+        ]
+      },
+      "mobile": {
+        "enabled": true,
+        "tests": [
+          "mobileNavigation",
+          "mobileCart",
+          "mobileCheckout",
+          "touchInteractions"
+        ]
+      }
+    },
+    "reporting": {
+      "generateJsonReport": true,
+      "generateHtmlReport": true,
+      "saveScreenshots": true,
+      "screenshotPath": "tests/screenshots",
+      "reportPath": "tests/reports"
+    },
+    "environment": {
+      "development": {
+        "baseUrl": "http://localhost:9002"
+      },
+      "staging": {
+        "baseUrl": "https://staging.elixr.com"
+      },
+      "production": {
+        "baseUrl": "https://elixr.com"
+      }
+    }
+  }
+}
