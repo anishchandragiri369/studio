@@ -252,13 +252,27 @@ exports.handler = async (event) => {
         console.log('Using mapped subscriptionData:', JSON.stringify(subscriptionData, null, 2));
       }
       
+      // FALLBACK: If subscriptionData is empty, try to extract from root level
+      if (!subscriptionData.planId && order.subscription_info.planName) {
+        console.log('Using root-level subscription data as fallback');
+        subscriptionData = {
+          planId: order.subscription_info.planId || `plan-${Date.now()}`,
+          planName: order.subscription_info.planName,
+          planFrequency: order.subscription_info.planFrequency || 'weekly',
+          selectedJuices: order.subscription_info.selectedJuices || [],
+          selectedFruitBowls: order.subscription_info.selectedFruitBowls || [],
+          subscriptionDuration: order.subscription_info.subscriptionDuration || 3,
+          basePrice: order.subscription_info.basePrice || subscriptionItem?.price || 120
+        };
+      }
+      
       const customerInfo = order.shipping_address || {};
 
       const subscriptionPayload = {
         userId: order.user_id,
         planId: subscriptionData.planId,
         planName: subscriptionData.planName || subscriptionItem?.name,
-        planPrice: subscriptionItem?.price || subscriptionData.planPrice,
+        planPrice: subscriptionItem?.price || subscriptionData.basePrice,
         planFrequency: subscriptionData.planFrequency,
         customerInfo: {
           name: customerInfo.firstName ? `${customerInfo.firstName} ${customerInfo.lastName || ''}`.trim() : customerInfo.name,
@@ -291,6 +305,22 @@ exports.handler = async (event) => {
 
       if (!subscriptionResult.success) {
         console.error('Failed to create subscription:', subscriptionResult.message);
+        console.error('Subscription creation failed - this should be investigated manually');
+        
+        // Log detailed error information for debugging
+        console.error('Failed subscription details:', {
+          orderId: order.id,
+          userId: order.user_id,
+          planId: subscriptionData.planId,
+          planName: subscriptionData.planName,
+          error: subscriptionResult.message,
+          apiResponse: subscriptionResult
+        });
+        
+        // DO NOT create fallback subscription - this maintains payment-first integrity
+        // The subscription will need to be created manually or through the sync tool
+        // after the API issue is resolved
+        
         // Continue with the webhook processing even if subscription creation fails
       } else {
         console.log('Subscription created successfully:', subscriptionResult.data?.subscription?.id);

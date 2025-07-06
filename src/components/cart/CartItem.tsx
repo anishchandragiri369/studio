@@ -35,7 +35,8 @@ type SubscriptionCartItem = {
     basePrice: number;
     selectedJuices: { juiceId: string; quantity: number }[];
     selectedFruitBowls?: { fruitBowlId: string; quantity: number }[];
-    selectedCategory?: string;
+    selectedCategory?: string | null;
+    categoryDistribution?: any[] | null;
   };
   image?: string;
 };
@@ -148,7 +149,7 @@ const CartItem = ({ item }: CartItemProps) => {
             </div>
             
             {/* Show category or customization info */}
-            {item.subscriptionData.selectedCategory && item.subscriptionData.selectedCategory !== 'custom' ? (
+            {item.subscriptionData.selectedCategory && item.subscriptionData.selectedCategory !== 'customized' ? (
               <div className="text-sm">
                 <div className="flex items-center gap-1 mb-1">
                   <Tag className="h-3 w-3 text-green-600" />
@@ -157,6 +158,23 @@ const CartItem = ({ item }: CartItemProps) => {
                 <p className="text-xs text-muted-foreground">
                   Juices will be distributed from this category across your subscription period
                 </p>
+                {/* Show category distribution if available */}
+                {item.subscriptionData.categoryDistribution && item.subscriptionData.categoryDistribution.length > 0 && (
+                  <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <p className="text-xs font-medium text-green-700 mb-1">Distribution Preview:</p>
+                    <div className="text-xs text-green-600">
+                      {item.subscriptionData.categoryDistribution.slice(0, 3).map((dist: any, idx: number) => (
+                        <div key={idx} className="flex justify-between">
+                          <span>Day {dist.day}:</span>
+                          <span>{dist.juiceName}</span>
+                        </div>
+                      ))}
+                      {item.subscriptionData.categoryDistribution.length > 3 && (
+                        <p className="text-xs text-green-600 mt-1">... and {item.subscriptionData.categoryDistribution.length - 3} more days</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : item.subscriptionData.selectedJuices && item.subscriptionData.selectedJuices.length > 0 ? (
               <div className="text-sm">

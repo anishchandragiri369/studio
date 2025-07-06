@@ -28,6 +28,8 @@ interface SubscriptionCartItem {
     basePrice: number;
     selectedJuices: { juiceId: string; quantity: number }[];
     selectedFruitBowls?: { fruitBowlId: string; quantity: number }[];
+    selectedCategory?: string | null;
+    categoryDistribution?: any[] | null;
   };
   image?: string;
 }

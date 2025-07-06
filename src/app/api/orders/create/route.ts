@@ -261,10 +261,32 @@ export async function POST(req: NextRequest) {
           }]);
 
         if (couponError) {
-          logger.warn('Error recording coupon usage', { couponError }, 'Orders API');
+          logger.error('Error recording coupon usage', { error: couponError.message }, 'Orders API');
         }
       } catch (couponError) {
-        logger.warn('Error processing coupon usage', { couponError }, 'Orders API');
+        logger.error('Error processing coupon usage', { error: couponError }, 'Orders API');
+      }
+    }
+
+    // Process referral rewards if referral was applied
+    if (appliedReferral && userId) {
+      try {
+        const { error: referralError } = await supabase
+          .from('referral_rewards')
+          .insert([{
+            user_id: userId,
+            referrer_id: appliedReferral.referrerId,
+            order_id: orderId,
+            reward_amount: appliedReferral.rewardAmount,
+            referral_code: appliedReferral.code,
+            earned_at: new Date().toISOString()
+          }]);
+
+        if (referralError) {
+          logger.error('Error recording referral reward', { error: referralError.message }, 'Orders API');
+        }
+      } catch (referralError) {
+        logger.error('Error processing referral reward', { error: referralError }, 'Orders API');
       }
     }
 
@@ -283,7 +305,17 @@ export async function POST(req: NextRequest) {
     }
 
     logger.info('Order creation completed successfully', { orderId, orderType }, 'Orders API');
-    return NextResponse.json(createLoggedResponse(true, 'Order created successfully', { id: orderId }));
+    return NextResponse.json(createLoggedResponse(true, 'Order created successfully!', {
+      id: orderId,
+      orderType,
+      totalAmount: orderAmount,
+      containsSubscriptions,
+      deliverySchedule: deliverySchedule ? {
+        firstDeliveryDate: deliverySchedule.firstDeliveryDate.toISOString(),
+        isAfterCutoff: deliverySchedule.isAfterCutoff,
+        orderCutoffTime: deliverySchedule.orderCutoffTime.toISOString()
+      } : null
+    }));
 
   } catch (error: any) {
     logger.error('General error in order creation', { 

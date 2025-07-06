@@ -344,7 +344,12 @@ function SubscribePageContents() {
           : planDefaults.map(d => ({ juiceId: d.juiceId.toString(), quantity: d.quantity })) || [],
         selectedFruitBowls: selectedPlan.isCustomizable && (selectedPlan.planType === 'fruit-bowl-only' || selectedPlan.planType === 'customized')
           ? Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => ({ fruitBowlId, quantity }))
-          : selectedPlan.defaultFruitBowls || []
+          : selectedPlan.defaultFruitBowls || [],
+        // Add category information
+        selectedCategory: selectedCategory,
+        categoryDistribution: selectedCategory && categoryJuices.length > 0 
+          ? calculateCategoryDistribution(selectedCategory, categoryJuices, selectedPlan)
+          : null
       };
       
       addSubscriptionToCart(subscriptionData);
@@ -359,12 +364,17 @@ function SubscribePageContents() {
       planFrequency: selectedPlan.frequency,
       subscriptionDuration: selectedDuration,
       basePrice: selectedPricing.finalPrice, // Use final price with discount
-              selectedJuices: selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized')
-          ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
-          : planDefaults.map(d => ({ juiceId: d.juiceId.toString(), quantity: d.quantity })) || [],
+      selectedJuices: selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized')
+        ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
+        : planDefaults.map(d => ({ juiceId: d.juiceId.toString(), quantity: d.quantity })) || [],
       selectedFruitBowls: selectedPlan.isCustomizable && (selectedPlan.planType === 'fruit-bowl-only' || selectedPlan.planType === 'customized')
         ? Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => ({ fruitBowlId, quantity }))
-        : selectedPlan.defaultFruitBowls || []
+        : selectedPlan.defaultFruitBowls || [],
+      // Add category information
+      selectedCategory: selectedCategory,
+      categoryDistribution: selectedCategory && categoryJuices.length > 0 
+        ? calculateCategoryDistribution(selectedCategory, categoryJuices, selectedPlan)
+        : null
     };
     
     addSubscriptionToCart(subscriptionData);
