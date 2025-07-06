@@ -48,14 +48,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check for admin pause before allowing subscription creation
+    // Check for admin pause and adjust delivery dates accordingly
     const adminPauseValidation = await validateAdminPauseForSubscription(userId);
-    if (!adminPauseValidation.canProceed) {
-      return NextResponse.json(
-        { success: false, message: adminPauseValidation.message, adminPause: true },
-        { status: 423 } // 423 Locked
-      );
-    }
+    
+    // Always allow subscription creation, but adjust delivery dates if needed
+    let adjustedDeliveryDate = adminPauseValidation.adjustedDeliveryDate;
+    let adminPauseMessage = adminPauseValidation.message;
 
     if (!planId || !planName || !planPrice || !planFrequency) {
       return NextResponse.json(
@@ -115,7 +113,9 @@ export async function POST(req: NextRequest) {
     const endDate = SubscriptionManager.calculateSubscriptionEndDate(startDate, subscriptionDuration);
 
     // Use new delivery scheduling system with 6 PM cutoff
-    const deliverySchedule: DeliverySchedule = calculateFirstDeliveryDate(new Date());
+    // If there's an admin pause, use the adjusted delivery date
+    const baseDate = adjustedDeliveryDate || new Date();
+    const deliverySchedule: DeliverySchedule = calculateFirstDeliveryDate(baseDate);
     
     // Determine subscription type based on plan and selections
     let subscriptionType = 'customized'; // default for mixed or unspecified plans
@@ -239,6 +239,7 @@ export async function POST(req: NextRequest) {
       pricing,
       nextDeliveryDate: nextDeliveryDate.toISOString(),
       subscriptionEndDate: endDate.toISOString(),
+      adminPauseMessage,
       deliverySchedule: {
         firstDeliveryDate: deliverySchedule.firstDeliveryDate.toISOString(),
         isAfterCutoff: deliverySchedule.isAfterCutoff,

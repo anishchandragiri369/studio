@@ -5,25 +5,60 @@ const SIGNATURE_URL = process.env.NODE_ENV === 'production'
   : 'http://localhost:9002/images/signature.png';
 
 exports.handler = async (event, context) => {
+  let browser = null;
+  
   try {
+    console.log('Invoice generation started');
+    
     const { order, customer } = JSON.parse(event.body);
+    
+    if (!order) {
+      throw new Error('Order data is required');
+    }
+    
+    console.log('Order ID:', order.id);
     
     // Generate HTML with complete invoice template
     const html = generateInvoiceHTML({ order, customer });
     
-    // Launch browser with proper Netlify settings
-    const browser = await puppeteer.launch({
+    console.log('HTML generated, launching browser...');
+    
+    // Launch browser with Netlify-compatible settings
+    browser = await puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--single-process',
+        '--no-zygote'
+      ],
+      executablePath: process.env.CHROME_BIN || null
     });
     
+    console.log('Browser launched, creating page...');
+    
     const page = await browser.newPage();
-    await page.setContent(html);
+    
+    // Set a longer timeout for page operations
+    page.setDefaultTimeout(30000);
+    
+    // Disable images to avoid signature image issues
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (req.resourceType() === 'image') {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+    
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    console.log('Page content set, generating PDF...');
     
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -36,7 +71,12 @@ exports.handler = async (event, context) => {
       printBackground: true
     });
     
+    console.log('PDF generated, closing browser...');
+    
     await browser.close();
+    browser = null;
+    
+    console.log('PDF generation completed successfully');
     
     return {
       statusCode: 200,
@@ -49,9 +89,27 @@ exports.handler = async (event, context) => {
     };
   } catch (error) {
     console.error('PDF generation error:', error);
+    
+    // Ensure browser is closed even if there's an error
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError);
+      }
+    }
+    
+    // Return a more detailed error response
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'PDF generation failed' })
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        error: 'PDF generation failed',
+        message: error.message,
+        stack: error.stack
+      })
     };
   }
 };
@@ -349,7 +407,9 @@ function generateInvoiceHTML(data) {
         </div>
         <div class="signature-section">
           <div class="signature-box">
-            <img src="${SIGNATURE_URL}" alt="Signature" class="signature-image" />
+            <div class="signature-placeholder" style="height: 40px; border-bottom: 1px solid #333; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">
+              [Signature]
+            </div>
             <div class="signature-label">Signature of Authorized Person</div>
           </div>
           <div class="date-box">

@@ -73,22 +73,42 @@ export async function checkAdminPauseStatus(userId?: string): Promise<{
 }
 
 /**
- * Block subscription creation/modification if admin pause is active
+ * Check if admin pause affects new subscription creation and adjust delivery dates accordingly
+ * Admin pause should NOT prevent new subscriptions, but should adjust delivery dates
  */
 export async function validateAdminPauseForSubscription(userId: string): Promise<{
   canProceed: boolean;
   message?: string;
+  adjustedDeliveryDate?: Date;
 }> {
   const pauseStatus = await checkAdminPauseStatus(userId);
   
   if (pauseStatus.isAdminPaused) {
+    // Admin pause should NOT prevent new subscription creation
+    // Instead, we'll adjust the delivery date to start after the pause ends
+    
+    let adjustedDeliveryDate: Date | undefined;
+    
+    if (pauseStatus.pauseEndDate) {
+      // If pause has an end date, start deliveries the day after pause ends
+      adjustedDeliveryDate = new Date(pauseStatus.pauseEndDate);
+      adjustedDeliveryDate.setDate(adjustedDeliveryDate.getDate() + 1);
+      adjustedDeliveryDate.setHours(8, 0, 0, 0); // Set to 8 AM
+    } else {
+      // If pause is indefinite, start deliveries 1 week from now
+      adjustedDeliveryDate = new Date();
+      adjustedDeliveryDate.setDate(adjustedDeliveryDate.getDate() + 7);
+      adjustedDeliveryDate.setHours(8, 0, 0, 0); // Set to 8 AM
+    }
+    
     const endMessage = pauseStatus.pauseEndDate 
       ? ` until ${new Date(pauseStatus.pauseEndDate).toLocaleDateString()}`
       : '';
     
     return {
-      canProceed: false,
-      message: `Subscription services are temporarily paused ${endMessage}. Reason: ${pauseStatus.pauseReason}`
+      canProceed: true, // Allow subscription creation
+      message: `Note: Due to admin pause ${endMessage}, your first delivery will be scheduled for ${adjustedDeliveryDate.toLocaleDateString()}. Reason: ${pauseStatus.pauseReason}`,
+      adjustedDeliveryDate
     };
   }
   

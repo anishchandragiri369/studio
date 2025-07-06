@@ -1,0 +1,12 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify functions for the juice delivery app",
+  "main": "index.js",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "scripts": {
+    "install": "puppeteer browsers install chrome"
+  }
+} 

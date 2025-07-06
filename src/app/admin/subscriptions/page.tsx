@@ -257,7 +257,7 @@ export default function AdminSubscriptionManagementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reactivateType,
+          reactivationType: reactivateType === 'all_paused' ? 'all' : 'selected',
           subscriptionIds,
           adminPauseId: selectedAdminPauseId || null,
           adminUserId: user?.id

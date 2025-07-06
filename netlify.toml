@@ -13,6 +13,7 @@
 [build]
   functions = "netlify/functions"
   command = "npm run build:server"
+  publish = ".next"
 
 [build.environment]
   MOBILE_BUILD = "false"
@@ -21,7 +22,8 @@
   NEXT_TELEMETRY_DISABLED = "1"
 
 [functions]
-  external_node_modules = ["exceljs", "nodemailer", "puppeteer"]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 # Scheduled function configuration
 # This function will run daily at 6 PM (18:00 UTC)
@@ -86,3 +88,14 @@
   for = "/images/*"
   [headers.values]
     Cache-Control = "public, max-age=86400"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[functions]]
+  function = "generate-invoice"
+  node_bundler = "esbuild"
+  external_node_modules = ["puppeteer"]
+
+[functions.environment]
+  CHROME_BIN = "/opt/google/chrome/chrome"
