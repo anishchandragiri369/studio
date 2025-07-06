@@ -1,7 +1,29 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database connection not available' },
+      { status: 503 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const orderId = searchParams.get('orderId');
   const userId = searchParams.get('userId');
@@ -10,13 +32,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: 'Order ID is required' },
       { status: 400 }
-    );
-  }
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database connection not available' },
-      { status: 503 }
     );
   }
 
@@ -97,6 +112,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database connection not available' },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { orderId, userId, email } = body;
@@ -105,13 +129,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Order ID is required' },
         { status: 400 }
-      );
-    }
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 503 }
       );
     }
 
