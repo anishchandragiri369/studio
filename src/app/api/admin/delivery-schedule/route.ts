@@ -1,13 +1,26 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase with service role for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role for admin operations - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function GET() {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const { data, error } = await supabase
       .from('delivery_schedule_settings')
@@ -25,6 +38,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const { subscription_type, delivery_gap_days, is_daily, description, change_reason, admin_email } = await request.json();
     

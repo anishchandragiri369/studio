@@ -1,44 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const {
       company_name,
-      company_email,
-      contact_person,
-      contact_phone,
-      billing_address,
-      tax_id,
+      admin_user_id,
       employee_limit,
       monthly_budget,
-      subsidy_percentage,
-      allowed_plans
+      contact_email,
+      contact_phone,
+      address,
+      tax_id,
+      subscription_plan_id
     } = await request.json();
 
     // Validate required fields
-    if (!company_name || !company_email || !contact_person || !billing_address) {
+    if (!company_name || !admin_user_id || !contact_email) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Company name, admin user ID, and contact email are required' },
         { status: 400 }
       );
     }
 
-    // Check if company email already exists
+    // Check if admin user already has a corporate account
     const { data: existingAccount } = await supabase
       .from('corporate_accounts')
       .select('id')
-      .eq('company_email', company_email)
+      .eq('admin_user_id', admin_user_id)
+      .eq('status', 'active')
       .single();
 
     if (existingAccount) {
       return NextResponse.json(
-        { error: 'Corporate account with this email already exists' },
+        { error: 'User already has an active corporate account' },
         { status: 400 }
       );
     }
@@ -48,16 +62,16 @@ export async function POST(request: NextRequest) {
       .from('corporate_accounts')
       .insert({
         company_name,
-        company_email,
-        contact_person,
+        admin_user_id,
+        employee_limit: employee_limit || 10,
+        monthly_budget: monthly_budget || 5000,
+        contact_email,
         contact_phone,
-        billing_address,
+        address,
         tax_id,
-        employee_limit: employee_limit || 50,
-        monthly_budget,
-        subsidy_percentage: subsidy_percentage || 100,
-        allowed_plans,
-        status: 'pending' // Admin approval required
+        subscription_plan_id,
+        status: 'active',
+        created_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -70,17 +84,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send email notification to admin for approval
-    // You can integrate with your email service here
+    // Create notification for admin
+    await supabase
+      .from('subscription_notifications')
+      .insert({
+        user_id: admin_user_id,
+        type: 'corporate_account_created',
+        title: 'Corporate Account Created',
+        message: `Your corporate account for ${company_name} has been created successfully.`,
+        related_id: corporateAccount.id,
+        related_type: 'corporate_account'
+      });
 
     return NextResponse.json({
       success: true,
       corporate_account: corporateAccount,
-      message: 'Corporate account created successfully. Pending admin approval.'
+      message: 'Corporate account created successfully'
     });
 
   } catch (error) {
-    console.error('Error in corporate account creation:', error);
+    console.error('Error creating corporate account:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -89,15 +112,19 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const accountId = searchParams.get('account_id');
-    const userEmail = searchParams.get('user_email');
-    const status = searchParams.get('status');
+    const adminUserId = searchParams.get('admin_user_id');
 
-    if (accountId) {
-      // Get specific corporate account with employees
-      const { data: account, error } = await supabase
+    if (adminUserId) {
+      // Get corporate account for specific admin
+      const { data: corporateAccount, error } = await supabase
         .from('corporate_accounts')
         .select(`
           *,
@@ -106,49 +133,28 @@ export async function GET(request: NextRequest) {
             corporate_subscriptions(*)
           )
         `)
-        .eq('id', accountId)
+        .eq('admin_user_id', adminUserId)
+        .eq('status', 'active')
         .single();
 
-      if (error || !account) {
+      if (error) {
         return NextResponse.json(
-          { error: 'Corporate account not found' },
-          { status: 404 }
+          { error: 'Failed to fetch corporate account' },
+          { status: 500 }
         );
       }
 
-      return NextResponse.json({ account });
-    }
-
-    if (userEmail) {
-      // Check if user is enrolled in any corporate program
-      const { data: employee, error } = await supabase
-        .from('corporate_employees')
-        .select(`
-          *,
-          corporate_accounts(*),
-          corporate_subscriptions(*)
-        `)
-        .eq('user_id', userEmail) // Assuming user_id can be email for lookup
-        .eq('is_active', true)
-        .single();
-
       return NextResponse.json({
-        employee: employee || null,
-        enrolled: !!employee
+        corporate_account: corporateAccount || null
       });
     }
 
-    // Get all corporate accounts (admin view)
-    let query = supabase
+    // Get all active corporate accounts
+    const { data: corporateAccounts, error } = await supabase
       .from('corporate_accounts')
       .select('*')
+      .eq('status', 'active')
       .order('created_at', { ascending: false });
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data: accounts, error } = await query;
 
     if (error) {
       return NextResponse.json(
@@ -158,7 +164,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      accounts: accounts || []
+      corporate_accounts: corporateAccounts || []
     });
 
   } catch (error) {

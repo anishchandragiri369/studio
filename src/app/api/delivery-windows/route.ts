@@ -1,47 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
-    const userId = searchParams.get('userId');
+    const pincode = searchParams.get('pincode');
 
-    // Get available time windows for the specified date
-    const { data: timeWindows, error } = await supabase
-      .rpc('get_available_time_windows', { 
-        p_delivery_date: date,
-        p_user_id: userId 
-      });
+    if (!pincode) {
+      return NextResponse.json(
+        { error: 'Pincode is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get delivery windows for the pincode
+    const { data: deliveryWindows, error } = await supabase
+      .from('delivery_windows')
+      .select('*')
+      .eq('pincode', pincode)
+      .eq('is_active', true)
+      .order('day_of_week', { ascending: true });
 
     if (error) {
-      console.error('Error fetching time windows:', error);
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to fetch delivery time windows'
-      }, { status: 500 });
+      console.error('Error fetching delivery windows:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch delivery windows' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
-      success: true,
-      data: {
-        date,
-        time_windows: timeWindows || [],
-        total_windows: timeWindows?.length || 0
-      }
+      delivery_windows: deliveryWindows || []
     });
 
   } catch (error) {
     console.error('Error in delivery windows API:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 

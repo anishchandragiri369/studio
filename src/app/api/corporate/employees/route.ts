@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const {
       corporate_account_id,
@@ -119,6 +133,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const corporateAccountId = searchParams.get('corporate_account_id');
@@ -186,6 +206,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database connection not available' }, { status: 503 });
+  }
+
   try {
     const {
       employee_id,
@@ -203,15 +229,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update employee record
-    const updateData: any = {};
-    if (monthly_allowance !== undefined) updateData.monthly_allowance = monthly_allowance;
-    if (department) updateData.department = department;
-    if (position) updateData.position = position;
-    if (is_active !== undefined) updateData.is_active = is_active;
-
-    const { data: updatedEmployee, error } = await supabase
+    const { data: employee, error } = await supabase
       .from('corporate_employees')
-      .update(updateData)
+      .update({
+        monthly_allowance,
+        department,
+        position,
+        is_active,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', employee_id)
       .select()
       .single();
@@ -226,7 +252,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      employee: updatedEmployee,
+      employee,
       message: 'Employee updated successfully'
     });
 
