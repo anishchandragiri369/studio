@@ -30,6 +30,13 @@
 [functions."daily-subscription-report-cron"]
   schedule = "0 18 * * *"
 
+# Generate invoice function configuration
+[functions."generate-invoice"]
+  external_node_modules = ["puppeteer"]
+
+[functions.environment]
+  CHROME_BIN = "/opt/google/chrome/chrome"
+
 # Cache control headers
 [[headers]]
   # Only apply aggressive no-cache to auth pages
@@ -91,11 +98,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[[functions]]
-  function = "generate-invoice"
-  node_bundler = "esbuild"
-  external_node_modules = ["puppeteer"]
-
-[functions.environment]
-  CHROME_BIN = "/opt/google/chrome/chrome"
