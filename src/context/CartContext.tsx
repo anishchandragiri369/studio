@@ -97,25 +97,61 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addSubscriptionToCart = (subscriptionData: SubscriptionCartItem['subscriptionData']) => {
-    const subscriptionItem: SubscriptionCartItem = {
-      id: `subscription-${subscriptionData.planId}-${Date.now()}`,
-      name: subscriptionData.planName,
-      price: subscriptionData.basePrice || 0, // Use basePrice instead of planPrice
-      quantity: 1,
-      type: 'subscription',
-      subscriptionData,
-      image: '/images/subscription-icon.jpg' // You can customize this
-    };
-
     setCartItems(prevItems => {
-      const newItems = [...prevItems, subscriptionItem];
-      saveCartToLocalStorage(newItems);
-      return newItems;
-    });
+      // Check if a subscription with this planId already exists
+      const existingSubscriptionIndex = prevItems.findIndex(
+        item => item.type === 'subscription' && item.subscriptionData.planId === subscriptionData.planId
+      );
 
-    toast({
-      title: "Subscription added to cart",
-      description: `${subscriptionData.planName} has been added to your cart.`,
+      let newItems;
+      let isUpdate = false;
+      
+      if (existingSubscriptionIndex !== -1) {
+        // Update existing subscription
+        newItems = prevItems.map((item, index) => 
+          index === existingSubscriptionIndex 
+            ? {
+                ...item,
+                name: subscriptionData.planName,
+                price: subscriptionData.basePrice || 0,
+                subscriptionData
+              } as SubscriptionCartItem
+            : item
+        );
+        isUpdate = true;
+      } else {
+        // Add new subscription
+        const subscriptionItem: SubscriptionCartItem = {
+          id: `subscription-${subscriptionData.planId}-${Date.now()}`,
+          name: subscriptionData.planName,
+          price: subscriptionData.basePrice || 0,
+          quantity: 1,
+          type: 'subscription',
+          subscriptionData,
+          image: '/images/subscription-icon.jpg'
+        };
+        
+        newItems = [...prevItems, subscriptionItem];
+      }
+      
+      saveCartToLocalStorage(newItems);
+      
+      // Show toast after state update
+      setTimeout(() => {
+        if (isUpdate) {
+          toast({
+            title: "Subscription updated",
+            description: `${subscriptionData.planName} has been updated in your cart.`,
+          });
+        } else {
+          toast({
+            title: "Subscription added to cart",
+            description: `${subscriptionData.planName} has been added to your cart.`,
+          });
+        }
+      }, 0);
+      
+      return newItems;
     });
   };
 

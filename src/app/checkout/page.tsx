@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet, Loader2, ShoppingBag, Clock, Sparkles } from 'lucide-react';
+import { CreditCard, ArrowLeft, MapPin, Info, AlertTriangle, Wallet, Loader2, ShoppingBag, Clock, Sparkles, Trash2, Plus, Minus } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,7 +56,7 @@ function CheckoutPageContents() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { cartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems, getCartTotal, clearCart, updateQuantity, removeFromCart } = useCart();
   const { user, loading: isAuthLoading, isAdmin } = useAuth(); // Enable user context and admin status
   const [isSubscriptionCheckout, setIsSubscriptionCheckout] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState<{
@@ -89,6 +89,11 @@ function CheckoutPageContents() {
     message: string;
     area?: string;
   } | null>(null);
+  const [userInstructions, setUserInstructions] = useState<string>(() => {
+    // Try to get from query params if passed from subscription flow
+    const param = searchParams.get('instructions');
+    return param ? decodeURIComponent(param) : '';
+  });
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CheckoutAddressFormData>({
     resolver: zodResolver(checkoutAddressSchema),
@@ -372,7 +377,8 @@ function CheckoutPageContents() {
             state: (formData as CheckoutAddressFormData).state,
             zipCode: (formData as CheckoutAddressFormData).zipCode,
             country: (formData as CheckoutAddressFormData).country,
-          }
+          },
+          instructions: userInstructions
         },
         userId: user?.id, // <-- Pass the userId to backend
         // Add subscription data if this is a subscription checkout
@@ -622,6 +628,20 @@ function CheckoutPageContents() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
+                    {/* User Instructions Section */}
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+                      <label htmlFor="user-instructions" className="block font-semibold text-blue-900 mb-2">
+                        Special Instructions (Optional)
+                      </label>
+                      <textarea
+                        id="user-instructions"
+                        className="w-full p-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
+                        rows={3}
+                        placeholder="Let us know if you have any special requirements, delivery instructions, or preferences."
+                        value={userInstructions}
+                        onChange={e => setUserInstructions(e.target.value)}
+                      />
+                    </div>
                     <Card className="glass border-0 shadow-soft">
                       <CardHeader className="pb-4">
                         <CardTitle className="font-headline text-xl flex items-center gap-2">
@@ -929,7 +949,7 @@ function CheckoutPageContents() {
                             Selected Juices:
                           </h4>
                           <div className="space-y-2">
-                            {subscriptionOrderItems.map(item => (
+                            {subscriptionOrderItems.map((item, idx) => (
                               <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg glass">
                                 {item.image && (
                                   <Image 
@@ -943,7 +963,37 @@ function CheckoutPageContents() {
                                     onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40.png'}
                                   />
                                 )}
-                                <span className="flex-grow text-sm">{item.quantity}x {item.name}</span>
+                                <span className="flex-grow text-sm">{item.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    className="h-7 w-7 flex items-center justify-center rounded border border-border/50 bg-white hover:bg-gray-100"
+                                    onClick={() => {
+                                      const newQty = Math.max(1, item.quantity - 1);
+                                      setSubscriptionOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: newQty } : it));
+                                    }}
+                                    disabled={item.quantity <= 1}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </button>
+                                  <span className="w-8 text-center">{item.quantity}</span>
+                                  <button
+                                    type="button"
+                                    className="h-7 w-7 flex items-center justify-center rounded border border-border/50 bg-white hover:bg-gray-100"
+                                    onClick={() => {
+                                      setSubscriptionOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: it.quantity + 1 } : it));
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="ml-2 h-7 w-7 flex items-center justify-center rounded border border-red-200 bg-red-50 hover:bg-red-100"
+                                    onClick={() => setSubscriptionOrderItems(prev => prev.filter((_, i) => i !== idx))}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1038,7 +1088,36 @@ function CheckoutPageContents() {
                              )}
                             <div className="flex-grow">
                               <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                              {item.type === 'subscription' && item.subscriptionData?.planId && (
+                                <Link href={`/subscriptions/subscribe?plan=${item.subscriptionData.planId}`} className="inline-block mt-1 text-xs text-blue-600 hover:underline font-semibold">
+                                  Edit Plan
+                                </Link>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <button
+                                  type="button"
+                                  className="h-7 w-7 flex items-center justify-center rounded border border-border/50 bg-white hover:bg-gray-100"
+                                  onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </button>
+                                <span className="w-8 text-center">{item.quantity}</span>
+                                <button
+                                  type="button"
+                                  className="h-7 w-7 flex items-center justify-center rounded border border-border/50 bg-white hover:bg-gray-100"
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ml-2 h-7 w-7 flex items-center justify-center rounded border border-red-200 bg-red-50 hover:bg-red-100"
+                                  onClick={() => removeFromCart(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </button>
+                              </div>
                             </div>
                             <span className="font-semibold text-primary">₹{(item.price * item.quantity).toFixed(2)}</span>
                           </div>

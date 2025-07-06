@@ -14,6 +14,7 @@ import { SubscriptionManager } from '@/lib/subscriptionManager';
 import type { SubscriptionPlan, Juice, FruitBowl } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
+import { fetchPlanDefaults, convertDefaultsToSelection, type PlanDefault } from '@/lib/planDefaults';
 
 type CustomSelections = Record<string, number>; // { juiceId: quantity }
 type FruitBowlSelections = Record<string, number>; // { fruitBowlId: quantity }
@@ -31,26 +32,15 @@ function SubscribePageContents() {
   const [selectedDuration, setSelectedDuration] = useState<1 | 2 | 3 | 4 | 6 | 12>(selectedPlan?.frequency === 'weekly' ? 2 : 3);
   const [selectedPricing, setSelectedPricing] = useState<any>(null);
   const [fruitBowls, setFruitBowls] = useState<FruitBowl[]>([]);
-  const [juices, setJuices] = useState<Juice[]>(FALLBACK_JUICES); // Initialize with fallback juices
+  const [juices, setJuices] = useState<Juice[]>([]); // Start empty, will be populated from API
+  const [juicesLoaded, setJuicesLoaded] = useState(false); // Track if database juices are loaded
+  const [userInstructions, setUserInstructions] = useState('');
+  const [planDefaults, setPlanDefaults] = useState<PlanDefault[]>([]);
+  const [isLoadingDefaults, setIsLoadingDefaults] = useState(false);
   
   useEffect(() => {
     if (selectedPlan && selectedPlan.isCustomizable) {
-      // Initialize juice selections
-      if (selectedPlan.defaultJuices) {
-        const initialJuiceSelections: CustomSelections = {};
-        let initialJuiceTotal = 0;
-        selectedPlan.defaultJuices.forEach(dj => {
-          initialJuiceSelections[dj.juiceId] = dj.quantity;
-          initialJuiceTotal += dj.quantity;
-        });
-        setCustomSelections(initialJuiceSelections);
-        setTotalSelectedJuices(initialJuiceTotal);
-      } else {
-        setCustomSelections({});
-        setTotalSelectedJuices(0);
-      }
-
-      // Initialize fruit bowl selections
+      // Initialize fruit bowl selections (these remain hardcoded for now)
       if (selectedPlan.defaultFruitBowls) {
         const initialFruitBowlSelections: FruitBowlSelections = {};
         let initialFruitBowlTotal = 0;
@@ -133,22 +123,112 @@ function SubscribePageContents() {
           // Ensure data is an array
           if (Array.isArray(juicesArray)) {
             setJuices(juicesArray);
+            setJuicesLoaded(true);
           } else {
             console.error('Juices data is not an array:', data);
             setJuices(FALLBACK_JUICES); // Fallback to constants
+            setJuicesLoaded(true);
           }
         } else {
           console.error('Failed to fetch juices:', response.status, response.statusText);
           setJuices(FALLBACK_JUICES); // Fallback to constants
+          setJuicesLoaded(true);
         }
       } catch (error) {
         console.error('Error fetching juices:', error);
         setJuices(FALLBACK_JUICES); // Fallback to constants
+        setJuicesLoaded(true);
       }
     };
 
     fetchJuices();
   }, []);
+
+  // Fetch plan defaults from database
+  useEffect(() => {
+    const loadPlanDefaults = async () => {
+      if (!selectedPlan || !selectedPlan.isCustomizable) {
+        setPlanDefaults([]);
+        return;
+      }
+
+      setIsLoadingDefaults(true);
+      try {
+        const defaultsData = await fetchPlanDefaults(selectedPlan.id);
+        setPlanDefaults(defaultsData.defaults);
+        
+        // Initialize juice selections from database defaults
+        if (defaultsData.defaults.length > 0 && Object.keys(customSelections).length === 0) {
+          const initialSelections = convertDefaultsToSelection(defaultsData.defaults);
+          
+          // Check if defaults exceed the plan limit and adjust if necessary
+          let adjustedSelections: CustomSelections = { ...initialSelections };
+          let totalFromDefaults = Object.values(initialSelections).reduce((sum, qty) => sum + qty, 0);
+          
+          if (selectedPlan.maxJuices && totalFromDefaults > selectedPlan.maxJuices) {
+            console.warn(`Plan defaults exceed limit: ${totalFromDefaults} > ${selectedPlan.maxJuices}. Adjusting...`);
+            
+            // Reduce quantities to fit within the limit, prioritizing first juices in the list
+            adjustedSelections = {};
+            let remainingSlots = selectedPlan.maxJuices;
+            
+            for (const [juiceId, quantity] of Object.entries(initialSelections)) {
+              if (remainingSlots <= 0) break;
+              
+              const adjustedQty = Math.min(quantity, remainingSlots);
+              adjustedSelections[juiceId] = adjustedQty;
+              remainingSlots -= adjustedQty;
+            }
+            
+            totalFromDefaults = Object.values(adjustedSelections).reduce((sum, qty) => sum + qty, 0);
+          }
+          
+          setCustomSelections(adjustedSelections);
+          setTotalSelectedJuices(totalFromDefaults);
+        }
+      } catch (error) {
+        console.error('Error loading plan defaults:', error);
+        // Fallback to hardcoded defaults if database fails
+        if (selectedPlan.defaultJuices && Object.keys(customSelections).length === 0) {
+          const initialJuiceSelections: CustomSelections = {};
+          selectedPlan.defaultJuices.forEach(dj => {
+            if (juices.some(j => j.id === dj.juiceId)) {
+              initialJuiceSelections[dj.juiceId] = dj.quantity;
+            }
+          });
+          
+          // Check if hardcoded defaults exceed the plan limit and adjust if necessary
+          let adjustedSelections: CustomSelections = { ...initialJuiceSelections };
+          let totalFromDefaults = Object.values(initialJuiceSelections).reduce((sum, qty) => sum + qty, 0);
+          
+          if (selectedPlan.maxJuices && totalFromDefaults > selectedPlan.maxJuices) {
+            console.warn(`Hardcoded defaults exceed limit: ${totalFromDefaults} > ${selectedPlan.maxJuices}. Adjusting...`);
+            
+            // Reduce quantities to fit within the limit, prioritizing first juices in the list
+            adjustedSelections = {};
+            let remainingSlots = selectedPlan.maxJuices;
+            
+            for (const [juiceId, quantity] of Object.entries(initialJuiceSelections)) {
+              if (remainingSlots <= 0) break;
+              
+              const adjustedQty = Math.min(quantity, remainingSlots);
+              adjustedSelections[juiceId] = adjustedQty;
+              remainingSlots -= adjustedQty;
+            }
+            
+            totalFromDefaults = Object.values(adjustedSelections).reduce((sum, qty) => sum + qty, 0);
+          }
+          
+          setCustomSelections(adjustedSelections);
+          setTotalSelectedJuices(totalFromDefaults);
+        }
+      } finally {
+        setIsLoadingDefaults(false);
+      }
+    };
+
+    loadPlanDefaults();
+  }, [selectedPlan, juices, customSelections]);
 
   if (typeof window !== 'undefined') {
     document.title = selectedPlan ? `Subscribe to ${selectedPlan.name} - Elixr` : 'Choose a Subscription - Elixr';
@@ -192,6 +272,20 @@ function SubscribePageContents() {
       return updatedSelections;
     });
   };
+  // Helper function to check if adding a specific juice would exceed the limit
+  const canAddJuice = (juiceId: string) => {
+    if (!selectedPlan?.maxJuices) return true;
+    const currentQty = customSelections[juiceId] || 0;
+    return totalSelectedJuices - currentQty + (currentQty + 1) <= selectedPlan.maxJuices;
+  };
+
+  // Helper function to check if adding a specific fruit bowl would exceed the limit
+  const canAddFruitBowl = (fruitBowlId: string) => {
+    if (!selectedPlan?.maxFruitBowls) return true;
+    const currentQty = fruitBowlSelections[fruitBowlId] || 0;
+    return totalSelectedFruitBowls - currentQty + (currentQty + 1) <= selectedPlan.maxFruitBowls;
+  };
+
   const canAddMore = selectedPlan?.maxJuices ? totalSelectedJuices < selectedPlan.maxJuices : true;
   const canAddMoreFruitBowls = selectedPlan?.maxFruitBowls ? totalSelectedFruitBowls < selectedPlan.maxFruitBowls : true;
   const handleDurationSelect = (duration: 1 | 2 | 3 | 4 | 6 | 12, pricing: any) => {
@@ -225,7 +319,7 @@ function SubscribePageContents() {
         basePrice: pricing.finalPrice, // Use final price with discount
         selectedJuices: selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized')
           ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
-          : selectedPlan.defaultJuices || [],
+          : planDefaults.map(d => ({ juiceId: d.juiceId.toString(), quantity: d.quantity })) || [],
         selectedFruitBowls: selectedPlan.isCustomizable && (selectedPlan.planType === 'fruit-bowl-only' || selectedPlan.planType === 'customized')
           ? Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => ({ fruitBowlId, quantity }))
           : selectedPlan.defaultFruitBowls || []
@@ -243,9 +337,9 @@ function SubscribePageContents() {
       planFrequency: selectedPlan.frequency,
       subscriptionDuration: selectedDuration,
       basePrice: selectedPricing.finalPrice, // Use final price with discount
-      selectedJuices: selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized')
-        ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
-        : selectedPlan.defaultJuices || [],
+              selectedJuices: selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized')
+          ? Object.entries(customSelections).map(([juiceId, quantity]) => ({ juiceId, quantity }))
+          : planDefaults.map(d => ({ juiceId: d.juiceId.toString(), quantity: d.quantity })) || [],
       selectedFruitBowls: selectedPlan.isCustomizable && (selectedPlan.planType === 'fruit-bowl-only' || selectedPlan.planType === 'customized')
         ? Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => ({ fruitBowlId, quantity }))
         : selectedPlan.defaultFruitBowls || []
@@ -263,6 +357,21 @@ function SubscribePageContents() {
           Back to All Plans
         </Link>
       </Button>
+
+      {/* User Instructions Section */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+        <label htmlFor="user-instructions" className="block font-semibold text-blue-900 mb-2">
+          Special Instructions (Optional)
+        </label>
+        <textarea
+          id="user-instructions"
+          className="w-full p-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
+          rows={3}
+          placeholder="Let us know if you have any special requirements, delivery instructions, or preferences."
+          value={userInstructions}
+          onChange={e => setUserInstructions(e.target.value)}
+        />
+      </div>
 
       {selectedPlan ? (
         <Card className="max-w-2xl mx-auto shadow-xl animate-fade-in">
@@ -290,7 +399,7 @@ function SubscribePageContents() {
                         <h5 className="font-medium text-xs text-muted-foreground mb-1">Juices:</h5>
                         <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                           {selectedPlan.defaultJuices.map(dj => {
-                            const juiceInfo = juices.find(j => j.id === dj.juiceId);
+                            const juiceInfo = juices.find(j => j.id === dj.juiceId) || FALLBACK_JUICES.find(j => j.id === dj.juiceId);
                             return (
                               <li key={dj.juiceId}>{dj.quantity}x {juiceInfo ? juiceInfo.name : `Juice (ID: ${dj.juiceId})`}</li>
                             )
@@ -313,6 +422,63 @@ function SubscribePageContents() {
                     )}
                   </div>
                 </div>
+              )}
+              {selectedPlan.isCustomizable && juicesLoaded && (
+                <div className="mt-4">
+                  <h4 className="font-semibold text-sm mb-1">Default Selection:</h4>
+                  <div className="space-y-2">
+                    {planDefaults.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-xs text-muted-foreground mb-1">Juices:</h5>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                          {planDefaults.map(defaultItem => (
+                            <li key={defaultItem.juiceId}>{defaultItem.quantity}x {defaultItem.juice.name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {Object.keys(fruitBowlSelections).length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-xs text-muted-foreground mb-1">Fruit Bowls:</h5>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                          {Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => {
+                            const fruitBowlInfo = fruitBowls.find((f: FruitBowl) => f.id === fruitBowlId);
+                            return (
+                              <li key={fruitBowlId}>{quantity}x {fruitBowlInfo ? fruitBowlInfo.name : `Fruit Bowl (ID: ${fruitBowlId})`}</li>
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {selectedPlan.isCustomizable && !juicesLoaded && (
+                <div className="mt-4">
+                  <h4 className="font-semibold text-sm mb-1">Default Selection:</h4>
+                  <div className="space-y-2">
+                    {planDefaults.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-xs text-muted-foreground mb-1">Juices:</h5>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                          {planDefaults.map(defaultItem => (
+                            <li key={defaultItem.juiceId}>{defaultItem.quantity}x {defaultItem.juice.name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {Object.keys(fruitBowlSelections).length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-xs text-muted-foreground mb-1">Fruit Bowls:</h5>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                          {Object.entries(fruitBowlSelections).map(([fruitBowlId, quantity]) => (
+                            <li key={fruitBowlId}>{quantity}x Fruit Bowl (ID: {fruitBowlId})</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}            </div>
 
             {/* Duration Selector */}            <div className="space-y-4">
@@ -325,7 +491,7 @@ function SubscribePageContents() {
             </div>
 
             {/* Juice Customization - only for juice-only and customized plans */}
-            {selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized') && (
+            {selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized') && juicesLoaded && (
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-primary">Customize Your Juices</CardTitle>
@@ -367,14 +533,14 @@ function SubscribePageContents() {
                           }}
                           className="w-12 h-8 text-center text-sm px-1" // Slightly smaller input
                           min="0"
-                          disabled={!canAddMore && (customSelections[juice.id] || 0) === 0}
+                          disabled={!canAddJuice(juice.id) && (customSelections[juice.id] || 0) === 0}
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8" // Slightly smaller buttons
                           onClick={() => handleQuantityChange(juice.id, (customSelections[juice.id] || 0) + 1)}
-                          disabled={!canAddMore}
+                          disabled={!canAddJuice(juice.id)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -382,11 +548,7 @@ function SubscribePageContents() {
                     </div>
                   ))}
                 </CardContent>
-                 {selectedPlan.maxJuices && totalSelectedJuices > selectedPlan.maxJuices && (
-                    <CardFooter>
-                        <p className="text-destructive text-sm">You have selected more than the allowed {selectedPlan.maxJuices} juices. Please reduce your selection.</p>
-                    </CardFooter>
-                )}
+
               </Card>
             )}
 
@@ -438,14 +600,14 @@ function SubscribePageContents() {
                           }}
                           className="w-12 h-8 text-center text-sm px-1"
                           min="0"
-                          disabled={!canAddMoreFruitBowls && (fruitBowlSelections[fruitBowl.id] || 0) === 0}
+                          disabled={!canAddFruitBowl(fruitBowl.id) && (fruitBowlSelections[fruitBowl.id] || 0) === 0}
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8"
                           onClick={() => handleFruitBowlQuantityChange(fruitBowl.id, (fruitBowlSelections[fruitBowl.id] || 0) + 1)}
-                          disabled={!canAddMoreFruitBowls}
+                          disabled={!canAddFruitBowl(fruitBowl.id)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -457,11 +619,7 @@ function SubscribePageContents() {
                     </div>
                   )}
                 </CardContent>
-                {selectedPlan.maxFruitBowls && totalSelectedFruitBowls > selectedPlan.maxFruitBowls && (
-                  <CardFooter>
-                    <p className="text-destructive text-sm">You have selected more than the allowed {selectedPlan.maxFruitBowls} fruit bowls. Please reduce your selection.</p>
-                  </CardFooter>
-                )}
+
               </Card>
             )}
             
@@ -475,10 +633,7 @@ function SubscribePageContents() {
                 onClick={handleProceedToCheckout}
                 size="lg" 
                 className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                disabled={
-                  !selectedPricing || 
-                  (selectedPlan.isCustomizable && selectedPlan.maxJuices ? totalSelectedJuices > selectedPlan.maxJuices : false)
-                }
+                disabled={!selectedPricing}
               >
                 <ShoppingCart className="mr-2 h-5 w-5" /> 
                 {!selectedPricing ? 'Loading...' : 'Add to Cart'}

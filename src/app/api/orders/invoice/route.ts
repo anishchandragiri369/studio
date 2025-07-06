@@ -54,11 +54,13 @@ export async function GET(request: NextRequest) {
         .single();
       
       customer = profile;
+    } else if (order.customer_info) {
+      // Use customer info from order for guest orders
+      customer = order.customer_info;
     }
 
     // Generate PDF invoice
-    const pdfGenerator = await generateOrderInvoice(order, customer);
-    const pdfBuffer = pdfGenerator.getPDFArrayBuffer();
+    const pdfBuffer = await generateOrderInvoice(order, customer);
 
     // Return PDF as response
     return new NextResponse(pdfBuffer, {
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="invoice-${order.id}.pdf"`,
-        'Content-Length': pdfBuffer.byteLength.toString(),
+        'Content-Length': pdfBuffer.length.toString(),
       },
     });
 
@@ -144,14 +146,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate PDF invoice
-    const pdfGenerator = await generateOrderInvoice(order, customer);
-    const pdfBlob = pdfGenerator.getPDFBlob();
-    const pdfDataUri = pdfGenerator.getPDFDataUri();
+    const pdfBuffer = await generateOrderInvoice(order, customer);
 
-    return NextResponse.json({
-      success: true,
-      pdfDataUri,
-      filename: `invoice-${order.id}.pdf`
+    // Return PDF as response
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="invoice-${order.id}.pdf"`,
+        'Content-Length': pdfBuffer.length.toString(),
+      },
     });
 
   } catch (error) {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useCart } from '@/hooks/useCart';
 import { Minus, Plus, Trash2, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { JUICES } from '@/lib/constants';
+import { JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import { useEffect, useState } from 'react';
 
 // Import the unified cart item types from CartContext
@@ -48,25 +48,41 @@ interface CartItemProps {
 const CartItem = ({ item }: CartItemProps) => {
   const { updateQuantity, removeFromCart } = useCart();
   const [fruitBowls, setFruitBowls] = useState<any[]>([]);
+  const [juices, setJuices] = useState<any[]>([]);
 
-  // Fetch fruit bowls for name resolution
+  // Fetch juices and fruit bowls for name resolution
   useEffect(() => {
-    const fetchFruitBowls = async () => {
-      try {
-        const response = await fetch('/api/fruit-bowls');
-        if (response.ok) {
-          const data = await response.json();
-          setFruitBowls(data.fruitBowls || []); // Fix: use data.fruitBowls instead of data
+    const fetchData = async () => {
+      // Fetch juices if subscription has selected juices
+      if (item.type === 'subscription' && item.subscriptionData.selectedJuices && item.subscriptionData.selectedJuices.length > 0) {
+        try {
+          const juiceResponse = await fetch('/api/juices');
+          if (juiceResponse.ok) {
+            const juiceData = await juiceResponse.json();
+            setJuices(juiceData.juices || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch juices:', error);
+          setJuices([]);
         }
-      } catch (error) {
-        console.error('Failed to fetch fruit bowls:', error);
-        setFruitBowls([]); // Set empty array as fallback
+      }
+
+      // Fetch fruit bowls if subscription has selected fruit bowls
+      if (item.type === 'subscription' && item.subscriptionData.selectedFruitBowls && item.subscriptionData.selectedFruitBowls.length > 0) {
+        try {
+          const fruitBowlResponse = await fetch('/api/fruit-bowls');
+          if (fruitBowlResponse.ok) {
+            const fruitBowlData = await fruitBowlResponse.json();
+            setFruitBowls(fruitBowlData.fruitBowls || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch fruit bowls:', error);
+          setFruitBowls([]);
+        }
       }
     };
 
-    if (item.type === 'subscription' && item.subscriptionData.selectedFruitBowls && item.subscriptionData.selectedFruitBowls.length > 0) {
-      fetchFruitBowls();
-    }
+    fetchData();
   }, [item]);
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -128,7 +144,7 @@ const CartItem = ({ item }: CartItemProps) => {
                 <p className="font-medium text-foreground mb-1">Juices:</p>
                 <div className="space-y-1">
                   {item.subscriptionData.selectedJuices.map(sj => {
-                    const juiceInfo = JUICES.find(j => j.id === sj.juiceId);
+                    const juiceInfo = juices.find((j: any) => j.id === sj.juiceId) || FALLBACK_JUICES.find((j: any) => j.id === sj.juiceId);
                     return (
                       <p key={sj.juiceId} className="text-muted-foreground">
                         {sj.quantity}x {juiceInfo ? juiceInfo.name : `Juice (ID: ${sj.juiceId})`}
@@ -220,6 +236,12 @@ const CartItem = ({ item }: CartItemProps) => {
           <Trash2 className="h-5 w-5" />
         </Button>
       </div>
+
+      {item.type === 'subscription' && item.subscriptionData?.planId && (
+        <Link href={`/subscriptions/subscribe?plan=${item.subscriptionData.planId}`} className="inline-block mt-2 text-xs text-blue-600 hover:underline font-semibold">
+          Edit Plan
+        </Link>
+      )}
     </div>
   );
 };

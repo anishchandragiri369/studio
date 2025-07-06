@@ -55,6 +55,8 @@ interface OrderData {
   };
   created_at: string;
   updated_at: string;
+  instructions?: string;
+  special_instructions?: string;
 }
 
 function getOAuth2Client() {
@@ -110,6 +112,7 @@ function formatDate(dateString: string): string {
 function generateCustomerEmailHtml(order: OrderData, customerName: string): string {
   const isSubscription = order.order_type === 'subscription';
   const subscriptionInfo = order.subscription_info;
+  const userInstructions = (order as any).instructions || (order as any).special_instructions || '';
   
   return `
 <!DOCTYPE html>
@@ -199,6 +202,7 @@ function generateCustomerEmailHtml(order: OrderData, customerName: string): stri
                 ${order.shipping_address.country || 'India'}<br>
                 Phone: ${order.shipping_address.mobileNumber || order.shipping_address.phone || 'N/A'}
             </p>
+            ${userInstructions ? `<div style="margin-top:12px;"><strong>Special Instructions:</strong><br><span style="white-space:pre-line;">${userInstructions}</span></div>` : ''}
         </div>
         ` : ''}
         
@@ -227,6 +231,7 @@ function generateCustomerEmailHtml(order: OrderData, customerName: string): stri
 function generateAdminEmailHtml(order: OrderData, customerName: string, customerEmail: string): string {
   const isSubscription = order.order_type === 'subscription';
   const subscriptionInfo = order.subscription_info;
+  const userInstructions = (order as any).instructions || (order as any).special_instructions || '';
   
   return `
 <!DOCTYPE html>
@@ -322,6 +327,7 @@ function generateAdminEmailHtml(order: OrderData, customerName: string, customer
                 ${order.shipping_address.country || 'India'}<br>
                 <strong>Phone:</strong> ${order.shipping_address.mobileNumber || order.shipping_address.phone || 'N/A'}
             </p>
+            ${userInstructions ? `<div style="margin-top:12px;"><strong>User Instructions:</strong><br><span style="white-space:pre-line;">${userInstructions}</span></div>` : ''}
         </div>
         ` : ''}
         
