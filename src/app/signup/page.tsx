@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -18,7 +18,8 @@ import { Loader2, AlertTriangle, MailCheck, Gift, CheckCircle } from 'lucide-rea
 import type { AuthError as SupabaseAuthError, User } from '@supabase/supabase-js';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
-export default function SignUpPage() {
+// Separate component that uses useSearchParams
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signUp, user, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -206,96 +207,139 @@ export default function SignUpPage() {
           )}
 
           {successMessage && (
-            <Alert variant="default" className="mb-6 bg-green-50 border-green-300">
-              <MailCheck className="h-5 w-5 text-green-600" />
-              <AlertTitle className="text-green-700">Check Your Email!</AlertTitle>
-              <AlertDescription className="text-green-600">{successMessage}</AlertDescription>
+            <Alert className="mb-6">
+              <MailCheck className="h-4 w-4" />
+              <AlertTitle>Sign Up Successful!</AlertTitle>
+              <AlertDescription>
+                {successMessage}
+              </AlertDescription>
             </Alert>
           )}
 
-          {!successMessage && (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} disabled={!isSupabaseConfigured || submitLoading} />
-                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="•••••••• (min. 6 characters)" autoComplete="new-password" {...register("password")} disabled={!isSupabaseConfigured || submitLoading}/>
-                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" {...register("confirmPassword")} disabled={!isSupabaseConfigured || submitLoading}/>
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="referralCode" className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-primary" />
-                  Referral Code (Optional)
-                </Label>
-                <Input 
-                  id="referralCode" 
-                  type="text" 
-                  placeholder="Enter referral code to earn bonus rewards" 
-                  {...register("referralCode")} 
-                  disabled={!isSupabaseConfigured || submitLoading}
-                  className={referralCodeValidation.isValid ? 'border-green-500 focus:ring-green-500' : ''}
-                />
-                {referralCodeValidation.checking && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Validating referral code...
-                  </p>
-                )}
-                {referralCodeValidation.message && !referralCodeValidation.checking && (
-                  <p className={`text-sm flex items-center gap-2 ${
-                    referralCodeValidation.isValid ? 'text-green-600' : 'text-destructive'
-                  }`}>
-                    {referralCodeValidation.isValid ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      <AlertTriangle className="h-3 w-3" />
-                    )}
-                    {referralCodeValidation.message}
-                  </p>
-                )}
-                {errors.referralCode && <p className="text-sm text-destructive">{errors.referralCode.message}</p>}
-              </div>
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!isSupabaseConfigured || submitLoading}>
-                {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign Up
-              </Button>
-              
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
-              
-              <GoogleSignInButton 
-                onError={setError}
-                disabled={submitLoading}
-                referralCode={referralCode}
-                isSignUp={true}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                {...register('email')}
+                className={errors.email ? 'border-red-500' : ''}
               />
-            </form>
-          )}
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a password"
+                {...register('password')}
+                className={errors.password ? 'border-red-500' : ''}
+              />
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                {...register('confirmPassword')}
+                className={errors.confirmPassword ? 'border-red-500' : ''}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+              <Input
+                id="referralCode"
+                type="text"
+                placeholder="Enter referral code"
+                {...register('referralCode')}
+                className={errors.referralCode ? 'border-red-500' : ''}
+              />
+              {referralCodeValidation.checking && (
+                <p className="text-sm text-blue-500">Validating referral code...</p>
+              )}
+              {referralCodeValidation.isValid && (
+                <p className="text-sm text-green-500 flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  {referralCodeValidation.message}
+                </p>
+              )}
+              {!referralCodeValidation.isValid && referralCodeValidation.message && !referralCodeValidation.checking && (
+                <p className="text-sm text-red-500">{referralCodeValidation.message}</p>
+              )}
+              {errors.referralCode && (
+                <p className="text-sm text-red-500">{errors.referralCode.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={submitLoading || !isSupabaseConfigured}
+            >
+              {submitLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <GoogleSignInButton />
+            </div>
+          </div>
         </CardContent>
-        <CardFooter>
-          <p className="text-sm text-muted-foreground text-center w-full">
+        <CardFooter className="flex flex-col space-y-2">
+          <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className={`font-semibold text-primary hover:underline ${!isSupabaseConfigured ? 'pointer-events-none opacity-50' : ''}`}>
-               Log in
+            <Link href="/login" className="font-semibold underline hover:no-underline">
+              Sign in
             </Link>
           </p>
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-12 mobile-container">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   );
 }
