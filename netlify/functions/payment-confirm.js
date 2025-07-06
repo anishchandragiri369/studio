@@ -220,9 +220,30 @@ exports.handler = async (event) => {
   if (Array.isArray(order.subscription_info.subscriptionItems)) {
     // New structure: array of subscription items
     subscriptionItems = order.subscription_info.subscriptionItems;
+    console.log('Using subscriptionItems array structure');
+  } else if (order.subscription_info.planName) {
+    // New structure: direct subscription data in subscription_info
+    console.log('Using direct subscription_info structure');
+    subscriptionItems = [{
+      id: order.subscription_info.planId || `plan-${Date.now()}`,
+      name: order.subscription_info.planName,
+      price: order.subscription_info.basePrice,
+      subscriptionData: {
+        planId: order.subscription_info.planId || `plan-${Date.now()}`,
+        planName: order.subscription_info.planName,
+        planFrequency: order.subscription_info.planFrequency || 'weekly',
+        selectedJuices: order.subscription_info.selectedJuices || [],
+        selectedCategory: order.subscription_info.selectedCategory,
+        categoryDistribution: order.subscription_info.categoryDistribution,
+        selectedFruitBowls: order.subscription_info.selectedFruitBowls || [],
+        subscriptionDuration: order.subscription_info.subscriptionDuration || 1,
+        basePrice: order.subscription_info.basePrice || 120
+      }
+    }];
   } else if (order.subscription_info.planId) {
     // Old structure: direct subscription data
     subscriptionItems = [order.subscription_info];
+    console.log('Using old structure with planId');
   }
   
   console.log('Found subscription items:', subscriptionItems.length);
@@ -246,24 +267,20 @@ exports.handler = async (event) => {
           planName: subscriptionItem.planName || subscriptionItem.name,
           planFrequency: subscriptionItem.planFrequency || 'weekly',
           selectedJuices: subscriptionItem.selectedJuices || [],
+          selectedCategory: subscriptionItem.selectedCategory,
+          categoryDistribution: subscriptionItem.categoryDistribution,
           subscriptionDuration: subscriptionItem.subscriptionDuration || 3,
           basePrice: subscriptionItem.basePrice || subscriptionItem.price || 120
         };
         console.log('Using mapped subscriptionData:', JSON.stringify(subscriptionData, null, 2));
       }
       
-      // FALLBACK: If subscriptionData is empty, try to extract from root level
-      if (!subscriptionData.planId && order.subscription_info.planName) {
-        console.log('Using root-level subscription data as fallback');
-        subscriptionData = {
-          planId: order.subscription_info.planId || `plan-${Date.now()}`,
-          planName: order.subscription_info.planName,
-          planFrequency: order.subscription_info.planFrequency || 'weekly',
-          selectedJuices: order.subscription_info.selectedJuices || [],
-          selectedFruitBowls: order.subscription_info.selectedFruitBowls || [],
-          subscriptionDuration: order.subscription_info.subscriptionDuration || 3,
-          basePrice: order.subscription_info.basePrice || subscriptionItem?.price || 120
-        };
+      // Validate that we have the required subscription data
+      if (!subscriptionData.planId || !subscriptionData.planName) {
+        console.error('Missing required subscription data - skipping subscription creation');
+        console.error('Required: planId and planName');
+        console.error('Available data:', JSON.stringify(subscriptionData, null, 2));
+        continue; // Skip this subscription item and continue with the next one
       }
       
       const customerInfo = order.shipping_address || {};
@@ -282,6 +299,8 @@ exports.handler = async (event) => {
         },
         selectedJuices: subscriptionData.selectedJuices || [],
         selectedFruitBowls: subscriptionData.selectedFruitBowls || [], // Add missing fruit bowls support
+        selectedCategory: subscriptionData.selectedCategory, // Add selected category
+        categoryDistribution: subscriptionData.categoryDistribution, // Add category distribution
         subscriptionDuration: subscriptionData.subscriptionDuration || 3,
         basePrice: subscriptionData.basePrice || subscriptionItem?.price || 120
       };

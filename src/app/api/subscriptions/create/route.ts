@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
       customerInfo, 
       selectedJuices,
       selectedFruitBowls, // Add support for fruit bowls
+      selectedCategory, // Add selected category
+      categoryDistribution, // Add category distribution
       subscriptionDuration = 3, // Default to 3 months if not provided
       basePrice = 120 // Default base price if not provided
     } = body;
@@ -151,6 +153,8 @@ export async function POST(req: NextRequest) {
       delivery_frequency: planFrequency,
       selected_juices: selectedJuices ?? [],
       selected_fruit_bowls: selectedFruitBowls ?? [], // Store fruit bowls for mixed subscriptions
+      selected_category: selectedCategory, // Store selected category
+      category_distribution: categoryDistribution, // Store category distribution
       delivery_address: customerInfo,
       total_amount: pricing.finalPrice,
       subscription_duration: subscriptionDuration,
