@@ -10,6 +10,7 @@ import {
 import type { User, AuthError as SupabaseAuthError, SignUpWithPasswordCredentials } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import type { SignUpFormData, LoginFormData, ForgotPasswordFormData } from '@/lib/types';
+import { clearOrderCache } from '@/lib/orderCache';
 
 interface AuthContextType {
   user: User | null;
@@ -320,6 +321,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         console.log('[AuthContext] User signed out, clearing state');
+        
+        // Clear order cache for the user who just signed out
+        if (user?.id) {
+          clearOrderCache(user.id);
+        }
+        
         setUser(null);
         setIsAdmin(false);
 
@@ -510,6 +517,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logOut = async (): Promise<void> => {
     // Clear local state immediately for instant UI feedback
     clearAuthState();
+    
+    // Clear order cache for the current user
+    if (user?.id) {
+      clearOrderCache(user.id);
+    }
     
     // Helper function to clear storage asynchronously
     const clearStorage = () => {

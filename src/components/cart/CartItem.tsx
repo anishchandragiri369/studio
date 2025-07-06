@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/hooks/useCart';
-import { Minus, Plus, Trash2, Calendar, Clock } from 'lucide-react';
+import { Minus, Plus, Trash2, Calendar, Clock, Tag, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { JUICES as FALLBACK_JUICES } from '@/lib/constants';
 import { useEffect, useState } from 'react';
@@ -35,6 +35,7 @@ type SubscriptionCartItem = {
     basePrice: number;
     selectedJuices: { juiceId: string; quantity: number }[];
     selectedFruitBowls?: { fruitBowlId: string; quantity: number }[];
+    selectedCategory?: string;
   };
   image?: string;
 };
@@ -59,7 +60,12 @@ const CartItem = ({ item }: CartItemProps) => {
           const juiceResponse = await fetch('/api/juices');
           if (juiceResponse.ok) {
             const juiceData = await juiceResponse.json();
-            setJuices(juiceData.juices || []);
+            const fetchedJuices = juiceData.juices || [];
+            console.log('Fetched juices for cart:', fetchedJuices.length, 'juices');
+            setJuices(fetchedJuices);
+          } else {
+            console.error('Failed to fetch juices:', juiceResponse.status, juiceResponse.statusText);
+            setJuices([]);
           }
         } catch (error) {
           console.error('Failed to fetch juices:', error);
@@ -74,6 +80,9 @@ const CartItem = ({ item }: CartItemProps) => {
           if (fruitBowlResponse.ok) {
             const fruitBowlData = await fruitBowlResponse.json();
             setFruitBowls(fruitBowlData.fruitBowls || []);
+          } else {
+            console.error('Failed to fetch fruit bowls:', fruitBowlResponse.status, fruitBowlResponse.statusText);
+            setFruitBowls([]);
           }
         } catch (error) {
           console.error('Failed to fetch fruit bowls:', error);
@@ -138,13 +147,62 @@ const CartItem = ({ item }: CartItemProps) => {
               <p className="text-sm text-muted-foreground capitalize">{item.subscriptionData.planFrequency} delivery</p>
             </div>
             
+            {/* Show category or customization info */}
+            {item.subscriptionData.selectedCategory && item.subscriptionData.selectedCategory !== 'custom' ? (
+              <div className="text-sm">
+                <div className="flex items-center gap-1 mb-1">
+                  <Tag className="h-3 w-3 text-green-600" />
+                  <p className="font-medium text-green-700">Category: {item.subscriptionData.selectedCategory}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Juices will be distributed from this category across your subscription period
+                </p>
+              </div>
+            ) : item.subscriptionData.selectedJuices && item.subscriptionData.selectedJuices.length > 0 ? (
+              <div className="text-sm">
+                <div className="flex items-center gap-1 mb-1">
+                  <Settings className="h-3 w-3 text-purple-600" />
+                  <p className="font-medium text-purple-700">Customized Selection</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {item.subscriptionData.selectedJuices.length} juice{item.subscriptionData.selectedJuices.length !== 1 ? 's' : ''} selected
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm">
+                <p className="text-muted-foreground">Standard plan configuration</p>
+              </div>
+            )}
+            
             {/* Selected Juices */}
             {item.subscriptionData.selectedJuices && item.subscriptionData.selectedJuices.length > 0 && (
               <div className="text-sm">
                 <p className="font-medium text-foreground mb-1">Juices:</p>
                 <div className="space-y-1">
                   {item.subscriptionData.selectedJuices.map(sj => {
-                    const juiceInfo = juices.find((j: any) => j.id === sj.juiceId) || FALLBACK_JUICES.find((j: any) => j.id === sj.juiceId);
+                    // Try to find juice in fetched juices first (database IDs)
+                    let juiceInfo = juices.find((j: any) => j.id === sj.juiceId);
+                    
+                    // If not found, try to find by string comparison (for database IDs)
+                    if (!juiceInfo) {
+                      juiceInfo = juices.find((j: any) => j.id.toString() === sj.juiceId.toString());
+                    }
+                    
+                    // If still not found, try fallback constants (for legacy IDs)
+                    if (!juiceInfo) {
+                      juiceInfo = FALLBACK_JUICES.find((j: any) => j.id === sj.juiceId);
+                    }
+                    
+                    // If still not found, try string comparison with fallback
+                    if (!juiceInfo) {
+                      juiceInfo = FALLBACK_JUICES.find((j: any) => j.id.toString() === sj.juiceId.toString());
+                    }
+                    
+                    // Debug logging
+                    if (!juiceInfo) {
+                      console.log('Could not find juice for ID:', sj.juiceId, 'Available juices:', juices.map(j => j.id), 'Fallback juices:', FALLBACK_JUICES.map(j => j.id));
+                    }
+                    
                     return (
                       <p key={sj.juiceId} className="text-muted-foreground">
                         {sj.quantity}x {juiceInfo ? juiceInfo.name : `Juice (ID: ${sj.juiceId})`}

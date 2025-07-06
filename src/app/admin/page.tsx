@@ -69,6 +69,14 @@ export default function AdminDashboardPage() {
 
   const adminFeatures = [
     {
+      title: "Orders Management",
+      description: "View all customer orders, filter by dates, track subscriptions, and export order data",
+      icon: Package,
+      href: "/admin/orders",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    {
       title: "Subscription Management",
       description: "Admin pause/reactivate controls for all or selected user subscriptions (holidays, emergencies)",
       icon: Users,

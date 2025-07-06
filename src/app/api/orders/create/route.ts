@@ -183,10 +183,29 @@ export async function POST(req: NextRequest) {
       shipping_address: customerInfo, // <-- FIXED: use shipping_address
       status: 'payment_pending', // Use snake_case for consistency
       order_type: orderType, // Use the new calculated order type
-      subscription_info: containsSubscriptions ? (subscriptionData || {
-        hasSubscriptionItems: true,
-        subscriptionItems: orderItems.filter((item: any) => item.type === 'subscription')
-      }) : null, // Store subscription details
+      subscription_info: containsSubscriptions ? (() => {
+        // Extract subscription data from subscription items
+        const subscriptionItem = orderItems.find((item: any) => item.type === 'subscription');
+        if (subscriptionItem?.subscriptionData) {
+          const subData = subscriptionItem.subscriptionData;
+          return {
+            planName: subData.planName || subscriptionItem.name,
+            planFrequency: subData.planFrequency || 'weekly',
+            subscriptionDuration: subData.subscriptionDuration || 1,
+            basePrice: subData.basePrice || subscriptionItem.price || 0,
+            selectedCategory: subData.selectedCategory || null,
+            selectedJuices: subData.selectedJuices || [],
+            selectedFruitBowls: subData.selectedFruitBowls || [],
+            categoryDistribution: subData.categoryDistribution || null,
+            // Also keep the original structure for backward compatibility
+            subscriptionItems: orderItems.filter((item: any) => item.type === 'subscription')
+          };
+        }
+        return subscriptionData || {
+          hasSubscriptionItems: true,
+          subscriptionItems: orderItems.filter((item: any) => item.type === 'subscription')
+        };
+      })() : null, // Store subscription details
       // Add delivery scheduling information
       first_delivery_date: deliverySchedule?.firstDeliveryDate?.toISOString() || null,
       is_after_cutoff: deliverySchedule?.isAfterCutoff || null,

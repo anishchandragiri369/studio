@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, AlertTriangle, Package, ArrowLeft, ShoppingBag, Mail, Search } from 'lucide-react';
+import { Loader2, AlertTriangle, Package, ArrowLeft, ShoppingBag, Mail, Search, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import type { Order } from '@/lib/types';
@@ -19,6 +19,8 @@ import OrderRating from '@/components/ratings/OrderRating';
 import { batchCheckOrderRatings } from '@/lib/ratingHelpers';
 import { cacheOrders, getCachedOrders, clearOrderCache } from '@/lib/orderCache';
 import InvoiceDownloadButton from '@/components/orders/InvoiceDownloadButton';
+import SubscriptionDetails from '@/components/orders/SubscriptionDetails';
+import OrderDetailsModal from '@/components/orders/OrderDetailsModal';
 
 export default function OrdersPage() {
   const { user, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -32,6 +34,8 @@ export default function OrdersPage() {
   const [hasSearchedByEmail, setHasSearchedByEmail] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMoreOrders, setHasMoreOrders] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
   const ORDERS_PER_PAGE = 10;
   // Remove the redirect for non-authenticated users - allow them to access the page
   // useEffect(() => {
@@ -144,13 +148,29 @@ export default function OrdersPage() {
       fetchOrders();
     }
     
-    // Clear cache on logout
-    return () => {
-      if (user && isSupabaseConfigured) {
-        clearOrderCache(user.id);
+    // Don't clear cache on component unmount - only clear on actual logout
+    // The cache will be cleared by the auth context when user logs out
+  }, [user, isSupabaseConfigured, ORDERS_PER_PAGE]);
+
+  // Handle page visibility changes (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && isSupabaseConfigured) {
+        // When tab becomes visible again, check if we need to refresh orders
+        const cachedOrders = getCachedOrders(user.id);
+        if (cachedOrders && cachedOrders.length > 0) {
+          console.log('Tab became visible, using cached orders');
+          setOrders(cachedOrders);
+          setLoadingOrders(false);
+        }
       }
     };
-  }, [user, isSupabaseConfigured, ORDERS_PER_PAGE]);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, isSupabaseConfigured]);
 
   // Function to fetch orders by email for non-authenticated users
   const fetchOrdersByEmail = async (email: string) => {
@@ -437,7 +457,15 @@ export default function OrdersPage() {
                   ) : (
                     <div className="space-y-4">
                       {orders.map((order) => (
-                        <OrderCard key={order.id} order={order} user={user} />
+                        <OrderCard 
+                          key={order.id} 
+                          order={order} 
+                          user={user} 
+                          onViewDetails={(order) => {
+                            setSelectedOrder(order);
+                            setShowOrderDetails(true);
+                          }}
+                        />
                       ))}
                     </div>
                   )}
@@ -519,7 +547,15 @@ export default function OrdersPage() {
             ) : (
               <div className="space-y-6">
                 {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} user={user} />
+                  <OrderCard 
+                    key={order.id} 
+                    order={order} 
+                    user={user} 
+                    onViewDetails={(order) => {
+                      setSelectedOrder(order);
+                      setShowOrderDetails(true);
+                    }}
+                  />
                 ))}
                 
                 {/* Load More Button */}
@@ -555,6 +591,17 @@ export default function OrdersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        order={selectedOrder}
+        user={user}
+        isOpen={showOrderDetails}
+        onClose={() => {
+          setShowOrderDetails(false);
+          setSelectedOrder(null);
+        }}
+      />
     </div>
   );
 }
@@ -582,7 +629,15 @@ function formatOrderDate(dateString: string | undefined): string {
 }
 
 // OrderCard component to display individual order details (optimized)
-function OrderCard({ order, user }: { order: any; user: any }) {
+function OrderCard({ 
+  order, 
+  user, 
+  onViewDetails 
+}: { 
+  order: any; 
+  user: any; 
+  onViewDetails: (order: any) => void;
+}) {
   // Memoize expensive calculations
   const orderItems = Array.isArray(order.items) ? order.items : [];
   const itemCount = orderItems.length;
@@ -619,7 +674,17 @@ function OrderCard({ order, user }: { order: any; user: any }) {
         <Separator className="my-2" />
         <h4 className="text-sm font-medium mb-1">Items:</h4>
         
-        {/* Show only first 3 items for performance, with option to expand */}
+        {/* Show subscription details if it's a subscription order */}
+        {order.order_type === 'subscription' && order.subscription_info && (
+          <div className="mb-4">
+            <SubscriptionDetails 
+              subscriptionInfo={order.subscription_info} 
+              orderType={order.order_type} 
+            />
+          </div>
+        )}
+
+        {/* Show regular items for non-subscription orders or as fallback */}
         {itemCount > 0 ? (
           <div className="space-y-2">
             {orderItems.slice(0, 3).map((item: any, idx: number) => (
@@ -673,28 +738,37 @@ function OrderCard({ order, user }: { order: any; user: any }) {
           </>
         )}
       </CardContent>
-      <CardFooter className="pt-3 space-y-2">
-        <div className="flex justify-between items-center w-full gap-2">
-          <Button variant="outline" size="sm" disabled className="text-xs">
-            Order Details (Coming Soon)
-          </Button>
-          <InvoiceDownloadButton
-            orderId={order.id}
-            userId={user?.id}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          />
-        </div>
-        
-        {/* Rating Component - Using full form view for proper rating submission */}
-        <div className="w-full">
-          <OrderRating 
-            order={order} 
-            userId={user?.id} 
-            compact={false}
-            showForm={true}
-          />
+      <CardFooter className="pt-3">
+        <div className="w-full space-y-4">
+          {/* Action Buttons Row */}
+          <div className="flex justify-between items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs flex-1"
+              onClick={() => onViewDetails(order)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Order Details
+            </Button>
+            <InvoiceDownloadButton
+              orderId={order.id}
+              userId={user?.id}
+              variant="outline"
+              size="sm"
+              className="text-xs flex-1"
+            />
+          </div>
+          
+          {/* Rating Component */}
+          <div className="w-full">
+            <OrderRating 
+              order={order} 
+              userId={user?.id} 
+              compact={false}
+              showForm={true}
+            />
+          </div>
         </div>
       </CardFooter>
     </Card>

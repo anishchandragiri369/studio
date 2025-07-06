@@ -525,7 +525,15 @@ export default function SubscriptionCard({ subscription, onUpdate, basePrice = 1
                 <DialogTitle>Reactivate Subscription</DialogTitle>
                 <DialogDescription>
                   Your subscription will be reactivated and deliveries will resume.
-                  The next delivery will be scheduled at least 24 hours from now.
+                  {(() => {
+                    const now = new Date();
+                    const currentHour = now.getHours();
+                    if (currentHour >= 18) {
+                      return "The next delivery will be scheduled for the day after tomorrow (after 6 PM cutoff).";
+                    } else {
+                      return "The next delivery will be scheduled for tomorrow (before 6 PM cutoff).";
+                    }
+                  })()}
                 </DialogDescription>
               </DialogHeader>
               {!canReactivate && (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { SubscriptionManager } from '@/lib/subscriptionManager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,10 +78,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate new next delivery date (tomorrow)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextDeliveryDate = tomorrow.toISOString();
+    // Calculate new next delivery date with 6 PM cutoff logic
+    const nextDeliveryDate = SubscriptionManager.calculateNextDeliveryDateWithCutoff(new Date());
 
     // Reactivate the subscription
     const { error: updateError } = await supabase
@@ -108,7 +107,7 @@ export async function POST(request: NextRequest) {
       .from('fruit_bowl_subscription_deliveries')
       .update({ status: 'scheduled' })
       .eq('subscription_id', subscriptionId)
-      .gte('delivery_date', tomorrow.toISOString().split('T')[0])
+      .gte('delivery_date', nextDeliveryDate.toISOString().split('T')[0])
       .lte('delivery_date', subscription.end_date.split('T')[0])
       .eq('status', 'skipped');
 
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest) {
       subscription: { 
         id: subscriptionId, 
         status: 'active',
-        next_delivery_date: nextDeliveryDate
+        next_delivery_date: nextDeliveryDate.toISOString()
       }
     });
 

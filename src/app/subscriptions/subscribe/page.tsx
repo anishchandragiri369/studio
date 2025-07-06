@@ -15,6 +15,8 @@ import type { SubscriptionPlan, Juice, FruitBowl } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
 import { fetchPlanDefaults, convertDefaultsToSelection, type PlanDefault } from '@/lib/planDefaults';
+import CategoryBasedSubscription from '@/components/subscriptions/CategoryBasedSubscription';
+import { calculateCategoryDistribution, convertDistributionToSelections } from '@/lib/categorySubscriptionHelper';
 
 type CustomSelections = Record<string, number>; // { juiceId: quantity }
 type FruitBowlSelections = Record<string, number>; // { fruitBowlId: quantity }
@@ -37,6 +39,8 @@ function SubscribePageContents() {
   const [userInstructions, setUserInstructions] = useState('');
   const [planDefaults, setPlanDefaults] = useState<PlanDefault[]>([]);
   const [isLoadingDefaults, setIsLoadingDefaults] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryJuices, setCategoryJuices] = useState<Juice[]>([]);
   
   useEffect(() => {
     if (selectedPlan && selectedPlan.isCustomizable) {
@@ -235,63 +239,81 @@ function SubscribePageContents() {
   }
 
   const handleQuantityChange = (juiceId: string, newQuantity: number) => {
-    const currentQty = customSelections[juiceId] || 0;
-    const diff = newQuantity - currentQty;
-    
-    if (selectedPlan?.maxJuices && (totalSelectedJuices + diff > selectedPlan.maxJuices) && diff > 0) {
-      // alert(`You can select a maximum of ${selectedPlan.maxJuices} juices for this plan.`);
-      return; // Do nothing if adding would exceed max limit
-    }
-
-    setCustomSelections(prev => {
-      const updatedSelections = { ...prev };
-      if (newQuantity > 0) {
-        updatedSelections[juiceId] = newQuantity;
-      } else {
-        delete updatedSelections[juiceId];
-      }
-      return updatedSelections;
-    });
+    if (!selectedPlan?.maxJuices) return;
+    if (newQuantity > selectedPlan.maxJuices) return; // Only block if this juice exceeds its cap
+    setCustomSelections(prev => ({
+      ...prev,
+      [juiceId]: newQuantity
+    }));
   };
 
   const handleFruitBowlQuantityChange = (fruitBowlId: string, newQuantity: number) => {
-    const currentQty = fruitBowlSelections[fruitBowlId] || 0;
-    const diff = newQuantity - currentQty;
-    
-    if (selectedPlan?.maxFruitBowls && (totalSelectedFruitBowls + diff > selectedPlan.maxFruitBowls) && diff > 0) {
-      return; // Do nothing if adding would exceed max limit
-    }
-
-    setFruitBowlSelections(prev => {
-      const updatedSelections = { ...prev };
-      if (newQuantity > 0) {
-        updatedSelections[fruitBowlId] = newQuantity;
-      } else {
-        delete updatedSelections[fruitBowlId];
-      }
-      return updatedSelections;
-    });
+    if (!selectedPlan?.maxFruitBowls) return;
+    if (newQuantity > selectedPlan.maxFruitBowls) return; // Only block if this fruit bowl exceeds its cap
+    setFruitBowlSelections(prev => ({
+      ...prev,
+      [fruitBowlId]: newQuantity
+    }));
   };
-  // Helper function to check if adding a specific juice would exceed the limit
+
+  // Calculate total days based on plan frequency
+  const getTotalDays = (frequency: string) => {
+    if (frequency === 'weekly') {
+      return 6; // 6 days total
+    } else if (frequency === 'monthly') {
+      return 20; // 20 days total
+    }
+    return 1; // Fallback
+  };
+
+  const totalDays = selectedPlan ? getTotalDays(selectedPlan.frequency) : 0;
+  
+  // Use plan limits directly - user can choose any distribution
+  const totalJuiceLimit = selectedPlan ? selectedPlan.maxJuices : 0;
+  const totalFruitBowlLimit = selectedPlan ? selectedPlan.maxFruitBowls : 0;
+
+  // Helper function to check if adding a specific juice would exceed the individual limit
   const canAddJuice = (juiceId: string) => {
     if (!selectedPlan?.maxJuices) return true;
     const currentQty = customSelections[juiceId] || 0;
-    return totalSelectedJuices - currentQty + (currentQty + 1) <= selectedPlan.maxJuices;
+    // Individual juice quantity cannot exceed the plan limit
+    return currentQty < selectedPlan.maxJuices;
   };
 
-  // Helper function to check if adding a specific fruit bowl would exceed the limit
+  // Helper function to check if adding a specific fruit bowl would exceed the individual limit
   const canAddFruitBowl = (fruitBowlId: string) => {
     if (!selectedPlan?.maxFruitBowls) return true;
     const currentQty = fruitBowlSelections[fruitBowlId] || 0;
-    return totalSelectedFruitBowls - currentQty + (currentQty + 1) <= selectedPlan.maxFruitBowls;
+    // Individual fruit bowl quantity cannot exceed the plan limit
+    return currentQty < selectedPlan.maxFruitBowls;
   };
 
-  const canAddMore = selectedPlan?.maxJuices ? totalSelectedJuices < selectedPlan.maxJuices : true;
-  const canAddMoreFruitBowls = selectedPlan?.maxFruitBowls ? totalSelectedFruitBowls < selectedPlan.maxFruitBowls : true;
+  const canAddMore = selectedPlan?.maxJuices && totalJuiceLimit ? totalSelectedJuices < totalJuiceLimit : true;
+  const canAddMoreFruitBowls = selectedPlan?.maxFruitBowls && totalFruitBowlLimit ? totalSelectedFruitBowls < totalFruitBowlLimit : true;
   const handleDurationSelect = (duration: 1 | 2 | 3 | 4 | 6 | 12, pricing: any) => {
     setSelectedDuration(duration);
     setSelectedPricing(pricing);
   };
+
+  const handleCategorySelect = (category: string | null, juices: Juice[]) => {
+    setSelectedCategory(category);
+    setCategoryJuices(juices);
+    
+    // If category is selected, update custom selections with category-based distribution
+    if (category && juices.length > 0 && selectedPlan) {
+      const distribution = calculateCategoryDistribution(category, juices, selectedPlan);
+      const newSelections = convertDistributionToSelections(distribution);
+      
+      setCustomSelections(newSelections);
+      setTotalSelectedJuices(Object.values(newSelections).reduce((sum, qty) => sum + qty, 0));
+    } else if (!category) {
+      // Reset to defaults when switching back to customized
+      setCustomSelections({});
+      setTotalSelectedJuices(0);
+    }
+  };
+
+
   const handleProceedToCheckout = () => {
     console.log('Adding subscription to cart');
     
@@ -490,14 +512,25 @@ function SubscribePageContents() {
               />
             </div>
 
-            {/* Juice Customization - only for juice-only and customized plans */}
+            {/* Category-Based Selection - only for juice-only and customized plans */}
             {selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized') && juicesLoaded && (
+              <CategoryBasedSubscription
+                selectedPlan={selectedPlan}
+                juices={juices}
+                onCategorySelect={handleCategorySelect}
+                selectedCategory={selectedCategory}
+                categoryJuices={categoryJuices}
+              />
+            )}
+
+            {/* Juice Customization - only for juice-only and customized plans when no category is selected */}
+            {selectedPlan.isCustomizable && (selectedPlan.planType === 'juice-only' || selectedPlan.planType === 'customized') && juicesLoaded && !selectedCategory && (
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-primary">Customize Your Juices</CardTitle>
                   {selectedPlan.maxJuices && (
                     <CardDescription>
-                      Select up to {selectedPlan.maxJuices} juices. You have selected {totalSelectedJuices} / {selectedPlan.maxJuices}.
+                      Select individual juices from our complete collection (max {selectedPlan.maxJuices} per juice type). You have selected {Object.keys(customSelections).length} different types.
                     </CardDescription>
                   )}
                 </CardHeader>
@@ -529,18 +562,19 @@ function SubscribePageContents() {
                           value={customSelections[juice.id] || 0}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val)) handleQuantityChange(juice.id, val < 0 ? 0 : val );
+                            if (!isNaN(val) && selectedPlan?.maxJuices) {
+                              handleQuantityChange(juice.id, Math.min(val, selectedPlan.maxJuices));
+                            }
                           }}
                           className="w-12 h-8 text-center text-sm px-1" // Slightly smaller input
                           min="0"
-                          disabled={!canAddJuice(juice.id) && (customSelections[juice.id] || 0) === 0}
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8" // Slightly smaller buttons
                           onClick={() => handleQuantityChange(juice.id, (customSelections[juice.id] || 0) + 1)}
-                          disabled={!canAddJuice(juice.id)}
+                          disabled={(customSelections[juice.id] || 0) >= (selectedPlan?.maxJuices || 0)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -559,7 +593,7 @@ function SubscribePageContents() {
                   <CardTitle className="font-headline text-xl text-primary">Customize Your Fruit Bowls</CardTitle>
                   {selectedPlan.maxFruitBowls && (
                     <CardDescription>
-                      Select up to {selectedPlan.maxFruitBowls} fruit bowls. You have selected {totalSelectedFruitBowls} / {selectedPlan.maxFruitBowls}.
+                      Select up to {totalFruitBowlLimit} different fruit bowl types. You have selected {Object.keys(fruitBowlSelections).length} / {totalFruitBowlLimit} types.
                     </CardDescription>
                   )}
                 </CardHeader>
@@ -596,18 +630,19 @@ function SubscribePageContents() {
                           value={fruitBowlSelections[fruitBowl.id] || 0}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val)) handleFruitBowlQuantityChange(fruitBowl.id, val < 0 ? 0 : val );
+                            if (!isNaN(val) && selectedPlan?.maxFruitBowls) {
+                              handleFruitBowlQuantityChange(fruitBowl.id, Math.min(val, selectedPlan.maxFruitBowls));
+                            }
                           }}
                           className="w-12 h-8 text-center text-sm px-1"
                           min="0"
-                          disabled={!canAddFruitBowl(fruitBowl.id) && (fruitBowlSelections[fruitBowl.id] || 0) === 0}
                         />
                         <Button 
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8"
                           onClick={() => handleFruitBowlQuantityChange(fruitBowl.id, (fruitBowlSelections[fruitBowl.id] || 0) + 1)}
-                          disabled={!canAddFruitBowl(fruitBowl.id)}
+                          disabled={(fruitBowlSelections[fruitBowl.id] || 0) >= (selectedPlan?.maxFruitBowls || 0)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>

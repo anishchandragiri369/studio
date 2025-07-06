@@ -225,7 +225,7 @@ export default function SubscriptionDurationSelector({
                             <SelectTrigger>
                               <SelectValue placeholder="Select months" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-[200px]" onCloseAutoFocus={(e) => e.preventDefault()}>
                               {CUSTOM_MONTH_OPTIONS.map((option) => (
                                 <SelectItem key={option.value} value={option.value.toString()}>
                                   {option.label}

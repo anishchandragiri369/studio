@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabaseClient';
 import RewardsDisplay from '@/components/account/RewardsDisplay';
 import OrderRating from '@/components/ratings/OrderRating';
 import { batchCheckOrderRatings } from '@/lib/ratingHelpers';
+import SubscriptionDetails from '@/components/orders/SubscriptionDetails';
 
 export default function AccountPage() {
   const { user, logOut, loading: authLoading, isSupabaseConfigured } = useAuth();
@@ -77,6 +78,22 @@ export default function AccountPage() {
     if (user && isSupabaseConfigured) {
       fetchOrders();
     }
+  }, [user, isSupabaseConfigured]);
+
+  // Handle page visibility changes (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && isSupabaseConfigured) {
+        // When tab becomes visible again, refresh orders if needed
+        console.log('Account page: Tab became visible, checking orders');
+        // The existing useEffect will handle fetching orders if needed
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user, isSupabaseConfigured]);
 
   const handleLogout = async () => {
@@ -250,6 +267,17 @@ export default function AccountPage() {
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 pt-0">
+                              {/* Show subscription details if it's a subscription order */}
+                              {(order as any).order_type === 'subscription' && (order as any).subscription_info && (
+                                <div className="mb-4">
+                                  <SubscriptionDetails 
+                                    subscriptionInfo={(order as any).subscription_info} 
+                                    orderType={(order as any).order_type} 
+                                  />
+                                </div>
+                              )}
+
+                              {/* Show regular items for non-subscription orders or as fallback */}
                               <Separator className="my-2" />
                               <h4 className="text-sm font-medium mb-1">Items:</h4>
                               {order.items.map((item: any, idx: number) => (
