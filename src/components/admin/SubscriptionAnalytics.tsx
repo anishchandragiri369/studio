@@ -190,7 +190,9 @@ export default function SubscriptionAnalytics({ orders }: SubscriptionAnalyticsP
                         <div>
                           <p className="font-medium capitalize">{category}</p>
                           <p className="text-sm text-muted-foreground">
-                            {count} subscription{(count as number) !== 1 ? 's' : ''}
+                            {typeof count === 'number'
+                              ? `${count} subscription${count !== 1 ? 's' : ''}`
+                              : 'N/A'}
                           </p>
                         </div>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -218,11 +220,15 @@ export default function SubscriptionAnalytics({ orders }: SubscriptionAnalyticsP
                       <div>
                         <p className="font-medium capitalize">{frequency}</p>
                         <p className="text-sm text-muted-foreground">
-                          {count} subscription{(count as number) !== 1 ? 's' : ''}
+                          {typeof count === 'number'
+                            ? `${count} subscription${count !== 1 ? 's' : ''}`
+                            : 'N/A'}
                         </p>
                       </div>
                       <Badge variant="outline">
-                        {Math.round(((count as number) / analytics.totalSubscriptions) * 100)}%
+                        {typeof count === 'number'
+                          ? `${Math.round((count / analytics.totalSubscriptions) * 100)}%`
+                          : 'N/A'}
                       </Badge>
                     </div>
                   </CardContent>
@@ -244,7 +250,7 @@ export default function SubscriptionAnalytics({ orders }: SubscriptionAnalyticsP
                     <Tag className="h-8 w-8 text-green-600 mx-auto mb-2" />
                     <p className="text-sm font-medium text-muted-foreground">Category-Based</p>
                     <p className="text-xl font-bold text-green-600">
-                      {formatCurrency(Object.values(analytics.categoryRevenue).reduce((sum: number, revenue: number) => sum + revenue, 0))}
+                      {formatCurrency(Object.values(analytics.categoryRevenue).reduce((sum: number, revenue: unknown) => sum + (typeof revenue === 'number' ? revenue : 0), 0))}
                     </p>
                   </div>
                 </CardContent>
