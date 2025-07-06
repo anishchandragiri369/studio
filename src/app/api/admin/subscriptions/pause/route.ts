@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { SubscriptionManager } from '@/lib/subscriptionManager';
 import crypto from 'crypto';
 
-// Use service role for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function POST(request: NextRequest) {
-  try {
-    if (!supabase) {
-      return NextResponse.json(
-        { success: false, message: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, message: 'Database connection not available' },
+      { status: 503 }
+    );
+  }
 
+  try {
     const body = await request.json();
     const { 
       pauseType, // 'all' or 'selected'

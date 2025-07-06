@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   // Create a local supabase client if the global one is not available
   const client = supabase || (isSupabaseConfigured ? createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   ) : null);
   
   if (!client) {

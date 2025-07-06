@@ -1,21 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Use service role for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
+
+// Add Subscription type for analytics
+interface Subscription {
+  id: string;
+  user_id: string;
+  subscription_type: string;
+  status: string;
+  created_at: string;
+  next_delivery_date?: string;
+  total_amount?: number;
+  users?: { email: string; full_name: string };
+}
 
 export async function GET(request: NextRequest) {
-  try {
-    if (!supabase) {
-      return NextResponse.json(
-        { success: false, message: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, message: 'Database connection not available' },
+      { status: 503 }
+    );
+  }
 
+  try {
     const { searchParams } = new URL(request.url);
     const adminUserId = searchParams.get('adminUserId');
     const includeSubscriptions = searchParams.get('includeSubscriptions') === 'true';
@@ -54,10 +75,10 @@ export async function GET(request: NextRequest) {
     // Calculate statistics
     const stats = {
       total: subscriptionStats.length,
-      active: subscriptionStats.filter(s => s.status === 'active').length,
-      adminPaused: subscriptionStats.filter(s => s.status === 'admin_paused').length,
-      userPaused: subscriptionStats.filter(s => s.status === 'paused').length,
-      expired: subscriptionStats.filter(s => s.status === 'expired').length
+      active: subscriptionStats.filter((s: { status: string }) => s.status === 'active').length,
+      adminPaused: subscriptionStats.filter((s: { status: string }) => s.status === 'admin_paused').length,
+      userPaused: subscriptionStats.filter((s: { status: string }) => s.status === 'paused').length,
+      expired: subscriptionStats.filter((s: { status: string }) => s.status === 'expired').length
     };
 
     let subscriptions = null;
@@ -76,7 +97,7 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching user subscriptions:', subscriptionError);
         } else if (subscriptionData && subscriptionData.length > 0) {
           // Get unique user IDs
-          const uniqueUserIds = [...new Set(subscriptionData.map(sub => sub.user_id))];
+          const uniqueUserIds = [...new Set(subscriptionData.map((sub: { user_id: string }) => sub.user_id))];
           
           // Try to get user details from auth.users (Supabase Auth table)
           const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
@@ -84,8 +105,8 @@ export async function GET(request: NextRequest) {
           if (!authError && authUsers?.users) {
             // Match auth users with subscription user IDs
             const usersWithActiveSubscriptions = authUsers.users
-              .filter(user => uniqueUserIds.includes(user.id))
-              .map(user => ({
+              .filter((user: { id: string; email?: string }) => uniqueUserIds.includes(user.id))
+              .map((user: { id: string; email?: string }) => ({
                 user_id: user.id,
                 email: user.email || 'No email'
               }));
@@ -163,8 +184,8 @@ export async function GET(request: NextRequest) {
         auditLogs: auditLogs || [],
         summary: {
           totalAdminPauses: adminPauses?.length || 0,
-          activeAdminPauses: adminPauses?.filter(p => p.status === 'active').length || 0,
-          reactivatedAdminPauses: adminPauses?.filter(p => p.status === 'reactivated').length || 0
+          activeAdminPauses: adminPauses?.filter((p: { status: string }) => p.status === 'active').length || 0,
+          reactivatedAdminPauses: adminPauses?.filter((p: { status: string }) => p.status === 'reactivated').length || 0
         }
       }
     });

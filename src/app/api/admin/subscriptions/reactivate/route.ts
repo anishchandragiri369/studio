@@ -3,40 +3,49 @@ import { createClient } from '@supabase/supabase-js';
 import { SubscriptionManager } from '@/lib/subscriptionManager';
 import crypto from 'crypto';
 
-// Use service role for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase with service role - only at runtime
+let supabase: any = null;
+
+function getSupabase() {
+  if (!supabase && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabase;
+}
 
 export async function POST(request: NextRequest) {
-  try {
-    if (!supabase) {
-      return NextResponse.json(
-        { success: false, message: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
+  const supabase = getSupabase();
+  
+  if (!supabase) {
+    return NextResponse.json(
+      { success: false, message: 'Database connection not available' },
+      { status: 503 }
+    );
+  }
 
+  try {
     const body = await request.json();
     const { 
-      adminPauseId, // specific admin pause to reactivate
-      reactivateType, // 'all_paused' or 'selected'
-      subscriptionIds = [], // for selected subscriptions
-      adminUserId // admin performing the action
+      reactivationType, // 'all' or 'selected'
+      userIds = [], // for selected users
+      adminUserId, // admin performing the action
+      reactivationReason
     } = body;
 
     // Validate input
-    if (!reactivateType || !['all_paused', 'selected'].includes(reactivateType)) {
+    if (!reactivationType || !['all', 'selected'].includes(reactivationType)) {
       return NextResponse.json(
-        { success: false, message: 'Invalid reactivate type. Must be "all_paused" or "selected"' },
+        { success: false, message: 'Invalid reactivation type. Must be "all" or "selected"' },
         { status: 400 }
       );
     }
 
-    if (reactivateType === 'selected' && (!subscriptionIds || subscriptionIds.length === 0) && !adminPauseId) {
+    if (reactivationType === 'selected' && (!userIds || userIds.length === 0)) {
       return NextResponse.json(
-        { success: false, message: 'Either subscription IDs or admin pause ID is required for selected reactivation' },
+        { success: false, message: 'User IDs required for selected reactivation' },
         { status: 400 }
       );
     }
@@ -48,282 +57,116 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
+    const reactivationDate = new Date();
 
     // Note: Frontend handles admin authentication, this endpoint assumes valid admin access
 
-    // Build query for fetching admin paused subscriptions
-    // Due to database constraint issues, admin paused subscriptions may not have their status updated
-    // So we need to find them via admin pause records instead
-    let subscriptions = [];
-    
-    if (adminPauseId) {
-      // Get specific admin pause record first
-      const { data: adminPause, error: pauseError } = await supabase
-        .from('admin_subscription_pauses')
-        .select('*')
-        .eq('id', adminPauseId)
-        .eq('status', 'active')
-        .single();
+    // Build query for fetching admin-paused subscriptions
+    let query = supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('status', 'admin_paused');
 
-      if (pauseError || !adminPause) {
-        console.log('No active admin pause record found for ID:', adminPauseId);
-        return NextResponse.json(
-          { 
-            success: false, 
-            message: `No active admin pause found with ID: ${adminPauseId}`,
-            debug: { adminPauseId, pauseError }
-          },
-          { status: 404 }
-        );
-      }
-
-      console.log('Found admin pause record:', adminPause);
-
-      // Get subscriptions for the affected users
-      const affectedUserIds = adminPause.pause_type === 'all' 
-        ? null 
-        : adminPause.affected_user_ids;
-
-      let subscriptionQuery = supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('status', 'admin_paused')
-        .eq('admin_pause_id', adminPauseId);
-
-      const { data: subscriptionData, error: subscriptionError } = await subscriptionQuery;
-      
-      if (subscriptionError) {
-        console.error('Error fetching subscriptions:', subscriptionError);
-        return NextResponse.json(
-          { success: false, message: 'Failed to fetch subscriptions' },
-          { status: 500 }
-        );
-      }
-
-      subscriptions = subscriptionData || [];
-    } else if (reactivateType === 'all_paused') {
-      // Get all active admin pause records and their affected subscriptions
-      const { data: activePauses, error: pausesError } = await supabase
-        .from('admin_subscription_pauses')
-        .select('*')
-        .eq('status', 'active');
-
-      if (pausesError) {
-        console.error('Error fetching admin pauses:', pausesError);
-        return NextResponse.json(
-          { success: false, message: 'Failed to fetch admin pauses' },
-          { status: 500 }
-        );
-      }
-
-      if (activePauses && activePauses.length > 0) {
-        console.log(`Found ${activePauses.length} active admin pause records`);
-        
-        // Get all affected user IDs from all active pauses
-        const allAffectedUserIds = new Set();
-        let hasGlobalPause = false;
-        
-        activePauses.forEach(pause => {
-          if (pause.pause_type === 'all') {
-            hasGlobalPause = true;
-          } else if (pause.affected_user_ids) {
-            pause.affected_user_ids.forEach((userId: string) => allAffectedUserIds.add(userId));
-          }
-        });
-
-        let subscriptionQuery = supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('status', 'admin_paused');
-
-        if (!hasGlobalPause && allAffectedUserIds.size > 0) {
-          subscriptionQuery = subscriptionQuery.in('user_id', Array.from(allAffectedUserIds));
-        }
-
-        const { data: subscriptionData, error: subscriptionError } = await subscriptionQuery;
-        
-        if (!subscriptionError && subscriptionData) {
-          subscriptions = subscriptionData;
-        }
-      }
-    } else if (reactivateType === 'selected') {
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .in('id', subscriptionIds)
-        .eq('status', 'admin_paused');
-
-      if (!subscriptionError && subscriptionData) {
-        subscriptions = subscriptionData;
-      }
+    if (reactivationType === 'selected') {
+      query = query.in('user_id', userIds);
     }
 
-    console.log('Debug - Found subscriptions for reactivation:', subscriptions?.length || 0);
+    const { data: pausedSubscriptions, error: fetchError } = await query;
 
-    if (!subscriptions || subscriptions.length === 0) {
-      // Get debug info about all subscriptions and admin pauses
-      const { data: debugSubscriptions } = await supabase
-        .from('user_subscriptions')
-        .select('id, status, admin_pause_id, user_id')
-        .limit(10);
-        
-      const { data: debugPauses } = await supabase
-        .from('admin_subscription_pauses')
-        .select('id, status, pause_type, affected_user_ids')
-        .eq('status', 'active');
-
+    if (fetchError) {
+      console.error('Error fetching paused subscriptions:', fetchError);
       return NextResponse.json(
-        { 
-          success: false, 
-          message: `No admin paused subscriptions found for reactivation.`,
-          debug: {
-            requestedAdminPauseId: adminPauseId,
-            reactivateType,
-            subscriptionIds,
-            totalSubscriptions: debugSubscriptions?.length || 0,
-            subscriptionStatuses: debugSubscriptions?.map(s => ({ 
-              id: s.id, 
-              status: s.status, 
-              admin_pause_id: s.admin_pause_id,
-              user_id: s.user_id 
-            })) || [],
-            activeAdminPauses: debugPauses?.map(p => ({
-              id: p.id,
-              status: p.status,
-              pause_type: p.pause_type,
-              affected_user_ids: p.affected_user_ids
-            })) || []
-          }
-        },
-        { status: 404 }
+        { success: false, message: 'Failed to fetch paused subscriptions' },
+        { status: 500 }
       );
     }
 
-    // If specific admin pause ID provided, get the admin pause record
-    let adminPauseRecord = null;
-    if (adminPauseId) {
-      const { data: pauseRecord, error: pauseError } = await supabase
-        .from('admin_subscription_pauses')
-        .select('*')
-        .eq('id', adminPauseId)
-        .single();
-
-      if (pauseError) {
-        console.error('Error fetching admin pause record:', pauseError);
-        return NextResponse.json(
-          { success: false, message: 'Admin pause record not found' },
-          { status: 404 }
-        );
-      }
-
-      adminPauseRecord = pauseRecord;
+    if (!pausedSubscriptions || pausedSubscriptions.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'No admin-paused subscriptions found' },
+        { status: 404 }
+      );
     }
 
     let processedCount = 0;
     let errors: string[] = [];
 
     // Process each subscription
-    for (const subscription of subscriptions) {
+    for (const subscription of pausedSubscriptions) {
       try {
-        // Calculate reactivation delivery schedule with proper timing logic
-        const reactivationResult = SubscriptionManager.updateDeliveryScheduleAfterReactivation(
-          subscription, 
-          now
-        );
-        
-        const nextDeliveryDate = reactivationResult.nextDeliveryDate;
-        const extendedEndDate = reactivationResult.extendedEndDate;
+        console.log(`Processing subscription ${subscription.id} for admin reactivation...`);
 
-        // Update subscription status to active
+        // Calculate new next delivery date with 6 PM cutoff logic
+        const nextDeliveryDate = SubscriptionManager.calculateNextDeliveryDateWithCutoff(new Date());
+
+        // Update subscription back to active status
         const { error: updateError } = await supabase
           .from('user_subscriptions')
           .update({
             status: 'active',
-            next_delivery_date: nextDeliveryDate.toISOString(),
-            subscription_end_date: extendedEndDate.toISOString(),
-            pause_date: null,
-            pause_reason: null,
-            admin_pause_id: null,
-            admin_pause_start: null,
-            admin_pause_end: null,
-            reactivation_deadline: null,
-            admin_reactivated_at: now.toISOString(),
+            admin_reactivated_at: reactivationDate.toISOString(),
             admin_reactivated_by: adminUserId,
-            updated_at: now.toISOString()
+            next_delivery_date: nextDeliveryDate.toISOString(),
+            updated_at: new Date().toISOString()
           })
           .eq('id', subscription.id);
 
         if (updateError) {
           console.error(`Error reactivating subscription ${subscription.id}:`, updateError);
-          errors.push(`Failed to reactivate subscription ${subscription.id}`);
+          errors.push(`Error reactivating subscription ${subscription.id}: ${updateError.message}`);
           continue;
         }
 
-        // Generate new delivery schedule for the subscription using proper reactivation logic
+        console.log(`✅ Updated subscription ${subscription.id} to active status`);
+
+        // Reschedule future deliveries
         try {
-          const deliverySchedule = SubscriptionManager.calculateReactivationDeliverySchedule(
-            now,
-            subscription.delivery_frequency || 'monthly'
-          );
-          
-          const deliveryDates = deliverySchedule.adjustedSchedule.slice(0, 10); // Take first 10 deliveries
-
-          // Remove old scheduled deliveries and create new ones
-          await supabase
+          const { error: deliveryUpdateError } = await supabase
             .from('subscription_deliveries')
-            .delete()
-            .eq('subscription_id', subscription.id)
-            .in('status', ['scheduled', 'admin_paused'])
-            .gte('delivery_date', now.toISOString());
-
-          // Insert new delivery records
-          if (deliveryDates.length > 0) {
-            const deliveryRecords = deliveryDates.map(date => ({
-              subscription_id: subscription.id,
-              delivery_date: date.toISOString(),
+            .update({ 
               status: 'scheduled',
-              items: subscription.selected_juices || [],
-              created_at: now.toISOString(),
-              updated_at: now.toISOString()
-            }));
+              admin_reactivated_at: reactivationDate.toISOString()
+            })
+            .eq('subscription_id', subscription.id)
+            .eq('status', 'admin_paused')
+            .gte('delivery_date', nextDeliveryDate.toISOString().split('T')[0]);
 
-            const { error: deliveryInsertError } = await supabase
-              .from('subscription_deliveries')
-              .insert(deliveryRecords);
-
-            if (deliveryInsertError) {
-              console.error(`Error creating delivery schedule for subscription ${subscription.id}:`, deliveryInsertError);
-              // Continue - this is not critical for reactivation
-            }
+          if (deliveryUpdateError) {
+            console.log(`Note: Could not update deliveries for subscription ${subscription.id}:`, deliveryUpdateError);
+            // Continue - delivery updates are not critical
+          } else {
+            console.log(`✅ Updated deliveries for subscription ${subscription.id}`);
           }
-        } catch (scheduleError) {
-          console.error(`Error generating delivery schedule for subscription ${subscription.id}:`, scheduleError);
-          // Continue - delivery schedule can be regenerated later
+        } catch (deliveryUpdateError) {
+          console.log(`Note: Delivery update failed for subscription ${subscription.id}:`, deliveryUpdateError);
+          // Continue - not critical
         }
 
         processedCount++;
+        console.log(`✅ Successfully reactivated subscription ${subscription.id}`);
+
       } catch (error) {
         console.error(`Error processing subscription ${subscription.id}:`, error);
-        errors.push(`Error processing subscription ${subscription.id}`);
+        errors.push(`Error processing subscription ${subscription.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
-    // Update admin pause record status if specific pause was reactivated
-    if (adminPauseRecord) {
+    // Update admin pause records to reactivated status
+    const pauseIds = [...new Set(pausedSubscriptions.map((s: any) => s.admin_pause_id).filter(Boolean))];
+    
+    if (pauseIds.length > 0) {
       const { error: pauseUpdateError } = await supabase
         .from('admin_subscription_pauses')
         .update({
           status: 'reactivated',
-          reactivated_at: now.toISOString(),
-          reactivated_by: adminUserId,
-          updated_at: now.toISOString()
+          reactivated_at: reactivationDate.toISOString(),
+          reactivated_by: adminUserId
         })
-        .eq('id', adminPauseId);
+        .in('id', pauseIds);
 
       if (pauseUpdateError) {
-        console.error('Error updating admin pause record:', pauseUpdateError);
-        // Continue - this doesn't affect the main operation
+        console.error('Error updating admin pause records:', pauseUpdateError);
+        // Continue - this is not critical
       }
     }
 
@@ -333,14 +176,14 @@ export async function POST(request: NextRequest) {
       admin_user_id: adminUserId,
       action: 'ADMIN_REACTIVATE_SUBSCRIPTIONS',
       details: {
-        reactivateType,
-        adminPauseId,
-        subscriptionIds: reactivateType === 'selected' ? subscriptionIds : 'all_paused',
+        reactivationType,
+        userIds: reactivationType === 'selected' ? userIds : 'all',
+        reactivationReason: reactivationReason || 'Admin reactivation',
         processedCount,
-        totalSubscriptions: subscriptions.length,
+        totalSubscriptions: pausedSubscriptions.length,
         errors
       },
-      created_at: now.toISOString()
+      created_at: reactivationDate.toISOString()
     };
 
     const { error: auditError } = await supabase
@@ -354,13 +197,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully reactivated ${processedCount} subscriptions`,
+      message: `Successfully reactivated ${processedCount} subscriptions.`,
       data: {
         processedCount,
-        totalSubscriptions: subscriptions.length,
-        reactivateType,
-        adminPauseId,
-        reactivatedAt: now.toISOString(),
+        totalSubscriptions: pausedSubscriptions.length,
+        reactivationType,
+        reactivationDate: reactivationDate.toISOString(),
         errors: errors.length > 0 ? errors : undefined
       }
     });
