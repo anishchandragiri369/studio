@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { generateOrderInvoice } from '@/lib/invoiceGenerator';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -59,8 +58,24 @@ export async function GET(request: NextRequest) {
       customer = order.customer_info;
     }
 
-    // Generate PDF invoice
-    const pdfBuffer = await generateOrderInvoice(order, customer);
+    // Call Netlify function for PDF generation
+    const netlifyFunctionUrl = process.env.NODE_ENV === 'production' 
+      ? `${process.env.URL}/.netlify/functions/generate-invoice`
+      : 'http://localhost:8888/.netlify/functions/generate-invoice';
+
+    const response = await fetch(netlifyFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order, customer }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate PDF');
+    }
+
+    const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
     // Return PDF as response
     return new NextResponse(pdfBuffer, {
@@ -145,8 +160,24 @@ export async function POST(request: NextRequest) {
       customer = order.customer_info;
     }
 
-    // Generate PDF invoice
-    const pdfBuffer = await generateOrderInvoice(order, customer);
+    // Call Netlify function for PDF generation
+    const netlifyFunctionUrl = process.env.NODE_ENV === 'production' 
+      ? `${process.env.URL}/.netlify/functions/generate-invoice`
+      : 'http://localhost:8888/.netlify/functions/generate-invoice';
+
+    const response = await fetch(netlifyFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order, customer }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate PDF');
+    }
+
+    const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
     // Return PDF as response
     return new NextResponse(pdfBuffer, {
