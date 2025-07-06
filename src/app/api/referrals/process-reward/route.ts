@@ -3,13 +3,22 @@ import { supabase } from '@/lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 import { REWARD_CONFIG } from '@/lib/rewards';
 
-// Create admin client for accessing user metadata
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create admin client for accessing user metadata - only at runtime
+let supabaseAdmin: any = null;
+
+function getSupabaseAdmin() {
+  if (!supabaseAdmin && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return supabaseAdmin;
+}
 
 export async function POST(req: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin();
+  
   if (!supabaseAdmin) {
     return NextResponse.json(
       { success: false, message: 'Database connection not available.' },
@@ -133,7 +142,9 @@ export async function POST(req: NextRequest) {
         { success: false, message: 'Unable to create referral reward.' },
         { status: 500 }
       );
-    }    // Update referrer's reward points
+    }
+
+    // Update referrer's reward points
     const { data: currentRewards, error: fetchError } = await supabaseAdmin
       .from('user_rewards')
       .select('total_points, total_earned, referrals_count')

@@ -2,14 +2,18 @@ import { NextResponse, NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 
-// Create admin client for bypassing RLS
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const adminClient = supabaseServiceKey && process.env.NEXT_PUBLIC_SUPABASE_URL 
-  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseServiceKey)
-  : null;
+// Create admin client for bypassing RLS - only at runtime
+let adminClient: any = null;
+
+function getAdminClient() {
+  if (!adminClient && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    adminClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+  return adminClient;
+}
 
 export async function POST(req: NextRequest) {
-  const dbClient = adminClient || supabase;
+  const dbClient = getAdminClient() || supabase;
   
   if (!dbClient) {
     return NextResponse.json(
