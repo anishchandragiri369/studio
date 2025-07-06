@@ -1,5 +1,9 @@
 const puppeteer = require('puppeteer');
 
+const SIGNATURE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://develixr.netlify.app/images/signature.png'
+  : 'http://localhost:9002/images/signature.png';
+
 exports.handler = async (event, context) => {
   try {
     const { order, customer } = JSON.parse(event.body);
@@ -345,6 +349,7 @@ function generateInvoiceHTML(data) {
         </div>
         <div class="signature-section">
           <div class="signature-box">
+            <img src="${SIGNATURE_URL}" alt="Signature" class="signature-image" />
             <div class="signature-label">Signature of Authorized Person</div>
           </div>
           <div class="date-box">
