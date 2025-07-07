@@ -1,12 +1,10 @@
-const puppeteer = require('puppeteer');
+const crypto = require('crypto');
 
 const SIGNATURE_URL = process.env.NODE_ENV === 'production'
   ? 'https://develixr.netlify.app/images/signature.png'
   : 'http://localhost:9002/images/signature.png';
 
 exports.handler = async (event, context) => {
-  let browser = null;
-  
   try {
     console.log('Invoice generation started');
     
@@ -21,132 +19,21 @@ exports.handler = async (event, context) => {
     // Generate HTML with complete invoice template
     const html = generateInvoiceHTML({ order, customer });
     
-    console.log('HTML generated, launching browser...');
+    console.log('HTML generated successfully');
     
-    // Try multiple Chrome paths for Netlify environment
-    const chromePaths = [
-      process.env.CHROME_BIN,
-      '/opt/google/chrome/chrome',
-      '/usr/bin/google-chrome',
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium'
-    ].filter(Boolean);
-    
-    let launchError = null;
-    
-    // Try launching with different Chrome paths
-    for (const chromePath of chromePaths) {
-      try {
-        console.log(`Trying Chrome path: ${chromePath}`);
-        browser = await puppeteer.launch({
-          headless: true,
-          executablePath: chromePath,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--single-process',
-            '--no-zygote',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
-          ]
-        });
-        console.log('Browser launched successfully');
-        break;
-      } catch (error) {
-        console.log(`Failed to launch with path ${chromePath}:`, error.message);
-        launchError = error;
-        continue;
-      }
-    }
-    
-    // If no browser launched, try without specifying executablePath
-    if (!browser) {
-      try {
-        console.log('Trying without specifying Chrome path...');
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--single-process',
-            '--no-zygote'
-          ]
-        });
-        console.log('Browser launched without specifying path');
-      } catch (error) {
-        console.log('Failed to launch without path:', error.message);
-        throw new Error(`Failed to launch browser: ${error.message}`);
-      }
-    }
-    
-    console.log('Browser launched, creating page...');
-    
-    const page = await browser.newPage();
-    
-    // Set a longer timeout for page operations
-    page.setDefaultTimeout(30000);
-    
-    // Disable images to avoid signature image issues
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      if (req.resourceType() === 'image') {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-    
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    
-    console.log('Page content set, generating PDF...');
-    
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      },
-      printBackground: true
-    });
-    
-    console.log('PDF generated, closing browser...');
-    
-    await browser.close();
-    browser = null;
-    
-    console.log('PDF generation completed successfully');
-    
+    // Return HTML instead of PDF for now
+    // The client can use browser's print-to-PDF functionality
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${order.id}.pdf"`
+        'Content-Type': 'text/html',
+        'Content-Disposition': `inline; filename="invoice-${order.id}.html"`
       },
-      body: pdfBuffer.toString('base64'),
-      isBase64Encoded: true
+      body: html
     };
-  } catch (error) {
-    console.error('PDF generation error:', error);
     
-    // Ensure browser is closed even if there's an error
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError);
-      }
-    }
+  } catch (error) {
+    console.error('Invoice generation error:', error);
     
     // Return a more detailed error response
     return {
@@ -155,7 +42,7 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        error: 'PDF generation failed',
+        error: 'Invoice generation failed',
         message: error.message,
         stack: error.stack
       })

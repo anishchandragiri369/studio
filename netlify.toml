@@ -32,12 +32,10 @@
 
 # Generate invoice function configuration
 [functions."generate-invoice"]
-  external_node_modules = ["puppeteer"]
+  # No external dependencies needed since we removed Puppeteer
 
 [functions.environment]
-  CHROME_BIN = "/opt/google/chrome/chrome"
-  PUPPETEER_CACHE_DIR = "/tmp/.cache/puppeteer"
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
+  # No special environment variables needed for invoice generation
 
 # Cache control headers
 [[headers]]

@@ -67,27 +67,66 @@ function getOAuth2Client() {
   );
 }
 
-
 async function getTransporter() {
-  const oAuth2Client = getOAuth2Client();
-  oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
-  const accessTokenResponse = await oAuth2Client.getAccessToken();
-  const accessToken = accessTokenResponse.token;
-  if (!accessToken) throw new Error('Failed to retrieve access token.');
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      type: 'OAuth2',
-      user: process.env.GMAIL_USER,
-      clientId: process.env.GMAIL_CLIENT_ID,
-      clientSecret: process.env.GMAIL_CLIENT_SECRET,
-      refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-      accessToken: accessToken,
-    },
-    tls: {
-      rejectUnauthorized: false, // For local dev only
-    },
-  });
+  try {
+    const oAuth2Client = getOAuth2Client();
+    oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+    
+    // Try to get access token with better error handling
+    let accessToken;
+    try {
+      const accessTokenResponse = await oAuth2Client.getAccessToken();
+      accessToken = accessTokenResponse.token;
+    } catch (tokenError) {
+      console.error('[getTransporter] Failed to get access token:', tokenError);
+      
+      // Fallback to SMTP if OAuth2 fails
+      console.log('[getTransporter] Falling back to SMTP authentication');
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD, // Use app password as fallback
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+    }
+    
+    if (!accessToken) {
+      throw new Error('Failed to retrieve access token.');
+    }
+    
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: process.env.GMAIL_USER,
+        clientId: process.env.GMAIL_CLIENT_ID,
+        clientSecret: process.env.GMAIL_CLIENT_SECRET,
+        refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+        accessToken: accessToken,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+  } catch (error) {
+    console.error('[getTransporter] Error creating transporter:', error);
+    
+    // Final fallback - try with basic SMTP
+    console.log('[getTransporter] Using basic SMTP fallback');
+    return nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+  }
 }
 
 function formatCurrency(amount: number | undefined | null): string {
@@ -347,108 +386,87 @@ function generateAdminEmailHtml(order: OrderData, customerName: string, customer
 
 // Enhanced email sending function
 async function sendOrderConfirmationEmails(orderData: OrderData): Promise<{ userEmailSent: boolean, adminEmailSent: boolean, errors: string[] }> {
-  console.log('[sendOrderConfirmationEmails] Starting email sending process for order:', orderData.id);
-  
-  const transporter = await getTransporter();
-  console.log('[sendOrderConfirmationEmails] Email transporter created successfully');
-  
   const errors: string[] = [];
   let userEmailSent = false;
   let adminEmailSent = false;
 
-  // Extract customer information
-  const customerEmail = orderData.email || orderData.customer_email || orderData.shipping_address?.email;
-  const customerName = orderData.shipping_address?.firstName 
-    ? `${orderData.shipping_address.firstName} ${orderData.shipping_address.lastName || ''}`.trim()
-    : orderData.shipping_address?.name || 'Valued Customer';
-  console.log('[sendOrderConfirmationEmails] Customer details extracted:', {
-    customerEmail,
-    customerName,
-    orderType: orderData.order_type
-  });
-
-  // Debug: Log order data structure to identify missing fields
-  console.log('[sendOrderConfirmationEmails] Order data structure:', {
-    id: orderData.id,
-    order_type: orderData.order_type,
-    total_amount: orderData.total_amount,
-    items: orderData.items ? orderData.items.map(item => ({
-      juiceId: item.juiceId,
-      juiceName: item.juiceName,
-      quantity: item.quantity,
-      pricePerItem: item.pricePerItem
-    })) : 'No items'
-  });
-  if (!customerEmail) {
-    console.error('[sendOrderConfirmationEmails] Customer email not found in order data');
-    errors.push('Customer email not found in order data');
-    return { userEmailSent: false, adminEmailSent: false, errors };
-  }
-
-  // Admin email address
-  const adminEmail = process.env.ADMIN_EMAIL;
-  console.log('[sendOrderConfirmationEmails] Admin email configured:', !!adminEmail);
-  if (!adminEmail) {
-    console.warn('[sendOrderConfirmationEmails] Admin email not configured in environment variables');
-    errors.push('Admin email not configured');
-  }
-
-  const isSubscription = orderData.order_type === 'subscription';
-  console.log('[sendOrderConfirmationEmails] Processing', isSubscription ? 'subscription' : 'order', 'emails');
-  // Send customer confirmation email
   try {
-    console.log('[sendOrderConfirmationEmails] Preparing customer email for:', customerEmail);
-    const customerEmailHtml = generateCustomerEmailHtml(orderData, customerName);
-    console.log('[sendOrderConfirmationEmails] Customer email HTML generated, length:', customerEmailHtml.length);
+    console.log('[sendOrderConfirmationEmails] Starting email sending process for order:', orderData.id);
     
-    const customerMailOptions = {
-      from: `"Elixr ${isSubscription ? 'Subscriptions' : 'Orders'}" <${process.env.GMAIL_USER}>`,
-      to: customerEmail,
-      subject: `${isSubscription ? 'Subscription' : 'Order'} Confirmation - ${orderData.id} ✅`,
-      html: customerEmailHtml,
-      text: `Thank you for your ${isSubscription ? 'subscription' : 'order'}!\n\n${isSubscription ? 'Subscription' : 'Order'} ID: ${orderData.id}\nTotal: ₹${orderData.total_amount}\n\nWe'll process your ${isSubscription ? 'first delivery' : 'order'} soon!`
-    };
+    const customerName = orderData.shipping_address?.firstName 
+      ? `${orderData.shipping_address.firstName} ${orderData.shipping_address.lastName || ''}`.trim()
+      : orderData.shipping_address?.name || 'Customer';
+    
+    const customerEmail = orderData.email || orderData.customer_email || orderData.shipping_address?.email;
+    const adminEmail = process.env.ADMIN_EMAIL || 'orders@elixrstudio.com';
 
-    console.log('[sendOrderConfirmationEmails] Sending customer email...');
-    const customerEmailInfo = await transporter.sendMail(customerMailOptions);
-    console.log('[sendOrderConfirmationEmails] Customer email sent successfully! Message ID:', customerEmailInfo.messageId);
-    userEmailSent = true;
-  } catch (error) {
-    console.error('[sendOrderConfirmationEmails] Error sending customer email:', error);
-    errors.push(`Customer email failed: ${error}`);
-  }
-  // Send admin notification email
-  if (adminEmail) {
+    if (!customerEmail) {
+      errors.push('No customer email found');
+      console.error('[sendOrderConfirmationEmails] No customer email found for order:', orderData.id);
+    }
+
+    // Generate email content
+    const customerEmailHtml = generateCustomerEmailHtml(orderData, customerName);
+    const adminEmailHtml = generateAdminEmailHtml(orderData, customerName, customerEmail || 'No email');
+
+    // Try to send customer email
+    if (customerEmail) {
+      try {
+        const transporter = await getTransporter();
+        
+        const customerMailOptions = {
+          from: `"Elixr Studio" <${process.env.GMAIL_USER}>`,
+          to: customerEmail,
+          subject: `Order Confirmation - ${orderData.id}`,
+          html: customerEmailHtml,
+        };
+
+        await transporter.sendMail(customerMailOptions);
+        userEmailSent = true;
+        console.log('[sendOrderConfirmationEmails] Customer email sent successfully to:', customerEmail);
+      } catch (emailError) {
+        console.error('[sendOrderConfirmationEmails] Failed to send customer email:', emailError);
+        errors.push(`Customer email failed: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`);
+        
+        // Log email content as fallback
+        console.log('[sendOrderConfirmationEmails] Customer email content (not sent):', {
+          to: customerEmail,
+          subject: `Order Confirmation - ${orderData.id}`,
+          html: customerEmailHtml.substring(0, 500) + '...' // Log first 500 chars
+        });
+      }
+    }
+
+    // Try to send admin email
     try {
-      console.log('[sendOrderConfirmationEmails] Preparing admin notification email for:', adminEmail);
-      const adminEmailHtml = generateAdminEmailHtml(orderData, customerName, customerEmail);
-      console.log('[sendOrderConfirmationEmails] Admin email HTML generated, length:', adminEmailHtml.length);
+      const transporter = await getTransporter();
       
       const adminMailOptions = {
-        from: `"Elixr System" <${process.env.GMAIL_USER}>`,
+        from: `"Elixr Studio" <${process.env.GMAIL_USER}>`,
         to: adminEmail,
-        subject: `🚨 New ${isSubscription ? 'Subscription' : 'Order'} Alert - ${orderData.id} - ₹${orderData.total_amount}`,
+        subject: `New Order Received - ${orderData.id}`,
         html: adminEmailHtml,
-        text: `New ${isSubscription ? 'subscription' : 'order'} received!\n\n${isSubscription ? 'Subscription' : 'Order'} ID: ${orderData.id}\nCustomer: ${customerName} (${customerEmail})\nTotal: ₹${orderData.total_amount}\n\nPlease process this ${isSubscription ? 'subscription' : 'order'} immediately.`
       };
 
-      console.log('[sendOrderConfirmationEmails] Sending admin email...');
-      const adminEmailInfo = await transporter.sendMail(adminMailOptions);
-      console.log('[sendOrderConfirmationEmails] Admin email sent successfully! Message ID:', adminEmailInfo.messageId);
+      await transporter.sendMail(adminMailOptions);
       adminEmailSent = true;
-    } catch (error) {
-      console.error('[sendOrderConfirmationEmails] Error sending admin email:', error);
-      errors.push(`Admin email failed: ${error}`);
+      console.log('[sendOrderConfirmationEmails] Admin email sent successfully to:', adminEmail);
+    } catch (emailError) {
+      console.error('[sendOrderConfirmationEmails] Failed to send admin email:', emailError);
+      errors.push(`Admin email failed: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`);
+      
+      // Log email content as fallback
+      console.log('[sendOrderConfirmationEmails] Admin email content (not sent):', {
+        to: adminEmail,
+        subject: `New Order Received - ${orderData.id}`,
+        html: adminEmailHtml.substring(0, 500) + '...' // Log first 500 chars
+      });
     }
-  } else {
-    console.warn('[sendOrderConfirmationEmails] Skipping admin email - no admin email configured');
-  }
 
-  console.log('[sendOrderConfirmationEmails] Email process completed:', {
-    userEmailSent,
-    adminEmailSent,
-    errorCount: errors.length
-  });
+  } catch (error) {
+    console.error('[sendOrderConfirmationEmails] General error:', error);
+    errors.push(`General error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 
   return { userEmailSent, adminEmailSent, errors };
 }

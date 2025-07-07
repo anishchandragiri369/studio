@@ -54,25 +54,61 @@ export default function InvoiceDownloadButton({
         throw new Error(errorData.error || 'Failed to generate invoice');
       }
 
-      // Create blob from response
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Check content type to determine how to handle the response
+      const contentType = response.headers.get('content-type');
       
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${orderId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(link);
+      if (contentType?.includes('text/html')) {
+        // Handle HTML response - open in new window for printing
+        const htmlContent = await response.text();
+        
+        // Create a new window with the HTML content
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(htmlContent);
+          newWindow.document.close();
+          
+          // Auto-print after a short delay
+          setTimeout(() => {
+            newWindow.print();
+          }, 500);
+        } else {
+          // Fallback: download as HTML file
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `invoice-${orderId}.html`;
+          document.body.appendChild(link);
+          link.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+        }
 
-      toast({
-        title: "Invoice Downloaded",
-        description: "Your invoice has been successfully downloaded.",
-      });
+        toast({
+          title: "Invoice Generated",
+          description: "Your invoice has been opened in a new window. Use Ctrl+P to save as PDF.",
+        });
+      } else {
+        // Handle PDF response (legacy support)
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `invoice-${orderId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+
+        toast({
+          title: "Invoice Downloaded",
+          description: "Your invoice has been successfully downloaded.",
+        });
+      }
 
     } catch (error) {
       console.error('Error downloading invoice:', error);
@@ -102,7 +138,7 @@ export default function InvoiceDownloadButton({
       ) : (
         <>
           <Download className="mr-2 h-4 w-4" />
-          Download Invoice
+          Generate Invoice
         </>
       )}
     </Button>
