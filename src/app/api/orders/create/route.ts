@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
     // Initialize user rewards if not exists
     if (userId) {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/rewards/initialize`, {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/api/rewards/initialize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId })

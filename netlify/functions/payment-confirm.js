@@ -129,12 +129,11 @@ exports.handler = async (event) => {
         }
         // If order found and updated, send appropriate notifications
         try {
-          // For Netlify functions, we'll use a different approach for fetch
-          const fetch = require('node-fetch');
+          // Use built-in fetch (available in Node.js 18+)
           
           if (orderStatus === 'Payment Success') {
             // Send success confirmation email
-            const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'http://localhost:9002/api/send-order-email';
+            const apiUrl = process.env.SEND_ORDER_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-order-email';
             const emailPayload = {
               orderId: order.id,
               userEmail: order.email || order.customer_email || order.shipping_address?.email
@@ -181,7 +180,7 @@ exports.handler = async (event) => {
           } else {
             // Send payment failure notification
             console.log('Sending payment failure notification for order:', order.id);
-            const failureApiUrl = process.env.SEND_PAYMENT_FAILURE_EMAIL_API_URL || 'http://localhost:9002/api/send-payment-failure-email';
+            const failureApiUrl = process.env.SEND_PAYMENT_FAILURE_EMAIL_API_URL || 'https://develixr.netlify.app/api/send-payment-failure-email';
             const failureEmailPayload = {
               orderId: order.id,
               userEmail: order.email || order.customer_email || order.shipping_address?.email,

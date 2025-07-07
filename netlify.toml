@@ -36,6 +36,8 @@
 
 [functions.environment]
   CHROME_BIN = "/opt/google/chrome/chrome"
+  PUPPETEER_CACHE_DIR = "/tmp/.cache/puppeteer"
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
 
 # Cache control headers
 [[headers]]

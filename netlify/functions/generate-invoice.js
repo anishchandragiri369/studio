@@ -23,21 +23,70 @@ exports.handler = async (event, context) => {
     
     console.log('HTML generated, launching browser...');
     
-    // Launch browser with Netlify-compatible settings
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--single-process',
-        '--no-zygote'
-      ],
-      executablePath: process.env.CHROME_BIN || null
-    });
+    // Try multiple Chrome paths for Netlify environment
+    const chromePaths = [
+      process.env.CHROME_BIN,
+      '/opt/google/chrome/chrome',
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium'
+    ].filter(Boolean);
+    
+    let launchError = null;
+    
+    // Try launching with different Chrome paths
+    for (const chromePath of chromePaths) {
+      try {
+        console.log(`Trying Chrome path: ${chromePath}`);
+        browser = await puppeteer.launch({
+          headless: true,
+          executablePath: chromePath,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--single-process',
+            '--no-zygote',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
+          ]
+        });
+        console.log('Browser launched successfully');
+        break;
+      } catch (error) {
+        console.log(`Failed to launch with path ${chromePath}:`, error.message);
+        launchError = error;
+        continue;
+      }
+    }
+    
+    // If no browser launched, try without specifying executablePath
+    if (!browser) {
+      try {
+        console.log('Trying without specifying Chrome path...');
+        browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--single-process',
+            '--no-zygote'
+          ]
+        });
+        console.log('Browser launched without specifying path');
+      } catch (error) {
+        console.log('Failed to launch without path:', error.message);
+        throw new Error(`Failed to launch browser: ${error.message}`);
+      }
+    }
     
     console.log('Browser launched, creating page...');
     

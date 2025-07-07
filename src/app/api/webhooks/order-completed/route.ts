@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Process referral reward if referral code exists
     if (order.referral_code && order.referrer_id) {
       try {
-        const referralResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/referrals/process-reward`, {
+        const referralResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/api/referrals/process-reward`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     // Trigger rating request for completed orders
     try {
-      const ratingResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ratings/request`, {
+      const ratingResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://develixr.netlify.app'}/api/ratings/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
