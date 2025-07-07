@@ -149,7 +149,7 @@ function MenuPageContent() {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-green-900/20 to-blue-900/20"></div>
           <Image
-            src="/images/Welcome-to-the-world-of-Elixirs_page"
+            src="/images/Welcome-to-the-world-of-Elixirs_page.webp"
             alt="Welcome to the world of Elixirs"
             fill
             sizes="100vw"

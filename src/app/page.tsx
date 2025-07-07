@@ -79,7 +79,7 @@ export default function HomePage() {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-purple-900/20 to-blue-900/20"></div>
           <Image
-            src="/images/Welcome-to-the-world-of-elixirs_page.jpg"
+            src="/images/Welcome-to-the-world-of-Elixirs_page.webp"
             alt="Welcome to the world of elixrs"
             fill={true}
             sizes="100vw"

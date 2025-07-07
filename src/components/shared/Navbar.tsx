@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ShoppingBag } from "lucide-react";
 import { ShoppingCart, Menu as MenuIcon, LogOut, UserCircle, LogInIcon, UserPlus, AlertTriangle, Settings, PackagePlus, BarChart, Shield, Ticket, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
@@ -224,11 +224,12 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/invoices" className="cursor-pointer">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Download Invoices</span>
+                      <Link href="/orders" className="cursor-pointer">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
                       </Link>
-                    </DropdownMenuItem>                    {isAdmin && (
+                    </DropdownMenuItem>
+                    {isAdmin && (
                       <>
                         <DropdownMenuItem asChild>
                           <Link href="/admin" className="cursor-pointer">
@@ -399,13 +400,18 @@ const Navbar = () => {
                             <Link href="/account" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
                               <Settings className="mr-2 h-5 w-5" /> My Account
                             </Link>
-                          </SheetClose>
-                          <SheetClose asChild>
+                        </SheetClose>
+                        <SheetClose asChild>
+                            <Link href="/orders" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
+                              <ShoppingBag className="mr-2 h-5 w-5" /> My Orders
+                            </Link>
+                        </SheetClose>
+                        <SheetClose asChild>
                             <Link href="/invoices" className="text-lg font-medium text-foreground/80 hover:text-primary flex items-center" onClick={() => setIsMenuOpen(false)}>
                               <FileText className="mr-2 h-5 w-5" /> Download Invoices
                             </Link>
-                          </SheetClose>
-                          <SheetClose asChild>
+                        </SheetClose>
+                        <SheetClose asChild>
                             <Button 
                               variant="ghost" 
                               onClick={handleLogout} 
@@ -419,7 +425,7 @@ const Navbar = () => {
                               )}
                               {isLoggingOut ? 'Logging out...' : 'Logout'}
                             </Button>
-                          </SheetClose>
+                        </SheetClose>
                       </>
                     ) : (
                         <>
