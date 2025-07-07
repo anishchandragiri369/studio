@@ -1,4 +1,3 @@
-
 import type {NextConfig} from 'next';
 
 // Simple, explicit build mode detection - ONLY enable export for mobile builds
@@ -66,9 +65,11 @@ const nextConfig: NextConfig = {
   },
   
   typescript: {
-    ignoreBuildErrors: true,
+    // Enable TypeScript validation during builds
+    ignoreBuildErrors: false,
   },
   eslint: {
+    // Ignore ESLint validation during builds
     ignoreDuringBuilds: true,
   },
   images: {
