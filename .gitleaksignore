@@ -1,0 +1,50 @@
+# Environment files
+.env
+.env.local
+.env.*
+*.env
+
+# Netlify internal directories
+.netlify/
+node_modules/
+
+# Build and cache directories
+.next/
+dist/
+build/
+.cache/
+
+# Test files and reports
+*test*.json
+*leak*.json
+gitleaks*.json
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Package lock files (may contain hashes that trigger false positives)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Database files
+*.db
+*.sqlite
+
+# Backup files
+*.bak
+*.backup

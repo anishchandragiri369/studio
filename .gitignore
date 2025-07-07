@@ -38,10 +38,39 @@ yarn-error.log*
 next-env.d.ts
 
 .genkit/*
-.env*
+
+# Environment files - CRITICAL: Never commit these!
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+.env.whatsapp
+.env.whatsapp.local
+
+# Allow only example files
+!.env.example
+!.env.whatsapp.example
 
 # firebase
 firebase-debug.log
 firestore-debug.log
+
 # Local Netlify folder
 .netlify
+
+# Gitleaks reports (to prevent circular issues)
+gitleaks-report*.json
+gitleaks-*-report.json
+
+# Backup files
+.api-backup/
+
+# Test files with mock data
+test-*.js
+test-*.ts
+test-*.tsx
+*test*.js
+*test*.ts
+*test*.tsx
