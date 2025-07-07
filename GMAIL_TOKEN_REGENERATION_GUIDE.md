@@ -1,1 +1,0 @@
-OAuth Client Secret: `YOUR_CLIENT_SECRET_HERE` 
