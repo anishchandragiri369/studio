@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       reactivationType, // 'all' or 'selected'
-      userIds = [], // for selected users
+      subscriptionIds = [], // for selected subscriptions (changed from userIds)
+      adminPauseId, // admin pause ID to reactivate
       adminUserId, // admin performing the action
       reactivationReason
     } = body;
@@ -43,9 +44,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (reactivationType === 'selected' && (!userIds || userIds.length === 0)) {
+    // If adminPauseId is provided, fetch the affected subscription IDs automatically
+    let finalSubscriptionIds = subscriptionIds;
+    if (reactivationType === 'selected' && adminPauseId && (!subscriptionIds || subscriptionIds.length === 0)) {
+      console.log(`Fetching subscription IDs for admin pause: ${adminPauseId}`);
+      
+      const { data: affectedSubscriptions, error: fetchPauseError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('admin_pause_id', adminPauseId)
+        .eq('status', 'admin_paused');
+
+      if (fetchPauseError) {
+        console.error('Error fetching subscriptions for admin pause:', fetchPauseError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to fetch subscriptions for admin pause' },
+          { status: 500 }
+        );
+      }
+
+      if (!affectedSubscriptions || affectedSubscriptions.length === 0) {
+        // Fallback: Mark the admin pause as reactivated since there are no subscriptions left
+        const { error: pauseUpdateError } = await supabase
+          .from('admin_subscription_pauses')
+          .update({
+            status: 'reactivated',
+            reactivated_at: new Date().toISOString(),
+            reactivated_by: adminUserId
+          })
+          .eq('id', adminPauseId);
+
+        if (pauseUpdateError) {
+          console.error('Error updating admin pause status:', pauseUpdateError);
+          return NextResponse.json(
+            { success: false, message: 'No paused subscriptions found for this admin pause, and failed to update admin pause status.' },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json(
+          { 
+            success: true, 
+            message: 'No paused subscriptions found for this admin pause. Admin pause marked as reactivated.',
+            data: {
+              processedCount: 0,
+              totalSubscriptions: 0,
+              reactivationType: 'selected',
+              reactivationDate: new Date().toISOString()
+            }
+          },
+          { status: 200 }
+        );
+      }
+
+      finalSubscriptionIds = affectedSubscriptions.map((sub: { id: string }) => sub.id);
+      console.log(`Found ${finalSubscriptionIds.length} subscriptions for admin pause ${adminPauseId}:`, finalSubscriptionIds);
+    }
+
+    if (reactivationType === 'selected' && (!finalSubscriptionIds || finalSubscriptionIds.length === 0)) {
       return NextResponse.json(
-        { success: false, message: 'User IDs required for selected reactivation' },
+        { success: false, message: 'Subscription IDs required for selected reactivation. Please provide subscription IDs or select an admin pause.' },
         { status: 400 }
       );
     }
@@ -68,7 +126,7 @@ export async function POST(request: NextRequest) {
       .eq('status', 'admin_paused');
 
     if (reactivationType === 'selected') {
-      query = query.in('user_id', userIds);
+      query = query.in('id', finalSubscriptionIds); // Use the final subscription IDs
     }
 
     const { data: pausedSubscriptions, error: fetchError } = await query;
@@ -177,7 +235,7 @@ export async function POST(request: NextRequest) {
       action: 'ADMIN_REACTIVATE_SUBSCRIPTIONS',
       details: {
         reactivationType,
-        userIds: reactivationType === 'selected' ? userIds : 'all',
+        subscriptionIds: reactivationType === 'selected' ? finalSubscriptionIds : 'all',
         reactivationReason: reactivationReason || 'Admin reactivation',
         processedCount,
         totalSubscriptions: pausedSubscriptions.length,

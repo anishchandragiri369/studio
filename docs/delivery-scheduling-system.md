@@ -130,7 +130,7 @@ curl -X POST /api/subscriptions/delivery-management \
 
 # Test cron scheduler
 curl -X POST /api/cron/delivery-scheduler \
-  -H "Authorization: Bearer your_cron_secret"
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
 ## Benefits

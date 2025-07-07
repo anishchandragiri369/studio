@@ -238,10 +238,26 @@ export default function AdminSubscriptionManagementPage() {
   };
 
   const handleReactivateSubmit = async () => {
+    // Check if user ID is available
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "User ID not available. Please refresh the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('Reactivate form state:', {
+      reactivateType,
+      selectedSubscriptionIds,
+      selectedAdminPauseId
+    });
+
     if (reactivateType === 'selected' && !selectedSubscriptionIds.trim() && !selectedAdminPauseId) {
       toast({
         title: "Validation Error",
-        description: "Either subscription IDs or admin pause ID is required for selected reactivation",
+        description: "Please select an admin pause or enter subscription IDs for selected reactivation",
         variant: "destructive",
       });
       return;
@@ -253,18 +269,26 @@ export default function AdminSubscriptionManagementPage() {
         ? selectedSubscriptionIds.split(',').map(id => id.trim()).filter(id => id)
         : [];
 
+      console.log('Sending reactivate request with:', {
+        adminUserId: user.id,
+        reactivationType: reactivateType === 'all_paused' ? 'all' : 'selected',
+        subscriptionIds,
+        adminPauseId: selectedAdminPauseId || null
+      });
+
       const response = await fetch('/api/admin/subscriptions/reactivate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reactivationType: reactivateType === 'all_paused' ? 'all' : 'selected',
-          subscriptionIds,
+          subscriptionIds: subscriptionIds,
           adminPauseId: selectedAdminPauseId || null,
-          adminUserId: user?.id
+          adminUserId: user.id
         }),
       });
 
       const result = await response.json();
+      console.log('Reactivate API response:', result);
 
       if (result.success) {
         toast({
@@ -641,10 +665,10 @@ export default function AdminSubscriptionManagementPage() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="subscription-ids">Subscription IDs (comma-separated, optional if Admin Pause ID selected)</Label>
+                      <Label htmlFor="subscription-ids">Subscription IDs (comma-separated, optional when Admin Pause ID is selected)</Label>
                       <Textarea
                         id="subscription-ids"
-                        placeholder="sub-id-1, sub-id-2, sub-id-3"
+                        placeholder="sub-id-1, sub-id-2, sub-id-3 (or leave empty if Admin Pause ID selected)"
                         value={selectedSubscriptionIds}
                         onChange={(e) => setSelectedSubscriptionIds(e.target.value)}
                       />

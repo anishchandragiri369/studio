@@ -67,7 +67,7 @@ Updated `netlify.toml` with correct TOML syntax for scheduled functions.
 In your Netlify dashboard > Site settings > Environment variables, add:
 
 ```env
-CRON_SECRET=623483794bc94eb44b2d33fa0cad9cfcbd0123e07b45cc041ba22a558c124269e
+CRON_SECRET=YOUR_CRON_SECRET
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ADMIN_EMAIL=your_admin_email

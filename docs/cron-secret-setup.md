@@ -32,7 +32,7 @@ openssl rand -hex 32
 
 ### For Local Development (.env.local)
 ```env
-CRON_SECRET=your_generated_secret_here
+CRON_SECRET=YOUR_CRON_SECRET
 ```
 
 ### For Production (Netlify)

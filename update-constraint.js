@@ -5,6 +5,8 @@ const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const jwtToken = 'EXAMPLE_JWT_TOKEN';
+
 async function updateConstraint() {
   try {
     console.log('Updating subscription duration constraint...');
